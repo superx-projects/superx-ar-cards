@@ -12,30 +12,32 @@
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 <body>
-  <!-- LOGO -->
-  <header>
-    <img src="/assets/logo.png" alt="Logo" class="logo" />
-  </header>
+  <div class="container">
+    <!-- LOGO -->
+    <header>
+      <img src="/assets/logo.png" alt="Logo" class="logo" />
+    </header>
 
-  <!-- VISOR 3D AR -->
-  <model-viewer 
-    src="/models/batman.glb"
-    ios-src="/models/batman.usdz"
-    ar 
-    ar-modes="scene-viewer quick-look webxr"
-    camera-controls 
-    autoplay 
-    auto-rotate
-    alt="Modelo 3D en AR"
-    style="width: 100%; height: 80vh;"
-  >
-    <button slot="ar-button" class="ar-button">🔍 Ver en tu espacio</button>
-  </model-viewer>
+    <!-- VISOR 3D AR -->
+    <model-viewer 
+      src="/models/batman.glb"
+      ios-src="/models/batman.usdz"
+      ar 
+      ar-modes="scene-viewer quick-look webxr"
+      camera-controls 
+      autoplay 
+      auto-rotate
+      alt="Modelo 3D en AR"
+      style="width: 100%; height: 80vh;"
+    >
+      <button slot="ar-button" class="ar-button">🔍 Ver en tu espacio</button>
+    </model-viewer>
 
-  <!-- INSTRUCCIONES -->
-  <div class="info">
-    <p id="info1"></p>
-    <p id="info2"></p>
+    <!-- INSTRUCCIONES -->
+    <div class="info">
+      <p id="info1"></p>
+      <p id="info2"></p>
+    </div>
   </div>
 
   <!-- BOTÓN DE AYUDA -->
@@ -54,7 +56,10 @@
       box.style.display = box.style.display === 'block' ? 'none' : 'block';
     }
 
-    window.addEventListener('DOMContentLoaded', loadLanguageTexts);
+    // Ejecuta carga de idioma correctamente
+    window.addEventListener('DOMContentLoaded', () => {
+      detectLangAndLoad();
+    });
   </script>
 </body>
 </html>
