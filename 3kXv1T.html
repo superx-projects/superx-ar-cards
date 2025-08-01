@@ -1,120 +1,60 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Super X AR</title>
+  <title>Visualizador AR - Batman</title>
+
+  <!-- Estilos -->
+  <link rel="stylesheet" href="/style/main.css" />
+
+  <!-- model-viewer webcomponent -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      background-color: #121212;
-      font-family: sans-serif;
-      color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-    model-viewer {
-      width: 100%;
-      height: 80vh;
-    }
-    .info {
-      text-align: center;
-      margin: 1em;
-      font-size: 1rem;
-    }
-
-    /* Botón de ayuda flotante */
-    .help-button {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      background-color: #03a9f4;
-      color: white;
-      font-size: 1.5em;
-      text-align: center;
-      line-height: 50px;
-      cursor: pointer;
-      z-index: 1000;
-      box-shadow: 0 0 10px rgba(0,0,0,0.4);
-    }
-
-    .help-box {
-      position: fixed;
-      bottom: 80px;
-      right: 20px;
-      background: #222;
-      border-radius: 8px;
-      padding: 1em;
-      max-width: 300px;
-      font-size: 0.9em;
-      line-height: 1.4em;
-      z-index: 999;
-      display: none;
-      box-shadow: 0 0 10px rgba(0,0,0,0.5);
-    }
-
-    .help-box p {
-      margin: 0.5em 0;
-    }
-
-    @media (max-width: 600px) {
-      .info {
-        font-size: 0.9rem;
-        padding: 0 1em;
-      }
-      .help-box {
-        max-width: 90%;
-        right: 5%;
-        bottom: 80px;
-      }
-    }
-  </style>
 </head>
 <body>
+  <!-- LOGO -->
+  <header>
+    <img src="/assets/logo.png" alt="Logo" class="logo" />
+  </header>
 
+  <!-- VISOR 3D AR -->
   <model-viewer 
-    src="models/batman.glb"
-    ios-src="models/batman.usdz"
-    alt="Modelo 3D de Super X"
+    src="/models/batman.glb"
+    ios-src="/models/batman.usdz"
     ar 
-    ar-modes="webxr scene-viewer quick-look" 
-    environment-image="neutral"
-    auto-rotate 
+    ar-modes="scene-viewer quick-look webxr"
     camera-controls 
-    shadow-intensity="1">
+    autoplay 
+    auto-rotate
+    alt="Modelo 3D en AR"
+    style="width: 100%; height: 80vh;"
+  >
+    <button slot="ar-button" class="ar-button">🔍 Ver en tu espacio</button>
   </model-viewer>
 
+  <!-- INSTRUCCIONES -->
   <div class="info">
-    <p>📱 Tocá el botón “Ver en tu espacio” para ver el modelo en realidad aumentada.</p>
-    <p>💡 Requiere un celular compatible con AR y acceso a la cámara.</p>
+    <p id="info1"></p>
+    <p id="info2"></p>
   </div>
 
-  <div class="help-button" onclick="toggleHelp()">?</div>
+  <!-- BOTÓN DE AYUDA -->
+  <button class="help-toggle" onclick="toggleHelp()">?</button>
 
-  <div class="help-box" id="helpBox">
-    <p><strong>¿Cómo grabar video?</strong></p>
-    <p>▶️ Al abrir el modo AR:</p>
-    <ul>
-      <li>En <strong>iPhone</strong>, tocá el botón de grabación que aparece automáticamente.</li>
-      <li>En <strong>Android</strong>, según el modelo, podés usar el botón de cámara o activar la grabación de pantalla desde el menú superior.</li>
-    </ul>
-    <p>🎯 Recordá que podés mover el modelo con un dedo o hacer zoom con dos.</p>
+  <!-- CAJA DE AYUDA -->
+  <div class="help-box" id="helpBox" style="display: none;">
+    <!-- Se llena dinámicamente -->
   </div>
 
+  <!-- SCRIPTS -->
+  <script src="/js/lang.js"></script>
   <script>
     function toggleHelp() {
       const box = document.getElementById('helpBox');
       box.style.display = box.style.display === 'block' ? 'none' : 'block';
     }
-  </script>
 
+    window.addEventListener('DOMContentLoaded', loadLanguageTexts);
+  </script>
 </body>
 </html>
