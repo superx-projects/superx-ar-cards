@@ -1,3 +1,5 @@
+console.log("lang.js cargado correctamente");
+
 function applyTranslations(translations) {
   Object.keys(translations).forEach(key => {
     const el = document.getElementById(key);
@@ -26,3 +28,4 @@ function detectLangAndLoad() {
 }
 
 detectLangAndLoad();
+
