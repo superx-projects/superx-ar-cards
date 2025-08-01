@@ -16,49 +16,74 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
     }
-
-    header {
-      width: 100%;
-      padding: 1em;
-      text-align: center;
-      background-color: #1e1e1e;
-    }
-
-    header img {
-      height: 48px;
-      max-width: 180px;
-    }
-
     model-viewer {
       width: 100%;
-      height: 75vh;
+      height: 80vh;
     }
-
     .info {
       text-align: center;
       margin: 1em;
       font-size: 1rem;
-      padding: 0 1em;
+    }
+
+    /* Botón de ayuda flotante */
+    .help-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: #03a9f4;
+      color: white;
+      font-size: 1.5em;
+      text-align: center;
+      line-height: 50px;
+      cursor: pointer;
+      z-index: 1000;
+      box-shadow: 0 0 10px rgba(0,0,0,0.4);
+    }
+
+    .help-box {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      background: #222;
+      border-radius: 8px;
+      padding: 1em;
+      max-width: 300px;
+      font-size: 0.9em;
+      line-height: 1.4em;
+      z-index: 999;
+      display: none;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+
+    .help-box p {
+      margin: 0.5em 0;
     }
 
     @media (max-width: 600px) {
       .info {
         font-size: 0.9rem;
+        padding: 0 1em;
+      }
+      .help-box {
+        max-width: 90%;
+        right: 5%;
+        bottom: 80px;
       }
     }
   </style>
 </head>
 <body>
 
-  <header>
-    <img src="assets/logo.png" alt="Logo Super X" />
-  </header>
-
   <model-viewer 
     src="models/batman.glb"
     ios-src="models/batman.usdz"
-    alt="Modelo Batman 3D de Super X"
+    alt="Modelo 3D de Super X"
     ar 
     ar-modes="webxr scene-viewer quick-look" 
     environment-image="neutral"
@@ -71,6 +96,25 @@
     <p>📱 Tocá el botón “Ver en tu espacio” para ver el modelo en realidad aumentada.</p>
     <p>💡 Requiere un celular compatible con AR y acceso a la cámara.</p>
   </div>
+
+  <div class="help-button" onclick="toggleHelp()">?</div>
+
+  <div class="help-box" id="helpBox">
+    <p><strong>¿Cómo grabar video?</strong></p>
+    <p>▶️ Al abrir el modo AR:</p>
+    <ul>
+      <li>En <strong>iPhone</strong>, tocá el botón de grabación que aparece automáticamente.</li>
+      <li>En <strong>Android</strong>, según el modelo, podés usar el botón de cámara o activar la grabación de pantalla desde el menú superior.</li>
+    </ul>
+    <p>🎯 Recordá que podés mover el modelo con un dedo o hacer zoom con dos.</p>
+  </div>
+
+  <script>
+    function toggleHelp() {
+      const box = document.getElementById('helpBox');
+      box.style.display = box.style.display === 'block' ? 'none' : 'block';
+    }
+  </script>
 
 </body>
 </html>
