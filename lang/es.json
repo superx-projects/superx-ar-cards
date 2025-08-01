@@ -2,7 +2,7 @@
   "index-title": "Super X AR Cards",
   "index-instruction": "Escaneá cada tarjeta para ver el modelo en realidad aumentada.",
   "index-note": "Solo disponibles con tarjetas físicas.",
-  "ar_button": "Ver en tu espacio",
+  "ar_button": "🔍 Ver en tu espacio",
   "info_1": "📱 Tocá el botón “Ver en tu espacio” para ver el modelo en realidad aumentada.",
   "info_2": "💡 Requiere un celular compatible con AR y acceso a la cámara.",
   "help_title": "¿Cómo grabar video?",
@@ -12,4 +12,5 @@
   "help_controls": "🎯 Podés mover el modelo con un dedo y hacer zoom con dos.",
   "help_close": "Tocá el botón “?” otra vez para cerrar esta ayuda."
 }
+
 
