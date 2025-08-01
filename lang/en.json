@@ -1,10 +1,14 @@
 {
-  "info_1": "📱 Tocá el botón “Ver en tu espacio” para ver el modelo en realidad aumentada.",
-  "info_2": "💡 Requiere un celular compatible con AR y acceso a la cámara.",
-  "help_title": "¿Cómo grabar video?",
-  "help_ar": "▶️ En modo AR:",
-  "help_ios": "iPhone: aparece un botón para grabar automáticamente.",
-  "help_android": "Android: usá el menú superior o grabación de pantalla.",
-  "help_controls": "🎯 Podés mover el modelo con un dedo y hacer zoom con dos.",
-  "help_close": "Tocá el botón “?” otra vez para cerrar esta ayuda."
+  "index-title": "Super X AR Cards",
+  "index-instruction": "Scan each card to view the model in augmented reality.",
+  "index-note": "Only available with physical cards."
+  "ar_button": "View in your space",
+  "info_1": "📱 Tap the “View in your space” button to see the model in augmented reality.",
+  "info_2": "💡 Requires a mobile device compatible with AR and camera access.",
+  "help_title": "How to record video?",
+  "help_ar": "▶️ In AR mode:",
+  "help_ios": "iPhone: a record button will appear automatically.",
+  "help_android": "Android: use the top menu or screen recorder.",
+  "help_controls": "🎯 You can rotate with one finger and zoom with two.",
+  "help_close": "Tap the “?” button again to close this help."
 }
