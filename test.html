@@ -1,30 +1,58 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>Test Modelo 3D</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <style>
-      html, body {
-        margin: 0;
-        height: 100%;
-        background-color: #888;
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Super X AR</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: #121212;
+      font-family: sans-serif;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    model-viewer {
+      width: 100%;
+      height: 80vh;
+    }
+    .info {
+      text-align: center;
+      margin: 1em;
+      font-size: 1rem;
+    }
+    @media (max-width: 600px) {
+      .info {
+        font-size: 0.9rem;
+        padding: 0 1em;
       }
-    </style>
-  </head>
-  <body>
-    <a-scene background="color: #888">
-      <a-assets>
-        <a-asset-item id="batmanModel" src="https://cards.superx.com.ar/models/batman.gltf"></a-asset-item>
-      </a-assets>
+    }
+  </style>
+</head>
+<body>
 
-      <a-entity light="type: ambient; intensity: 1"></a-entity>
-      <a-entity light="type: directional; intensity: 0.5" position="1 1 0"></a-entity>
+  <model-viewer 
+    src="models/batman.gltf"
+    ios-src="models/batman.usdz"
+    alt="Modelo 3D de Super X"
+    ar 
+    ar-modes="webxr scene-viewer quick-look" 
+    environment-image="neutral"
+    auto-rotate 
+    camera-controls 
+    shadow-intensity="1">
+  </model-viewer>
 
-      <a-entity gltf-model="#batmanModel" position="0 0 -2" scale="1 1 1"></a-entity>
+  <div class="info">
+    <p>📱 Tocá el botón “Ver en tu espacio” para ver el modelo en realidad aumentada.</p>
+    <p>💡 Requiere un celular compatible con AR y acceso a la cámara.</p>
+  </div>
 
-      <a-camera position="0 1.6 0"></a-camera>
-    </a-scene>
-  </body>
+</body>
 </html>
