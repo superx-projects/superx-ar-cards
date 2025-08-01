@@ -1,27 +1,23 @@
-async function loadLanguageTexts() {
-  const userLang = navigator.language.startsWith('es') ? 'es' : 'en';
-  const langFile = `/lang/${userLang}.json`;
+(async () => {
+  // Detectar idioma del navegador, usar 'en' por defecto
+  const supportedLangs = ['en', 'es'];
+  const userLang = navigator.language.slice(0, 2).toLowerCase();
+  const lang = supportedLangs.includes(userLang) ? userLang : 'en';
 
   try {
-    const res = await fetch(langFile);
-    const texts = await res.json();
+    // Cargar archivo JSON correspondiente al idioma
+    const response = await fetch(`./lang/${lang}.json`);
+    if (!response.ok) throw new Error(`No se pudo cargar el archivo de idioma: ${lang}`);
+    const translations = await response.json();
 
-    // Insertar en DOM
-    document.getElementById('info1').textContent = texts.info_1;
-    document.getElementById('info2').textContent = texts.info_2;
-
-    const helpBox = document.getElementById('helpBox');
-    helpBox.innerHTML = `
-      <p><strong>${texts.help_title}</strong></p>
-      <p>${texts.help_ar}</p>
-      <ul>
-        <li><strong>${texts.help_ios}</strong></li>
-        <li><strong>${texts.help_android}</strong></li>
-      </ul>
-      <p>${texts.help_controls}</p>
-      <p>${texts.help_close}</p>
-    `;
+    // Reemplazar texto en elementos con ID que coincidan con las claves del JSON
+    Object.keys(translations).forEach(key => {
+      const el = document.getElementById(key);
+      if (el) {
+        el.innerText = translations[key];
+      }
+    });
   } catch (error) {
-    console.error('Error al cargar idioma:', error);
+    console.error('Error al cargar el idioma:', error);
   }
-}
+})();
