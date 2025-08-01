@@ -1,148 +1,76 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <title>Super X AR</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Super X AR</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background-color: #121212;
+      font-family: sans-serif;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-    <!-- A-Frame y extensiones -->
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/aframe-ar@1.8.2/aframe-ar.min.js"></script>
+    header {
+      width: 100%;
+      padding: 1em;
+      text-align: center;
+      background-color: #1e1e1e;
+    }
 
-    <!-- Controles de manipulación (drag, rotate, scale) -->
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@6.1.1/dist/aframe-extras.controls.min.js"></script>
+    header img {
+      height: 48px;
+      max-width: 180px;
+    }
 
-    <style>
-      body, html { margin: 0; padding: 0; overflow: hidden; }
-      .logo {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        width: 80px;
-        z-index: 100;
-        opacity: 0.9;
-        pointer-events: none;
+    model-viewer {
+      width: 100%;
+      height: 75vh;
+    }
+
+    .info {
+      text-align: center;
+      margin: 1em;
+      font-size: 1rem;
+      padding: 0 1em;
+    }
+
+    @media (max-width: 600px) {
+      .info {
+        font-size: 0.9rem;
       }
-      .switch-btn {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        padding: 10px 14px;
-        z-index: 100;
-        background: rgba(0, 0, 0, 0.6);
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 14px;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Logo fijo -->
-    <img src="assets/logo.png" class="logo" alt="Logo Empresa" />
+    }
+  </style>
+</head>
+<body>
 
-    <!-- Botón para cambiar entre modo AR y modo normal -->
-    <button class="switch-btn" onclick="toggleAR()">Cambiar modo</button>
+  <header>
+    <img src="assets/logo.png" alt="Logo Super X" />
+  </header>
 
-    <a-scene
-      id="scene"
-      vr-mode-ui="enabled: false"
-      embedded
-      arjs="sourceType: webcam; debugUIEnabled: false;"
-    >
-      <a-assets>
-        <a-asset-item id="model" src="models/batman.gltf"></a-asset-item>
-      </a-assets>
+  <model-viewer 
+    src="models/batman.glb"
+    ios-src="models/batman.usdz"
+    alt="Modelo Batman 3D de Super X"
+    ar 
+    ar-modes="webxr scene-viewer quick-look" 
+    environment-image="neutral"
+    auto-rotate 
+    camera-controls 
+    shadow-intensity="1">
+  </model-viewer>
 
-      <!-- Contenedor para aplicar transformaciones -->
-      <a-entity id="modelContainer" position="0 0 0">
-        <a-entity
-          id="modelEntity"
-          gltf-model="#model"
-          scale="1 1 1"
-          position="0 0 0"
-          rotation="0 0 0"
-          gesture-handler
-        ></a-entity>
-      </a-entity>
+  <div class="info">
+    <p>📱 Tocá el botón “Ver en tu espacio” para ver el modelo en realidad aumentada.</p>
+    <p>💡 Requiere un celular compatible con AR y acceso a la cámara.</p>
+  </div>
 
-      <a-camera position="0 0 0"></a-camera>
-    </a-scene>
-
-    <!-- Script para manejar los gestos -->
-    <script>
-      // Gesture handler para rotar y escalar
-      AFRAME.registerComponent("gesture-handler", {
-        schema: {
-          enabled: { default: true },
-        },
-        init: function () {
-          this.handleScale = this.handleScale.bind(this);
-          this.handleRotate = this.handleRotate.bind(this);
-          this.handleStart = this.handleStart.bind(this);
-          this.handleEnd = this.handleEnd.bind(this);
-
-          this.scaleFactor = 1;
-          this.rotation = { x: 0, y: 0 };
-          this.initialTouch = null;
-
-          this.el.sceneEl.canvas.addEventListener("touchstart", this.handleStart);
-          this.el.sceneEl.canvas.addEventListener("touchmove", this.handleScale);
-          this.el.sceneEl.canvas.addEventListener("touchend", this.handleEnd);
-        },
-        handleStart: function (event) {
-          if (event.touches.length === 1) {
-            this.initialTouch = event.touches[0];
-          }
-        },
-        handleScale: function (event) {
-          if (event.touches.length === 2) {
-            const dx = event.touches[0].clientX - event.touches[1].clientX;
-            const dy = event.touches[0].clientY - event.touches[1].clientY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-
-            if (!this.lastDist) {
-              this.lastDist = dist;
-              return;
-            }
-
-            const scaleChange = dist / this.lastDist;
-            this.scaleFactor *= scaleChange;
-            this.el.setAttribute("scale", {
-              x: this.scaleFactor,
-              y: this.scaleFactor,
-              z: this.scaleFactor,
-            });
-
-            this.lastDist = dist;
-          } else if (event.touches.length === 1 && this.initialTouch) {
-            const dx = event.touches[0].clientX - this.initialTouch.clientX;
-            this.rotation.y += dx * 0.5;
-            this.el.setAttribute("rotation", this.rotation);
-            this.initialTouch = event.touches[0];
-          }
-        },
-        handleEnd: function () {
-          this.lastDist = null;
-          this.initialTouch = null;
-        },
-      });
-
-      // Alternar entre modo AR (con cámara) y modo visor 3D
-      let isAR = true;
-      function toggleAR() {
-        const scene = document.querySelector("a-scene");
-        if (isAR) {
-          scene.setAttribute("arjs", "enabled: false");
-          alert("Modo visor activado. La cámara se ha desactivado.");
-        } else {
-          scene.setAttribute("arjs", "enabled: true");
-          alert("Modo AR activado. Usa la cámara para ver el modelo.");
-        }
-        isAR = !isAR;
-      }
-    </script>
-  </body>
+</body>
 </html>
