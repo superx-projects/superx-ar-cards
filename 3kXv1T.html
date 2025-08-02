@@ -43,10 +43,10 @@
   </div>
 
   <!-- BOTÓN DE AYUDA -->
-  <button class="help_toggle" onclick="toggleHelp()">?</button>
+  <button id="help_button" class="help_toggle" onclick="toggleHelp()">?</button>
 
   <!-- CAJA DE AYUDA -->
-  <div class="help_box" id="helpBox" style="display: none;">
+  <div class="help_box" id="help_box" style="display: none;">
     <!-- Se llena dinámicamente -->
     <h2 id="help_title"></h2>
     <ul>
@@ -62,7 +62,7 @@
   <script src="/js/lang.js"></script>
   <script>
     function toggleHelp() {
-      const box = document.getElementById('helpBox');
+      const box = document.getElementById('help_box');
       box.style.display = box.style.display === 'block' ? 'none' : 'block';
     }
 
@@ -73,6 +73,7 @@
   </script>
 </body>
 </html>
+
 
 
 
