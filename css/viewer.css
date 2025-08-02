@@ -10,8 +10,6 @@ html, body {
   height: 100vh;
   overflow: auto;
   font-family: sans-serif;
-  justify-content: center; /* centra horizontalmente */
-  align-items: center;     /* centra verticalmente */
 }
 
 .container {
@@ -55,8 +53,8 @@ model-viewer.ar-viewer {
 .info {
   height: 20%;
   padding: 10px;
-  background-color: #121212; /* mismo fondo que body */
-  color: #ffffff; /* texto blanco */
+  background-color: #121212;
+  color: #ffffff;
   overflow-y: auto;
   font-size: 0.95rem;
   line-height: 1.5;
@@ -79,7 +77,7 @@ model-viewer.ar-viewer {
   color: #fff;
   cursor: pointer;
   z-index: 1000;
-  
+
   display: flex;
   align-items: center;
   justify-content: center;
@@ -108,15 +106,20 @@ model-viewer.ar-viewer {
   transform: translate(-50%, -50%);
   width: 90%;
   max-width: 280px;
+  max-height: 80vh;
+  overflow-y: auto;
+
   background-color: #fff;
   color: #000;
   border: 1px solid #ccc;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+
   font-size: 0.95rem;
-  z-index: 999;
   line-height: 1.5;
+  box-sizing: border-box;
+  z-index: 999;
 }
 
 /* =====================
@@ -145,7 +148,3 @@ model-viewer.ar-viewer {
     height: 25%;
   }
 }
-
-
-
-
