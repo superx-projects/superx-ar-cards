@@ -1,5 +1,8 @@
 /* main.css - Estilos generales y reutilizables */
 
+/* =====================
+   Reset y Normalización
+===================== */
 *,
 *::before,
 *::after {
@@ -8,38 +11,53 @@
   padding: 0;
 }
 
+/* =====================
+   Estilos Base
+===================== */
 html,
 body {
   height: 100%;
   font-family: Arial, sans-serif;
   background-color: #121212; /* gris oscuro */
   color: #ffffff;
+  overflow: hidden;
 }
 
+/* =====================
+   Contenedor Principal
+===================== */
 .container {
   width: 100%;
   max-width: 1200px;
-  margin: auto;
+  margin: 0 auto;
   padding: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+  height: 100%;
 }
 
-.logo {
-  max-width: 300px;
-  height: auto;
-  margin-bottom: 1rem;
-}
-
+/* =====================
+   Header y Logotipo
+===================== */
 header {
   width: 100%;
   padding: 10px 0;
   text-align: center;
   background-color: #121212;
-  color: #ffffff;
 }
 
+.logo {
+  max-width: 300px;
+  width: 80%;
+  height: auto;
+  margin-bottom: 1rem;
+  object-fit: contain;
+}
+
+/* =====================
+   Botones Generales
+===================== */
 button {
   cursor: pointer;
   background: none;
