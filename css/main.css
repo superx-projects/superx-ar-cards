@@ -20,7 +20,7 @@ body {
   font-family: Arial, sans-serif;
   background-color: #121212; /* gris oscuro */
   color: #ffffff;
-  overflow: hidden;
+  overflow: auto;
 }
 
 /* =====================
@@ -72,3 +72,4 @@ button {
 button:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
+
