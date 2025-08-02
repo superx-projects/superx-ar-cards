@@ -53,7 +53,8 @@ model-viewer.ar-viewer {
 .info {
   height: 20%;
   padding: 10px;
-  background-color: #f9f9f9;
+  background-color: #121212; /* mismo fondo que body */
+  color: #ffffff; /* texto blanco */
   overflow-y: auto;
   font-size: 0.95rem;
   line-height: 1.5;
@@ -76,6 +77,18 @@ model-viewer.ar-viewer {
   color: #fff;
   cursor: pointer;
   z-index: 1000;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  line-height: 1;
+  padding: 0;
+}
+
+.help-toggle:active {
+  background-color: #555;
+  transform: scale(0.95);
 }
 
 /* =====================
@@ -136,3 +149,4 @@ model-viewer.ar-viewer {
     height: 25%;
   }
 }
+
