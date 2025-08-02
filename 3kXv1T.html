@@ -30,7 +30,7 @@
       alt="Modelo 3D en AR"
       style="width: 100%; height: 80vh;"
     >
-      <button slot="ar_button" class="ar-button">🔍 ...</button>
+      <button id="ar_button" slot="ar_button" class="ar-button"></button>
     </model-viewer>
 
     <!-- INSTRUCCIONES -->
@@ -46,6 +46,14 @@
   <!-- CAJA DE AYUDA -->
   <div class="help_box" id="helpBox" style="display: none;">
     <!-- Se llena dinámicamente -->
+    <h2 id="help_title"></h2>
+    <ul>
+      <li id="help_ar"></li>
+      <li id="help_ios"></li>
+      <li id="help_android"></li>
+      <li id="help_controls"></li>
+      <li id="help_close"></li>
+    </ul>
   </div>
 
   <!-- SCRIPTS -->
@@ -63,4 +71,5 @@
   </script>
 </body>
 </html>
+
 
