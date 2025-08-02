@@ -1,4 +1,4 @@
-/* viewer.css - Páginas con modelo 3D */
+/* viewer.css - Estilos específicos para visor AR */
 
 model-viewer {
   width: 100%;
@@ -7,9 +7,9 @@ model-viewer {
   z-index: 1;
 }
 
-.ar_viewer {
+.ar-viewer {
   width: 100%;
-  height: calc(100vh - 180px); /* Ajusta 180px según el tamaño de header + textos + botones */
+  height: calc(100vh - 180px); /* Ajustar si cambia header/textos/botones */
   max-height: 100%;
   display: block;
 }
@@ -36,7 +36,6 @@ model-viewer {
   border: none;
   background: #333;
   color: #fff;
-  cursor: pointer;
   z-index: 10;
 }
 
@@ -44,23 +43,23 @@ model-viewer {
   position: fixed;
   bottom: 150px;
   right: 20px;
-  background: white;
+  background: #ffffff;
   color: #000;
   border: 1px solid #ccc;
   padding: 15px;
   width: 280px;
   max-width: 90%;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   border-radius: 8px;
   z-index: 20;
 }
 
-/* Si querés que el menú se despliegue hacia arriba del modelo */
 .help-box.above {
   bottom: auto;
   top: 20px;
 }
 
+/* Responsive */
 @media (max-width: 600px) {
   .help-box {
     width: 90%;
@@ -77,4 +76,3 @@ model-viewer {
     right: 15px;
   }
 }
-
