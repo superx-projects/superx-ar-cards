@@ -28,7 +28,7 @@ model-viewer {
 .help-toggle {
   position: fixed;
   bottom: 90px;
-  right: 20px;
+  left: 20px;
   font-size: 24px;
   border-radius: 50%;
   width: 48px;
@@ -42,7 +42,7 @@ model-viewer {
 .help-box {
   position: fixed;
   bottom: 150px;
-  right: 20px;
+  left: 20px;
   background: #ffffff;
   color: #000;
   border: 1px solid #ccc;
@@ -73,6 +73,7 @@ model-viewer {
 
   .help-toggle {
     bottom: 75px;
-    right: 15px;
+    left: 15px;
   }
 }
+
