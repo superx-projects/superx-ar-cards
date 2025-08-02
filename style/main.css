@@ -1,58 +1,46 @@
-/* Estilo general */
-body, html {
-  height: 100%;
+/* main.css - Estilos generales y reutilizables */
+
+* {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  background-color: #121212; /* Fondo oscuro para identidad de marca */
-  color: #ffffff;
-  font-family: Arial, sans-serif;
 }
 
-/* Contenedor principal para centrar vertical y horizontal */
+body, html {
+  height: 100%;
+  font-family: Arial, sans-serif;
+  background-color: #121212;
+  color: #ffffff;
+}
+
 .container {
-  height: 100vh;
   width: 100%;
+  max-width: 1200px;
+  margin: auto;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  justify-content: center; /* Centrado vertical */
-  align-items: center;     /* Centrado horizontal */
-  text-align: center;
-  padding: 1rem;
-  background-color: #121212; /* mismo color que body */
+  align-items: center;
 }
 
-/* Logo */
 .logo {
   max-width: 300px;
   height: auto;
   margin-bottom: 1rem;
 }
 
-/* Encabezado */
 header {
-  text-align: center;
-  padding: 10px 0;
-  background-color: black;
   width: 100%;
+  padding: 10px 0;
+  text-align: center;
+  background-color: black;
+  color: white;
 }
 
-/* Botón AR (fuera del model-viewer) */
-#ar_button {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 20;
-  background-color: #000;
-  color: #fff;
-  border: none;
-  padding: 12px 20px;
-  font-size: 16px;
-  border-radius: 8px;
+button {
   cursor: pointer;
 }
 
-/* Botón dentro del model-viewer (por si se usa slot también) */
 .ar-button {
   background-color: #000;
   color: #fff;
@@ -60,49 +48,4 @@ header {
   padding: 12px 20px;
   font-size: 16px;
   border-radius: 8px;
-  cursor: pointer;
-}
-
-/* Contenido informativo */
-.info {
-  padding: 15px;
-  text-align: center;
-}
-
-/* Botón flotante para mostrar ayuda */
-.help-toggle {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  font-size: 24px;
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  border: none;
-  background: #333;
-  color: #fff;
-  cursor: pointer;
-  z-index: 15;
-}
-
-/* Caja flotante de ayuda */
-.help-box {
-  position: fixed;
-  bottom: 80px;
-  right: 20px;
-  background: white;
-  border: 1px solid #ccc;
-  padding: 15px;
-  width: 280px;
-  max-width: 90%;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-  border-radius: 8px;
-  z-index: 16;
-}
-
-/* Estilo para el model-viewer (opcional) */
-model-viewer {
-  width: 100%;
-  height: 100%;
-  z-index: 1; /* Asegura que no tape botones */
 }
