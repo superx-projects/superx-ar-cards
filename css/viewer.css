@@ -1,60 +1,118 @@
-/* viewer.css - Estilos específicos para visor AR */
+/* viewer.css - Estilos para visor 3D con AR y ayuda contextual */
 
-model-viewer {
-  width: 100%;
+/* =====================
+   Layout General
+===================== */
+
+html, body {
+  margin: 0;
+  padding: 0;
   height: 100vh;
-  background-color: #121212;
-  z-index: 1;
+  overflow: hidden;
+  font-family: sans-serif;
 }
 
-.ar-viewer {
-  width: 100%;
-  height: calc(100vh - 180px); /* Ajustar si cambia header/textos/botones */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* =====================
+   Logotipo
+===================== */
+
+header {
+  height: 10%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo {
   max-height: 100%;
+  max-width: 80%;
+  object-fit: contain;
+}
+
+/* =====================
+   Visor 3D AR
+===================== */
+
+model-viewer.ar-viewer {
+  flex: 1 1 auto;
+  width: 100%;
+  background-color: #121212;
   display: block;
 }
 
-#help_box {
-  display: none;
+/* =====================
+   Instrucciones
+===================== */
+
+.info {
+  height: 20%;
+  padding: 10px;
+  background-color: #f9f9f9;
+  overflow-y: auto;
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
+
+/* =====================
+   Botón de Ayuda Flotante
+===================== */
 
 .help-toggle {
   position: fixed;
   bottom: 90px;
   left: 20px;
-  font-size: 24px;
-  border-radius: 50%;
   width: 48px;
   height: 48px;
+  font-size: 24px;
+  border-radius: 50%;
   border: none;
   background-color: #333;
   color: #fff;
-  z-index: 10;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+/* =====================
+   Caja de Ayuda
+===================== */
+
+#help_box {
+  display: none;
 }
 
 .help-box {
   position: fixed;
   bottom: 150px;
   left: 20px;
-  background-color: #ffffff;
-  color: #000000;
-  border: 1px solid #cccccc;
-  padding: 20px; /* aumentado para mejor legibilidad */
   width: 280px;
   max-width: 90%;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  background-color: #fff;
+  color: #000;
+  border: 1px solid #ccc;
+  padding: 20px;
   border-radius: 8px;
-  z-index: 20;
-  line-height: 1.5;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   font-size: 0.95rem;
+  z-index: 999;
+  line-height: 1.5;
 }
 
+/* Variante de posición superior (opcional) */
 .help-box.above {
   bottom: auto;
   top: 20px;
 }
 
-/* Responsive */
+/* =====================
+   Responsive
+===================== */
+
 @media (max-width: 600px) {
   .help-box {
     width: 90%;
@@ -64,5 +122,17 @@ model-viewer {
   .help-toggle {
     bottom: 75px;
     left: 15px;
+  }
+
+  .info {
+    font-size: 0.85rem;
+  }
+
+  header {
+    height: 12%;
+  }
+
+  .info {
+    height: 25%;
   }
 }
