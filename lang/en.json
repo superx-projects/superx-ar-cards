@@ -5,6 +5,7 @@
   "ar_button": "🔍 View in your space",
   "info_1": "📱 Tap the “View in your space” button to see the model in augmented reality.",
   "info_2": "💡 Requires a mobile device compatible with AR and camera access.",
+  "help_toggle": "❓",
   "help_title": "How to record video?",
   "help_ar": "▶️ In AR mode:",
   "help_ios": "iPhone: a record button will appear automatically.",
@@ -12,6 +13,7 @@
   "help_controls": "🎯 You can rotate with one finger and zoom with two.",
   "help_close": "Tap the “?” button again to close this help."
 }
+
 
 
 
