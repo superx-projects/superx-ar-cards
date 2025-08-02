@@ -10,6 +10,8 @@ html, body {
   height: 100vh;
   overflow: auto;
   font-family: sans-serif;
+  justify-content: center; /* centra horizontalmente */
+  align-items: center;     /* centra verticalmente */
 }
 
 .container {
@@ -117,12 +119,6 @@ model-viewer.ar-viewer {
   line-height: 1.5;
 }
 
-/* Variante de posición superior (opcional) */
-.help-box.above {
-  bottom: auto;
-  top: 20px;
-}
-
 /* =====================
    Responsive
 ===================== */
@@ -149,6 +145,7 @@ model-viewer.ar-viewer {
     height: 25%;
   }
 }
+
 
 
 
