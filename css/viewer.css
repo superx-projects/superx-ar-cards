@@ -7,11 +7,22 @@ model-viewer {
   z-index: 1;
 }
 
+.ar_viewer {
+  width: 100%;
+  height: calc(100vh - 180px); /* Ajusta 180px según el tamaño de header + textos + botones */
+  max-height: 100%;
+  display: block;
+}
+
 #ar_button {
   position: fixed;
   bottom: 20px;
   right: 20px;
   z-index: 10;
+}
+
+#help_box {
+  display: none;
 }
 
 .help-toggle {
@@ -66,3 +77,4 @@ model-viewer {
     right: 15px;
   }
 }
+
