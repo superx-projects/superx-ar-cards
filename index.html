@@ -7,15 +7,23 @@
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <div class="index-page">
-    <img src="assets/images/logo.png" alt="Logo Super X" class="logo" />
+  <div class="container">
+    <img src="assets/logo.png" alt="Logo Super X" class="logo" />
     <h1 id="index_title">Super X AR Cards</h1>
     <p id="index_instruction">Scan each card to view the model in augmented reality.</p>
     <p id="index_note">Only available with physical cards.</p>
   </div>
 
-  <script type="module" src="./js/lang.js"></script>
-  <script src="js/main.js"></script>
+  <script src="./js/lang.js"></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", async () => {
+      const lang = navigator.language.startsWith("es") ? "es" : "en";
+      const translations = await loadLang(lang);
+
+      document.getElementById("index_title").textContent = translations["index_title"] || "Super X AR Cards";
+      document.getElementById("index_instruction").textContent = translations["index_instruction"] || "Scan each card to view the model in augmented reality.";
+      document.getElementById("index_note").textContent = translations["index_note"] || "Only available with physical cards.";
+    });
+  </script>
 </body>
 </html>
-
