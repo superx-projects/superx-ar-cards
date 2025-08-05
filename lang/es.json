@@ -1,6 +1,7 @@
 {
   "index_title": "Super X AR Cards",
-  "index_instruction": "Escaneá cada tarjeta para ver el modelo en realidad aumentada.",
+  "index_instruction": "Escaneá cada tarjeta para ver el modelo 3D.",
   "index_note": "Solo disponibles con tarjetas físicas.",
   "card_hold_to_play": "Mantené presionada la carta para ver la animación"
+
 }
