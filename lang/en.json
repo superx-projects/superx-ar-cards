@@ -2,21 +2,5 @@
   "index_title": "Super X AR Cards",
   "index_instruction": "Scan each card to view the model in augmented reality.",
   "index_note": "Only available with physical cards.",
-  "info_1": "📱 Tap the AR button to see the model in your space.",
-  "info_2": "💡 Requires a mobile device compatible with AR and camera access.",
-  "help_toggle": "❓",
-  "help_title": "How to record video?",
-  "help_ar": "▶️ In AR mode:",
-  "help_ios": "iPhone: a record button will appear automatically.",
-  "help_android": "Android: use the top menu or screen recorder.",
-  "help_controls": "🎯 You can rotate with one finger and zoom with two.",
-  "help_close": "Tap the “❓” button again to close this help."
+  "card_hold_to_play": "Hold the card to play the animation"
 }
-
-
-
-
-
-
-
-

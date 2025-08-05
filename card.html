@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Super X Card</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+</head>
+<body>
+  <div class="card-page">
+    <img src="assets/images/logo.png" alt="Logo Super X" class="logo" />
+
+    <model-viewer 
+      id="viewer"
+      alt="Super X Card 3D"
+      auto-rotate
+      camera-controls
+      shadow-intensity="1"
+      disable-zoom
+      exposure="1">
+    </model-viewer>
+
+    <div class="info" id="info-box">
+      <h1 id="card_title">Loading...</h1>
+      <p id="card_instructions"></p>
+    </div>
+
+    <video id="card_video" controls style="display:none;"></video>
+  </div>
+
+  <script src="js/lang.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
