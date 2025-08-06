@@ -2,6 +2,8 @@
   "index_title": "Super X AR Cards",
   "index_instruction": "Scan each card to view the 3D model.",
   "index_note": "Only available with physical cards.",
-  "card_hold_to_play": "Hold the card to play the animation"
-
+  "error_card_not_found": "Card not found",
+  "error_invalid_id": "Invalid or missing card ID",
+  "card_hold_to_play": "Hold the card to play the animation",
+  "video_skip": "Skip"
 }
