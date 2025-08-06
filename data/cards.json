@@ -8,20 +8,69 @@
     }
   },
   "u9z8mp": {
-    "model": "model_card2.glb",
-    "video": "video_card2.mp4",
+    "model": "card0002.glb",
+    "video": "card0002.mp4",
     "title": {
       "en": "Spiderman by Todd McFarlane",
       "es": "Spiderman por Todd McFarlane"
     }
   },
   "q5c2nw": {
-    "model": "model_card3.glb",
-    "video": "video_card3.mp4",
+    "model": "card0003.glb",
+    "video": "card0003.mp4",
     "title": {
       "en": "Demon Slayer by Koyoharu Gotouge",
       "es": "Demon Slayer por Koyoharu Gotouge"
     }
+  },
+  "x1v9ke": {
+    "model": "card0004.glb",
+    "video": "card0004.mp4",
+    "title": {
+      "en": "Iron Man by Adi Granov",
+      "es": "Iron Man por Adi Granov"
+    }
+  },
+  "m4t7qs": {
+    "model": "card0005.glb",
+    "video": "card0005.mp4",
+    "title": {
+      "en": "Wonder Woman by George Pérez",
+      "es": "Wonder Woman por George Pérez"
+    }
+  },
+  "b2h6df": {
+    "model": "card0006.glb",
+    "video": "card0006.mp4",
+    "title": {
+      "en": "Naruto by Masashi Kishimoto",
+      "es": "Naruto por Masashi Kishimoto"
+    }
+  },
+  "l8f3wo": {
+    "model": "card0007.glb",
+    "video": "card0007.mp4",
+    "title": {
+      "en": "Wolverine by Frank Miller",
+      "es": "Wolverine por Frank Miller"
+    }
+  },
+  "e3y7pz": {
+    "model": "card0008.glb",
+    "video": "card0008.mp4",
+    "title": {
+      "en": "One Piece by Eiichiro Oda",
+      "es": "One Piece por Eiichiro Oda"
+    }
+  },
+  "k9r5tm": {
+    "model": "card0009.glb",
+    "video": "card0009.mp4",
+    "title": {
+      "en": "Superman by Alex Ross",
+      "es": "Superman por Alex Ross"
+    }
   }
 }
+
 
