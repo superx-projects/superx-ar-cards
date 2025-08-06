@@ -94,21 +94,22 @@ model-viewer {
    Estilos para reproducción de video
 =================================== */
 #card_video {
-  display: none;
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
   background-color: black;
-  z-index: 999; /* asegurar que esté por encima del fade */
+  z-index: 999;
   object-fit: contain;
+  opacity: 0;
+  pointer-events: none;
   transition: opacity 0.5s ease;
 }
 
 #card_video.showing {
-  display: block;
   opacity: 1;
+  pointer-events: auto;
 }
 
 #card_video.hidden {
@@ -156,6 +157,7 @@ model-viewer {
   padding: 1em;
   text-align: center;
 }
+
 
 
 
