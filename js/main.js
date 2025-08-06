@@ -1,23 +1,27 @@
 (async function () {
+  // Obtener el los parametros de la URL
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
+  // Obtener el idioma del navegador y cargar el correspondiente archivo de idioma
   const lang = navigator.language.startsWith("es") ? "es" : "en";
   const translations = await loadLang(lang);
 
+  // Chequear si se accede desde una url valida (existe el parametro 'id')
   if (!id) {
     document.body.innerHTML = `<p style='color:white;text-align:center;'>${translations["error_invalid_id"] || "Invalid or missing card ID"}</p>`;
     return;
   }
 
+  // Chequear si el id parametro 'id' es valido y corresponde a una carta fisica
   const response = await fetch("data/cards.json");
   const data = await response.json();
   const cardData = data[id];
-
   if (!cardData) {
     document.body.innerHTML = `<p style='color:white;text-align:center;'>${translations["error_card_not_found"] || "Card not found"}</p>`;
     return;
   }
 
+  // Obtener los elementos de la pagina card.html
   const viewer = document.getElementById("viewer");
   const video = document.getElementById("card_video");
   const fade = document.getElementById("fade_effect");
@@ -34,10 +38,7 @@
   viewer.setAttribute("src", `assets/models/${cardData.model}`);
   video.src = `assets/videos/${cardData.video}`;
 
-  let holdTimeout;
-  let particleInterval = null;
-
-  // Función para generar partículas en la posición del click
+ // Función para generar partículas en la posición del click
   function spawnParticles(x, y) {
     for (let i = 0; i < 5; i++) {
       const particle = document.createElement("div");
@@ -110,34 +111,75 @@
   skipButton.addEventListener("click", returnToModel);
 
   // Evento cuando el usuario mantiene presionado sobre el modelo
+  let isHolding = false;
+  let holdTimeout = null;
+  let particleInterval = null;
+  let activePointerId = null;
+  let lastCameraOrbit = null;
+  let modelMoved = false;
+
   viewer.addEventListener("pointerdown", (e) => {
+    // Prevenir múltiples toques simultáneos
+    if (activePointerId !== null) return;
+    activePointerId = e.pointerId;
+
     const x = e.clientX;
     const y = e.clientY;
+    modelMoved = false;
 
-    viewer.classList.add("hold");
-    indicator.classList.add("active");
+    lastCameraOrbit = viewer.getCameraOrbit ? viewer.getCameraOrbit() : null;
 
-    // Iniciar partículas repetitivas en el punto del toque
-    particleInterval = setInterval(() => {
-      spawnParticles(x, y);
-    }, 80);
+    // Delay para mostrar partículas y reproducir video si no hay movimiento
+    holdTimeout = setTimeout(() => {
+      if (!modelMoved) {
+       isHolding = true;
+        viewer.classList.add("hold");
+        indicator.classList.add("active");
 
-    holdTimeout = setTimeout(showVideo, 1500); // Mostrar video después de 1.5s de mantener presionado
-  });
+        // Iniciar partículas
+        particleInterval = setInterval(() => {
+          spawnParticles(x, y);
+        }, 80);
 
-  // Eventos para cancelar si se suelta antes de tiempo
-  ["pointerup", "pointerleave"].forEach(evt => {
-    viewer.addEventListener(evt, () => {
-      viewer.classList.remove("hold");
-      indicator.classList.remove("active");
-      clearTimeout(holdTimeout);
-
-      if (particleInterval) {
-        clearInterval(particleInterval);
-        particleInterval = null;
+        // Reproducir video después de 2s
+        setTimeout(() => {
+          if (isHolding) showVideo();
+        }, 2000);
       }
-    });
+    }, 600);
   });
+
+   viewer.addEventListener("pointermove", () => {
+    if (!lastCameraOrbit) return;
+
+    const currentOrbit = viewer.getCameraOrbit ? viewer.getCameraOrbit() : null;
+    if (currentOrbit && currentOrbit.theta !== lastCameraOrbit.theta) {
+      modelMoved = true;
+      clearTimeout(holdTimeout);
+    }
+  });
+
+  viewer.addEventListener("pointerup", (e) => {
+    if (e.pointerId !== activePointerId) return;
+    cancelHold();
+  });
+
+  viewer.addEventListener("pointercancel", cancelHold);
+  viewer.addEventListener("pointerleave", cancelHold);
+
+  function cancelHold() {
+    isHolding = false;
+    activePointerId = null;
+    clearTimeout(holdTimeout);
+
+    if (particleInterval) {
+      clearInterval(particleInterval);
+      particleInterval = null;
+    }
+
+    indicator.classList.remove("active");
+    viewer.classList.remove("hold");
+  }
 
   // Volver al modelo cuando el video termina
   video.addEventListener("ended", returnToModel);
