@@ -22,56 +22,60 @@
   const viewer = document.getElementById("viewer");
   const video = document.getElementById("card_video");
   const fade = document.getElementById("fade_effect");
+  const indicator = document.getElementById("hold-indicator");
+  const particles = document.getElementById("particles");
 
-  // Textos
   document.getElementById("card_title").textContent = cardData.title[lang] || cardData.title["en"];
   document.getElementById("card_instructions").textContent = translations["card_hold_to_play"] || "Hold the card to play animation";
 
-  // Model y video
   viewer.setAttribute("src", `assets/models/${cardData.model}`);
   video.src = `assets/videos/${cardData.video}`;
 
   let holdTimeout;
 
-  // Función para reproducir el video
   function showVideo() {
-    fade.classList.add("in");
+    fade.classList.add("active");
     setTimeout(() => {
       viewer.style.display = "none";
       document.getElementById("info-box").style.display = "none";
       document.querySelector(".logo").classList.add("hidden");
+      particles.classList.remove("active");
       video.classList.add("showing");
       video.style.display = "block";
-      fade.classList.remove("in");
+      fade.classList.remove("active");
       video.play();
     }, 400);
   }
 
-  // Función para volver al modelo
   function returnToModel() {
-    fade.classList.add("in");
+    fade.classList.add("active");
     setTimeout(() => {
       video.classList.remove("showing");
-      video.style.display = "none";
       video.pause();
       video.currentTime = 0;
+      video.style.display = "none";
       viewer.style.display = "block";
       document.getElementById("info-box").style.display = "block";
       document.querySelector(".logo").classList.remove("hidden");
-      fade.classList.remove("in");
+      fade.classList.remove("active");
     }, 400);
   }
 
-  // Evento para mantener presionado
   viewer.addEventListener("pointerdown", () => {
-    holdTimeout = setTimeout(showVideo, 800); // 800ms hold
+    viewer.classList.add("hold");
+    indicator.classList.add("active");
+    particles.classList.add("active");
+    holdTimeout = setTimeout(showVideo, 800);
   });
 
   ["pointerup", "pointerleave"].forEach(evt => {
-    viewer.addEventListener(evt, () => clearTimeout(holdTimeout));
+    viewer.addEventListener(evt, () => {
+      clearTimeout(holdTimeout);
+      indicator.classList.remove("active");
+      particles.classList.remove("active");
+      viewer.classList.remove("hold");
+    });
   });
 
   video.addEventListener("ended", returnToModel);
 })();
-
-
