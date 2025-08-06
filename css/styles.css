@@ -175,6 +175,25 @@ model-viewer.hold {
   100% { background-size: 20px 20px; }
 }
 
+.skip-button {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1001;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: 1px solid white;
+  padding: 0.5em 1em;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.skip-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 /* =====================
    Página: index.html
 ===================== */
@@ -198,6 +217,7 @@ model-viewer.hold {
   padding: 1em;
   text-align: center;
 }
+
 
 
 
