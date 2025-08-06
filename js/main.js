@@ -183,4 +183,27 @@
 
   // Volver al modelo cuando el video termina
   video.addEventListener("ended", returnToModel);
+
+  // SNAP DE ROTACIÓN HORIZONTAL
+  let snapTimeout = null;
+
+  viewer.addEventListener("camera-change", () => {
+    clearTimeout(snapTimeout);
+
+    snapTimeout = setTimeout(() => {
+      const orbit = viewer.getCameraOrbit();
+      const theta = orbit.theta; // radianes
+
+      const deg = (theta * 180) / Math.PI;
+      const normalized = ((deg % 360) + 360) % 360;
+
+      // Si está más cerca de 180°, mostrar reverso
+      const targetDeg = (normalized > 90 && normalized < 270) ? 180 : 0;
+
+      // Aplicar rotación con snap visual
+      viewer.cameraOrbit = `${targetDeg}deg 90deg auto`;
+    }, 800); // espera 800ms de inactividad antes de alinear
+  });
+  
 })();
+
