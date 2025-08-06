@@ -1,13 +1,13 @@
 {
-  "abc123": {
-    "model": "model_card1.glb",
-    "video": "video_card1.mp4",
+  "j7k3xa": {
+    "model": "card0001.glb",
+    "video": "card0001.mp4",
     "title": {
       "en": "Batman by Jim Lee",
       "es": "Batman por Jim Lee"
     }
   },
-  "mno456": {
+  "u9z8mp": {
     "model": "model_card2.glb",
     "video": "video_card2.mp4",
     "title": {
@@ -15,7 +15,7 @@
       "es": "Spiderman por Todd McFarlane"
     }
   },
-  "xyz789": {
+  "q5c2nw": {
     "model": "model_card3.glb",
     "video": "video_card3.mp4",
     "title": {
@@ -24,3 +24,4 @@
     }
   }
 }
+
