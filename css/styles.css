@@ -33,12 +33,12 @@ html, body {
    ELEMENTOS GENÉRICOS
 ===================== */
 .logo {
-  max-width: 300px;
-  width: 80%;
+  display: block;
+  margin: 2rem auto 1rem auto;
+  max-width: 80%;
   height: auto;
-  margin-bottom: 1rem;
-  object-fit: contain;
 }
+
 .logo.hidden {
   display: none;
 }
@@ -116,6 +116,7 @@ model-viewer.hold {
   align-items: center;
   justify-content: center;
   padding: 1rem;
+  padding-top: clamp(2rem, 5vh, 4rem);
   max-width: 100%;
   min-height: 100vh;
   box-sizing: border-box;
@@ -231,3 +232,4 @@ model-viewer.hold {
 .skip-button:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
