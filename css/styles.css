@@ -40,6 +40,10 @@ html, body {
   object-fit: contain;
 }
 
+.logo.hidden {
+  display: none;
+}
+
 button {
   cursor: pointer;
   background: none;
@@ -97,8 +101,8 @@ model-viewer {
   width: 100vw;
   height: 100vh;
   background-color: black;
-  z-index: 100;
-  object-fit: cover;
+  z-index: 999; /* asegurar que esté por encima del fade */
+  object-fit: contain;
   transition: opacity 0.5s ease;
 }
 
@@ -152,4 +156,5 @@ model-viewer {
   padding: 1em;
   text-align: center;
 }
+
 
