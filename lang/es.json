@@ -4,7 +4,8 @@
   "index_note": "Solo disponibles con tarjetas físicas.",
   "error_card_not_found": "Carta no encontrada",
   "error_invalid_id": "ID de carta inválido o ausente",
-  "card_hold_to_play": "Hold the card to play the animation",
+  "card_hold_to_play": "Mantén pulsado para comenzar la animación",
   "video_skip": "Omitir"
 }
+
 
