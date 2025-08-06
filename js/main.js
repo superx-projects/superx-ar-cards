@@ -119,6 +119,9 @@
   let modelMoved = false;
 
   viewer.addEventListener("pointerdown", (e) => {
+    // Desactivar auto-rotate al empezar la interacción
+    viewer.autoRotate = false;
+    
     // Prevenir múltiples toques simultáneos
     if (activePointerId !== null) return;
     activePointerId = e.pointerId;
@@ -162,6 +165,11 @@
   viewer.addEventListener("pointerup", (e) => {
     if (e.pointerId !== activePointerId) return;
     cancelHold();
+
+    // Reactivar auto-rotate 2 segundos después de soltar
+    setTimeout(() => {
+      viewer.autoRotate = true;
+    }, 2000);
   });
 
   viewer.addEventListener("pointercancel", cancelHold);
@@ -206,4 +214,5 @@
   });
   
 })();
+
 
