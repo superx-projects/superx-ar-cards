@@ -39,6 +39,7 @@
     setTimeout(() => {
       viewer.style.display = "none";
       document.getElementById("info-box").style.display = "none";
+      document.querySelector(".logo").classList.add("hidden");
       video.classList.add("showing");
       fade.classList.remove("in");
       video.play();
@@ -54,6 +55,7 @@
       video.currentTime = 0;
       viewer.style.display = "block";
       document.getElementById("info-box").style.display = "block";
+      document.querySelector(".logo").classList.remove("hidden");
       fade.classList.remove("in");
     }, 400);
   }
@@ -69,3 +71,4 @@
 
   video.addEventListener("ended", returnToModel);
 })();
+
