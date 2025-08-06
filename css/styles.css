@@ -39,7 +39,6 @@ html, body {
   margin-bottom: 1rem;
   object-fit: contain;
 }
-
 .logo.hidden {
   display: none;
 }
@@ -74,6 +73,10 @@ a:hover {
 model-viewer {
   width: 100%;
   height: 80vh;
+  transition: filter 0.3s ease;
+}
+model-viewer.hold {
+  filter: blur(4px) brightness(1.2);
 }
 
 /* =====================
@@ -88,6 +91,7 @@ model-viewer {
   max-width: 100%;
   min-height: 100vh;
   box-sizing: border-box;
+  position: relative;
 }
 
 /* ===============================
@@ -106,7 +110,6 @@ model-viewer {
   pointer-events: none;
   transition: opacity 0.5s ease;
 }
-
 #card_video.showing {
   opacity: 1;
   pointer-events: auto;
@@ -129,9 +132,47 @@ model-viewer {
   pointer-events: none;
   transition: opacity 0.4s ease;
 }
-
 .fade.active {
   opacity: 1;
+}
+
+/* HOLD INDICATOR */
+#hold-indicator {
+  position: absolute;
+  bottom: 30px;
+  width: 0;
+  height: 6px;
+  background: linear-gradient(to right, cyan, blue);
+  border-radius: 4px;
+  transition: width 0.8s ease;
+  z-index: 501;
+}
+#hold-indicator.active {
+  width: 80%;
+}
+
+/* PARTICLES */
+#particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(rgba(0,255,255,0.3) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 400;
+}
+#particles.active {
+  opacity: 1;
+  animation: pulse 1s infinite ease-in-out;
+}
+@keyframes pulse {
+  0% { background-size: 20px 20px; }
+  50% { background-size: 22px 22px; }
+  100% { background-size: 20px 20px; }
 }
 
 /* =====================
@@ -157,7 +198,6 @@ model-viewer {
   padding: 1em;
   text-align: center;
 }
-
 
 
 
