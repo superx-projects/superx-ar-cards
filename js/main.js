@@ -1,5 +1,5 @@
 (async function () {
-  // Obtener el los parametros de la URL
+  // Obtener los parametros de la URL
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
   // Obtener el idioma del navegador y cargar el correspondiente archivo de idioma
@@ -38,6 +38,19 @@
   viewer.setAttribute("src", `assets/models/${cardData.model}`);
   video.src = `assets/videos/${cardData.video}`;
 
+  // Variables globales del main
+  const HOLD_DELAY = 600; // tiempo minimo para reaccionar a la pulsacion del modelo
+  const VIDEO_TRIGGER_DELAY = 2000; // tiempo para mostrar el video (2000 ms = 2 segundos)
+  let isHolding = false;
+  let holdTimeout = null;
+  let particleInterval = null;
+  let activePointerId = null;
+  let lastCameraOrbit = null;
+  let modelMoved = false;
+  let isAutoRotateEnabled = true;
+  let lastTimestamp = null;
+  const rotateSpeed = 0.0005; // ajustar si gira muy lento o rápido
+
  // Función para generar partículas en la posición del click
   function spawnParticles(x, y) {
     for (let i = 0; i < 5; i++) {
@@ -68,9 +81,13 @@
 
   // Función para mostrar el video
   function showVideo() {
+    // Pausar auto-rotate al mostrar el video
+    isAutoRotateEnabled = false;
+    // Mostar el fade en pantalla
     fade.classList.add("active");
 
     setTimeout(() => {
+      // Ocultar model-viewer, logo y textos en pantalla
       viewer.style.display = "none";
       document.getElementById("info-box").style.display = "none";
       document.querySelector(".logo").classList.add("hidden");
@@ -80,6 +97,7 @@
       video.classList.add("showing");
       skipButton.style.display = "block";
 
+      // Finalizar el fade en pantalla y reproducir el video
       fade.classList.remove("active");
       video.play();
 
@@ -90,38 +108,38 @@
 
   // Función para volver al modelo después del video
   function returnToModel() {
+    // Mostrar el fade en pantalla
     fade.classList.add("active");
 
     setTimeout(() => {
+      // Ocultar video y skip-button
       video.classList.remove("showing");
       video.pause();
       video.currentTime = 0;
       video.style.display = "none";
       skipButton.style.display = "none";
 
+      // Mostrar model.viewer, logo y textos en pantalla
       viewer.style.display = "block";
       document.getElementById("info-box").style.display = "block";
       document.querySelector(".logo").classList.remove("hidden");
 
+      // Finalizar el fade en pantalla
       fade.classList.remove("active");
     }, 400);
+
+    // Habilitar auto-rotate al volver del video
+    setTimeout(() => {
+      isAutoRotateEnabled = true;
+    }, 2000);
+    
   }
 
   // Botón para omitir el video
   skipButton.addEventListener("click", returnToModel);
 
   // Evento cuando el usuario mantiene presionado sobre el modelo
-  let isHolding = false;
-  let holdTimeout = null;
-  let particleInterval = null;
-  let activePointerId = null;
-  let lastCameraOrbit = null;
-  let modelMoved = false;
-
   viewer.addEventListener("pointerdown", (e) => {
-    // Desactivar auto-rotate al empezar la interacción
-    viewer.autoRotate = false;
-    
     // Prevenir múltiples toques simultáneos
     if (activePointerId !== null) return;
     activePointerId = e.pointerId;
@@ -147,9 +165,9 @@
         // Reproducir video después de 2s
         setTimeout(() => {
           if (isHolding) showVideo();
-        }, 2000);
+        }, VIDEO_TRIGGER_DELAY);
       }
-    }, 600);
+    }, HOLD_DELAY);
   });
 
    viewer.addEventListener("pointermove", () => {
@@ -166,9 +184,9 @@
     if (e.pointerId !== activePointerId) return;
     cancelHold();
 
-    // Reactivar auto-rotate 2 segundos después de soltar
+    // Habilitar auto-rotate 2 segundos después de soltar
     setTimeout(() => {
-      viewer.autoRotate = true;
+      isAutoRotateEnabled = true;
     }, 2000);
   });
 
@@ -208,11 +226,39 @@
       // Si está más cerca de 180°, mostrar reverso
       const targetDeg = (normalized > 90 && normalized < 270) ? 180 : 0;
 
+      // Pausar la auto-rotación durante el snap para evitar conflicto
+      isAutoRotateEnabled = false;
+
       // Aplicar rotación con snap visual
       viewer.cameraOrbit = `${targetDeg}deg 90deg auto`;
-    }, 800); // espera 800ms de inactividad antes de alinear
+
+      // Reactivar auto-rotate después de alinear
+      setTimeout(() => {
+        isAutoRotateEnabled = true;
+        }, 1000);
+      
+      }, 800); // espera 800ms de inactividad antes de alinear
+    
   });
-  
+
+  function customAutoRotate(timestamp) {
+    if (!isAutoRotateEnabled || !viewer.getCameraOrbit) {
+      requestAnimationFrame(customAutoRotate);
+      return;
+    }
+
+    if (!lastTimestamp) lastTimestamp = timestamp;
+    const delta = timestamp - lastTimestamp;
+    lastTimestamp = timestamp;
+
+    const orbit = viewer.getCameraOrbit();
+    const newTheta = orbit.theta + delta * rotateSpeed;
+
+    viewer.cameraOrbit = `${newTheta}rad ${orbit.phi}rad ${orbit.radius}m`;
+
+    requestAnimationFrame(customAutoRotate);
+  }
+
+  requestAnimationFrame(customAutoRotate);
+
 })();
-
-
