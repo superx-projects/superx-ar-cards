@@ -19,7 +19,7 @@
   height: 5vh;
   width: auto;
   margin: 1rem auto;
-  max-width: 200px;
+  max-width: 300px;
 }
 
 /* =====================
@@ -27,12 +27,24 @@
 ===================== */
 #card_viewer {
   width: 100%;
-  height: 80vh;
+  height: 78vh;
   transition: filter 0.3s ease;
 }
 
 #card_viewer.hold {
   filter: blur(4px) brightness(1.2);
+}
+
+/* =====================
+   HOLD INDICATOR AREA
+===================== */
+.hold-indicator-area {
+  height: 2vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
 /* =====================
@@ -177,7 +189,7 @@
   }
   
   #card_viewer {
-    height: 75vh;
+    height: 72vh;
   }
   
   .info-box {
@@ -191,10 +203,6 @@
   
   #card_instructions {
     font-size: clamp(0.8rem, 3vw, 1rem);
-  }
-  
-  #card_hold_indicator {
-    bottom: 25px;
   }
   
   #card_hold_indicator.active {
@@ -215,6 +223,6 @@
   }
   
   #card_viewer {
-    height: 70vh;
+    height: 65vh;
   }
 }
