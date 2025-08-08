@@ -1,0 +1,57 @@
+/* ==========================================
+   index.css - Estilos específicos para index.html
+   Proyecto: Super X Immersive Cards
+========================================== */
+
+/* =====================
+   INDEX PAGE LAYOUT
+===================== */
+#index_main {
+  min-height: 100vh;
+  justify-content: center;
+  padding-top: clamp(2rem, 5vh, 4rem);
+}
+
+/* =====================
+   INDEX CONTENT
+===================== */
+#index_title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+#index_instructions {
+  font-size: clamp(1.1rem, 3vw, 1.4rem);
+  color: #ccc;
+  margin-bottom: 1rem;
+  max-width: 600px;
+  line-height: 1.6;
+}
+
+#index_note {
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+  color: #888;
+  max-width: 500px;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* =====================
+   RESPONSIVE ADJUSTMENTS
+===================== */
+@media (max-width: 768px) {
+  #index_main {
+    padding: 1rem;
+  }
+  
+  #index_title {
+    margin-bottom: 1rem;
+  }
+  
+  #index_instructions,
+  #index_note {
+    padding: 0 0.5rem;
+  }
+}

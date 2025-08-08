@@ -1,3 +1,4 @@
+
 /**
  * Genera partículas visuales en una posición (x,y) dentro de un contenedor dado.
  * Para animaciones breves y efecto visual de "sparkles" o "explosión".
@@ -76,6 +77,15 @@ export function degToRad(deg) {
 }
 
 /**
+ * Convierte radianes a grados.
+ * @param {number} rad - radianes
+ * @returns {number} grados
+ */
+export function radToDeg(rad) {
+  return (rad * 180) / Math.PI;
+}
+
+/**
  * Normaliza ángulo en grados para estar siempre en rango [0,360).
  * @param {number} deg
  * @returns {number}
@@ -102,12 +112,12 @@ export function snapToNearestSide(viewer) {
   if (!viewer.getCameraOrbit) return;
 
   const orbit = viewer.getCameraOrbit();
-  const thetaDeg = (orbit.theta * 180) / Math.PI;
+  const thetaDeg = radToDeg(orbit.theta);
   const normalized = normalizeAngle(thetaDeg);
   const targetDeg = getSnapAngle(normalized);
 
   // Se fija phi (elevación) a 90 grados (horizontal),
-  // radius en automático para no cambiar zoom
-  viewer.cameraOrbit = `${targetDeg}deg 90deg auto`;
+  // toma el orbit.radius para mantener el zoom actual
+  viewer.cameraOrbit = `${targetDeg}deg 90deg ${orbit.radius}m`;
 }
 

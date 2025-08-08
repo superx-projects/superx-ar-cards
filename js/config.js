@@ -24,8 +24,21 @@ export const VIDEO_ACTIVATION_DELAY = 2000;
 // Tiempo que debe mantenerse presionado para activar el video (en milisegundos)
 export const HOLD_DURATION = 1000;
 
+// Tiempo de duracion del efecto fade al iniciar o finalizar el video (en milisegundos)
+// Si se modifica, actualizar tambien la linea "transition: opacity 0.4s ease" en card.css#fade_effect
+export const FADE_DURATION = 400;
+
 // Duración del spawn de partículas o efectos visuales (si aplica)
 export const PARTICLE_SPAWN_DURATION = 500;
+
+// Intervalo de generación de partículas durante el hold (en milisegundos)
+export const PARTICLE_SPAWN_INTERVAL = 80;
+
+// Tiempo de espera para el snap automático de cámara (en milisegundos)
+export const CAMERA_SNAP_DELAY = 800;
+
+// Duración de la transición del snap de cámara (en milisegundos)
+export const CAMERA_SNAP_TRANSITION = 1000;
 
 // Ajustes de rotación automática
 export const AUTO_ROTATE_SPEED = 0.002;  // radianes por frame (aproximado)
@@ -33,4 +46,3 @@ export const AUTO_ROTATE_RESET_TIMEOUT = 3000; // tiempo de espera tras interacc
 
 // Habilitar debug mode
 export const DEBUG_MODE = false;
-

@@ -1,42 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-default-lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title data-i18n="page_card_title"></title>
-  <link rel="stylesheet" href="css/styles.css" />
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <title data-i18n="page_card_title">Super X Card</title>
+  <link rel="icon" href="assets/favicon.ico" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/card.css" />
 </head>
 <body>
-  <div class="card-page">
-    <img src="assets/images/logo.png" alt="Logo Super X" class="logo" />
+  <main id="card_main" class="main">
+    <img id="card_logo" class="logo" src="assets/images/logo.png" alt="Logo Super X" />
 
     <model-viewer 
-      id="viewer"
+      id="card_viewer"
       alt="Super X Card 3D"
       camera-controls
       shadow-intensity="1"
       disable-zoom
       exposure="1"
       camera-orbit="0deg 90deg auto"
-      min-camera-orbit="0deg 75deg auto"
-      max-camera-orbit="360deg 105deg auto"
+      min-camera-orbit="auto 75deg auto"
+      max-camera-orbit="auto 105deg auto"
       interpolation-decay="100">
     </model-viewer>
 
-    <div class="info" id="info-box">
+    <div id="card_info_box" class="info-box" >
       <h1 id="card_title" data-i18n="loading"></h1>
       <p id="card_instructions" data-i18n="card_hold_to_play"></p>
     </div>
 
-    <div id="hold-indicator"></div>
-    <div id="particles-container"></div>
-    <video id="card_video" style="display:none;"></video>
-    <button id="skip_button" class="skip-button" style="display: none;" data-i18n="video_skip"></button>
-    <div id="fade_effect" class="fade"></div>
-  </div>
+    <div id="card_hold_indicator"></div>
+    <div id="card_particles_container"></div>
+    <video id="card_video"></video>
+    <button id="card_skip_button" class="skip-button" data-i18n="video_skip"></button>
+    <div id="card_fade_effect" class="fade-effect"></div>
+  </main>
 
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <script type="module" src="js/card.js"></script>
 </body>
 </html>
-

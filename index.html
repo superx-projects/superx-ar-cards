@@ -1,20 +1,21 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en" data-default-lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title data-i18n="page_index_title"></title>
-  <link rel="stylesheet" href="css/styles.css" />
+  <title data-i18n="page_index_title">Super X Inmersive Cards</title>
+  <link rel="icon" href="assets/favicon.ico" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/index.css" />
 </head>
 <body>
-  <div id="index_container" class="container">
-    <img src="assets/images/logo.png" alt="Logo Super X" class="logo" />
-    <h1 data-i18n="index_title"></h1>
-    <p data-i18n="index_instruction"></p>
-    <p data-i18n="index_note"></p>
-  </div>
+  <main id="index_main" class="main">
+    <img id="index_logo" class="logo" src="assets/images/logo.png" alt="Logo Super X" />
+    <h1 id="index_title" data-i18n="index_title"></h1>
+    <p id="index_instructions" data-i18n="index_instruction"></p>
+    <p id="index_note" data-i18n="index_note"></p>
+  </main>
 
   <script type="module" src="./js/index.js"></script>
 </body>
 </html>
-

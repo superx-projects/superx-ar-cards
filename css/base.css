@@ -1,0 +1,114 @@
+/* ==========================================
+   base.css - Estilos base y reutilizables
+   Proyecto: Super X Immersive Cards
+========================================== */
+
+/* =====================
+   RESET y Normalización
+===================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* =====================
+   BASE GENERAL
+===================== */
+html, body {
+  height: 100%;
+  font-family: Arial, sans-serif;
+  background-color: #121212;
+  color: white;
+  overflow: auto;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =====================
+   COMPONENTES REUTILIZABLES
+===================== */
+
+/* Main container */
+.main {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+  position: relative;
+}
+
+/* Logo component */
+.logo {
+  display: block;
+  margin: 2rem auto 1rem auto;
+  max-width: 250px;
+  width: 70%;
+  height: auto;
+}
+
+.logo.hidden {
+  display: none;
+}
+
+/* Button base styles */
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Link styles */
+a {
+  color: #00bfff;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* =====================
+   UTILITY CLASSES
+===================== */
+.hidden {
+  display: none !important;
+}
+
+.fade-effect {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: black;
+  opacity: 0;
+  z-index: 1000;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.fade-effect.active {
+  opacity: 1;
+}

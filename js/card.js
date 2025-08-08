@@ -3,7 +3,7 @@ import * as config from "./config.js";
 import {
   spawnParticles,
   customAutoRotate,
-  snapToNearestSide,
+  snapToNearestSide
 } from "./utils.js";
 
 (async function () {
@@ -43,12 +43,14 @@ import {
   }
 
   // --- Referencias a elementos DOM ---
-  const viewer = document.getElementById("viewer");
+  const viewer = document.getElementById("card_viewer");
   const video = document.getElementById("card_video");
-  const fade = document.getElementById("fade_effect");
-  const indicator = document.getElementById("hold-indicator");
-  const particlesContainer = document.getElementById("particles-container");
-  const skipButton = document.getElementById("skip_button");
+  const fade = document.getElementById("card_fade_effect");
+  const indicator = document.getElementById("card_hold_indicator");
+  const particlesContainer = document.getElementById("card_particles_container");
+  const skipButton = document.getElementById("card_skip_button");
+  const infoBox = document.getElementById("card_info_box");
+  const logo = document.getElementById("card_logo");
 
   // Mostrar título de la carta
   const title =
@@ -78,8 +80,8 @@ import {
 
     setTimeout(() => {
       viewer.style.display = "none";
-      document.getElementById("info-box").style.display = "none";
-      document.querySelector(".logo").classList.add("hidden");
+      infoBox.style.display = "none";
+      logo.classList.add("hidden");
 
       video.style.display = "block";
       video.classList.add("showing");
@@ -89,7 +91,7 @@ import {
       video.play();
 
       particlesContainer.innerHTML = "";
-    }, 400);
+    }, config.FADE_DURATION);
   }
 
   // Volver al modelo 3D con transición
@@ -104,11 +106,11 @@ import {
       skipButton.style.display = "none";
 
       viewer.style.display = "block";
-      document.getElementById("info-box").style.display = "block";
-      document.querySelector(".logo").classList.remove("hidden");
+      infoBox.style.display = "block";
+      logo.classList.remove("hidden");
 
       fade.classList.remove("active");
-    }, 400);
+    }, config.FADE_DURATION);
 
     setTimeout(() => {
       isAutoRotateEnabled = true;
@@ -153,7 +155,7 @@ import {
 
         particleInterval = setInterval(() => {
           spawnParticles(x, y, particlesContainer);
-        }, 80);
+        }, config.PARTICLE_SPAWN_INTERVAL);
 
         setTimeout(() => {
           if (isHolding) showVideo();
@@ -201,27 +203,15 @@ import {
     clearTimeout(snapTimeout);
 
     snapTimeout = setTimeout(() => {
-      const orbit = viewer.getCameraOrbit();
-      const theta = orbit.theta;
-      const deg = (theta * 180) / Math.PI;
-      const normalized = ((deg % 360) + 360) % 360;
-
-      const targetDeg = normalized > 90 && normalized < 270 ? 180 : 0;
-
       isAutoRotateEnabled = false;
-      viewer.cameraOrbit = `${targetDeg}deg 90deg auto`;
-      //viewer.cameraOrbit = `${targetDeg}deg ${orbit.phi}rad ${orbit.radius}m`;
+      snapToNearestSide(viewer);
 
       setTimeout(() => {
         isAutoRotateEnabled = true;
-      }, 1000);
-    }, 800);
+      }, config.CAMERA_SNAP_TRANSITION);
+    }, config.CAMERA_SNAP_DELAY);
   });
 
   // --- Iniciar rotación automática ---
   //customAutoRotate(viewer, () => isAutoRotateEnabled, config.AUTO_ROTATE_SPEED);
 })();
-
-
-
-
