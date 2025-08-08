@@ -25,14 +25,15 @@
       interpolation-decay="100">
     </model-viewer>
 
+    <div class="hold-indicator-area">
+      <div id="card_hold_indicator"></div>
+    </div>
+
     <div id="card_info_box" class="info-box" >
       <h1 id="card_title" data-i18n="loading"></h1>
       <p id="card_instructions" data-i18n="card_hold_to_play"></p>
     </div>
-
-    <div class="hold-indicator-area">
-      <div id="card_hold_indicator"></div>
-    </div>
+    
     <div id="card_particles_container"></div>
     <video id="card_video" class="hidden"></video>
     <button id="card_skip_button" class="skip-button hidden" data-i18n="video_skip"></button>
@@ -43,5 +44,6 @@
   <script type="module" src="js/card.js"></script>
 </body>
 </html>
+
 
 
