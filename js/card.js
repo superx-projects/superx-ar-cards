@@ -209,7 +209,8 @@ import {
       const targetDeg = normalized > 90 && normalized < 270 ? 180 : 0;
 
       isAutoRotateEnabled = false;
-      viewer.cameraOrbit = `${targetDeg}deg 90deg auto`;
+      // viewer.cameraOrbit = `${targetDeg}deg 90deg auto`;
+      viewer.cameraOrbit = `${targetDeg}deg ${orbit.phi}rad ${orbit.radius}m`;
 
       setTimeout(() => {
         isAutoRotateEnabled = true;
@@ -220,3 +221,4 @@ import {
   // --- Iniciar rotación automática ---
   customAutoRotate(viewer, () => isAutoRotateEnabled, config.AUTO_ROTATE_SPEED);
 })();
+
