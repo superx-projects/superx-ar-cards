@@ -29,7 +29,8 @@ export const PARTICLE_SPAWN_DURATION = 500;
 
 // Ajustes de rotación automática
 export const AUTO_ROTATE_SPEED = 0.002;  // radianes por frame (aproximado)
-export const AUTO_ROTATE_RESET_TIMEOUT = 2000; // tiempo de espera tras interacción (en ms)
+export const AUTO_ROTATE_RESET_TIMEOUT = 3000; // tiempo de espera tras interacción (en ms)
 
 // Habilitar debug mode
 export const DEBUG_MODE = false;
+
