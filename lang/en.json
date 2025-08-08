@@ -1,7 +1,11 @@
 {
-  "index_title": "Super X AR Cards",
+  "page_index_title": "Super X Inmersive Cards",
+  "index_title": "Super X Inmersive Cards",
   "index_instruction": "Scan each card to view the 3D model.",
   "index_note": "Only available with physical cards.",
+  
+  "page_card_title": "Super X Card",
+  "loading": "Loading...",
   "error_card_not_found": "Card not found",
   "error_invalid_id": "Invalid or missing card ID",
   "card_hold_to_play": "Hold the card to play the animation",

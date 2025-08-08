@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Super X Card</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <title data-i18n="page_card_title"></title>
+  <link rel="stylesheet" href="css/styles.css" />
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 <body>
@@ -25,22 +25,17 @@
     </model-viewer>
 
     <div class="info" id="info-box">
-      <h1 id="card_title">Loading...</h1>
-      <p id="card_instructions"></p>
+      <h1 id="card_title" data-i18n="loading"></h1>
+      <p id="card_instructions" data-i18n="card_hold_to_play"></p>
     </div>
 
     <div id="hold-indicator"></div>
     <div id="particles-container"></div>
     <video id="card_video" style="display:none;"></video>
-    <button id="skip_button" class="skip-button" style="display: none;"></button>
-    <div class="fade" id="fade_effect"></div>
+    <button id="skip_button" class="skip-button" style="display: none;" data-i18n="video_skip"></button>
+    <div id="fade_effect" class="fade"></div>
   </div>
 
-  <script src="js/lang.js"></script>
-  <script src="js/main.js"></script>
+  <script type="module" src="js/card.js"></script>
 </body>
 </html>
-
-
-
-

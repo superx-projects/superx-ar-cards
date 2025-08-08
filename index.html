@@ -3,27 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Super X AR Cards</title>
+  <title data-i18n="page_index_title"></title>
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
   <div class="container">
     <img src="assets/images/logo.png" alt="Logo Super X" class="logo" />
-    <h1 id="index_title"></h1>
-    <p id="index_instruction"></p>
-    <p id="index_note"></p>
+    <h1 data-i18n="index_title"></h1>
+    <p data-i18n="index_instruction"></p>
+    <p data-i18n="index_note"></p>
   </div>
 
-  <script src="./js/lang.js"></script>
-  <script>
-    window.addEventListener("DOMContentLoaded", async () => {
-      const lang = navigator.language.startsWith("es") ? "es" : "en";
-      const translations = await loadLang(lang);
-
-      document.getElementById("index_title").textContent = translations["index_title"] || "";
-      document.getElementById("index_instruction").textContent = translations["index_instruction"] || "";
-      document.getElementById("index_note").textContent = translations["index_note"] || "";
-    });
-  </script>
+  <script type="module" src="./js/index.js"></script>
 </body>
 </html>
