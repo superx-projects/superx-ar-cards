@@ -8,6 +8,11 @@
   "loading": "Cargando...",
   "error_card_not_found": "Carta no encontrada",
   "error_invalid_id": "ID de carta inválido o inexistente",
+  "error_model_not_found": "Archivo del modelo 3D no encontrado",
+  "error_video_not_found": "Archivo de video no encontrado", 
+  "error_model_load_failed": "Error al cargar el modelo 3D",
+  "warning_video_unavailable": "Video no disponible",
   "card_hold_to_play": "Mantén presionada la carta para reproducir la animación",
   "video_skip": "Saltar"
 }
+
