@@ -1,23 +1,4 @@
 /* ==========================================
-   card.css - Estilos específicos de card.html
-   Proyecto: Super X AR Cards
-========================================== */
-
-/* =======================
-   ESTRUCTURA GENERAL
-========================== */
-.card-page {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  padding-top: clamp(2rem, 5vh, 4rem);
-  max-width: 100%;
-  min-height: 100vh;
-  box-sizing: border-box;
-  position: relative;
-}/* ==========================================
    card.css - Estilos específicos para card.html
    Proyecto: Super X Immersive Cards
 ========================================== */
@@ -27,8 +8,18 @@
 ===================== */
 #card_main {
   min-height: 100vh;
-  padding-top: clamp(2rem, 5vh, 4rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
   box-sizing: border-box;
+}
+
+#card_logo {
+  height: 5vh;
+  width: auto;
+  margin: 1rem auto;
+  max-width: 200px;
 }
 
 /* =====================
@@ -45,31 +36,34 @@
 }
 
 /* =====================
-   INFO BOX
+   INFO BOX (Parte inferior)
 ===================== */
 .info-box {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
+  height: 15vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
 }
 
 #card_title {
-  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
   margin-bottom: 0.5rem;
   font-weight: bold;
+  color: white;
 }
 
 #card_instructions {
-  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
   color: #ccc;
+  margin: 0;
 }
 
 /* =====================
@@ -177,20 +171,30 @@
    RESPONSIVE ADJUSTMENTS
 ===================== */
 @media (max-width: 768px) {
+  #card_logo {
+    height: 4vh;
+    margin: 0.5rem auto;
+  }
+  
   #card_viewer {
     height: 75vh;
   }
   
   .info-box {
-    top: 10px;
+    height: 21vh;
     padding: 0.8rem;
-    width: calc(100% - 2rem);
-    max-width: 400px;
+  }
+  
+  #card_title {
+    font-size: clamp(1rem, 4vw, 1.5rem);
+  }
+  
+  #card_instructions {
+    font-size: clamp(0.8rem, 3vw, 1rem);
   }
   
   #card_hold_indicator {
-    bottom: 20px;
-    width: 0;
+    bottom: 25px;
   }
   
   #card_hold_indicator.active {
@@ -205,133 +209,12 @@
   }
 }
 
-/* =======================
-   MODEL VIEWER
-========================== */
-model-viewer {
-  width: 100%;
-  height: 90vh;
-  transition: filter 0.3s ease;
-}
-
-model-viewer.hold {
-  filter: blur(4px) brightness(1.2);
-}
-
-/* =======================
-   VIDEO DE CARTA
-========================== */
-#card_video {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: black;
-  z-index: 999;
-  object-fit: contain;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.5s ease;
-}
-
-#card_video.showing {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* =======================
-   EFECTO FADE
-========================== */
-#fade_effect,
-.fade {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: black;
-  opacity: 0;
-  z-index: 1000;
-  pointer-events: none;
-  transition: opacity 0.4s ease;
-}
-
-.fade.active {
-  opacity: 1;
-}
-
-/* =======================
-   INDICADOR DE HOLD
-========================== */
-#hold-indicator {
-  position: absolute;
-  bottom: 30px;
-  width: 0;
-  height: 6px;
-  background: linear-gradient(to right, cyan, blue);
-  border-radius: 4px;
-  transition: width 0.8s ease;
-  z-index: 501;
-}
-
-#hold-indicator.active {
-  width: 80%;
-}
-
-/* =======================
-   EFECTO DE PARTÍCULAS
-========================== */
-#particles-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  width: 100vw;
-  height: 100vh;
-  z-index: 999;
-  overflow: hidden;
-}
-
-.particle {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  background: radial-gradient(circle, #fff, #0ff, transparent);
-  border-radius: 50%;
-  opacity: 0.8;
-  animation: fly 0.6s ease-out forwards;
-}
-
-@keyframes fly {
-  0% {
-    transform: translate(0, 0) scale(1);
-    opacity: 1;
+@media (max-width: 480px) {
+  .info-box {
+    height: 25vh;
   }
-  100% {
-    transform: translate(var(--dx), var(--dy)) scale(0.2);
-    opacity: 0;
+  
+  #card_viewer {
+    height: 70vh;
   }
-}
-
-/* =======================
-   BOTÓN PARA SALTAR VIDEO
-========================== */
-.skip-button {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 1001;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
-  border: 1px solid white;
-  padding: 0.5em 1em;
-  border-radius: 6px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.skip-button:hover {
-  background: rgba(255, 255, 255, 0.2);
 }
