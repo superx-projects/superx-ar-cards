@@ -42,6 +42,37 @@ import {
     return;
   }
 
+  // --- Función para validar recursos ---
+  async function validateResource(url, resourceType) {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+      return response.ok;
+    } catch (error) {
+      console.error(`Error validando ${resourceType}: ${url}`, error);
+      return false;
+    }
+  }
+
+  // Construir rutas de recursos
+  const modelPath = `${config.MODEL_PATH}${cardData.model}`;
+  const videoPath = `${config.VIDEO_PATH}${cardData.video}`;
+
+  // Validar que los archivos de recursos existan
+  const [modelExists, videoExists] = await Promise.all([
+    validateResource(modelPath, 'modelo 3D'),
+    validateResource(videoPath, 'video')
+  ]);
+
+  if (!modelExists) {
+    document.body.innerHTML = `<p style='color:white;text-align:center;'>${translations["error_model_not_found"] || "3D model file not found"}</p>`;
+    return;
+  }
+
+  if (!videoExists) {
+    document.body.innerHTML = `<p style='color:white;text-align:center;'>${translations["error_video_not_found"] || "Video file not found"}</p>`;
+    return;
+  }
+
   // --- Referencias a elementos DOM ---
   const viewer = document.getElementById("card_viewer");
   const video = document.getElementById("card_video");
@@ -58,9 +89,27 @@ import {
     "Unknown Card";
   document.getElementById("card_title").textContent = title;
 
-  // Asignar rutas a modelo 3D y video
-  viewer.setAttribute("src", `${config.MODEL_PATH}${cardData.model}`);
-  video.src = `${config.VIDEO_PATH}${cardData.video}`;
+  // Asignar rutas a modelo 3D y video (ya validadas)
+  viewer.setAttribute("src", modelPath);
+  video.src = videoPath;
+
+  // --- Validación adicional de carga del modelo 3D ---
+  viewer.addEventListener('error', () => {
+    document.body.innerHTML = `<p style='color:white;text-align:center;'>${translations["error_model_load_failed"] || "Failed to load 3D model"}</p>`;
+  });
+
+  // --- Validación adicional de carga del video ---
+  video.addEventListener('error', () => {
+    console.error('Error cargando video:', videoPath);
+    // Mostrar advertencia pero no detener la aplicación
+    const warningDiv = document.createElement('div');
+    warningDiv.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(255,165,0,0.9);color:black;padding:0.5rem 1rem;border-radius:4px;z-index:1002;';
+    warningDiv.textContent = translations["warning_video_unavailable"] || "Video unavailable";
+    document.body.appendChild(warningDiv);
+    
+    // Ocultar advertencia después de 3 segundos
+    setTimeout(() => warningDiv.remove(), 3000);
+  });
 
   // --- Variables de control ---
   let isHolding = false;
@@ -214,4 +263,5 @@ import {
 
   // --- Iniciar rotación automática ---
   //customAutoRotate(viewer, () => isAutoRotateEnabled, config.AUTO_ROTATE_SPEED);
+
 })();
