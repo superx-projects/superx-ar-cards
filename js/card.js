@@ -219,6 +219,7 @@ import {
   });
 
   // --- Iniciar rotación automática ---
-  customAutoRotate(viewer, () => isAutoRotateEnabled, config.AUTO_ROTATE_SPEED);
+  //customAutoRotate(viewer, () => isAutoRotateEnabled, config.AUTO_ROTATE_SPEED);
 })();
+
 
