@@ -37,7 +37,7 @@ export function customAutoRotate(viewer, isEnabledFn, speed = 0.0005) {
   let lastTimestamp = null;
 
   function rotate(timestamp) {
-    if (!isEnabledFn() || !viewer.getCameraOrbit) {
+    if (!viewer.getCameraOrbit) {
       requestAnimationFrame(rotate);
       return;
     }
@@ -46,10 +46,15 @@ export function customAutoRotate(viewer, isEnabledFn, speed = 0.0005) {
     const delta = timestamp - lastTimestamp;
     lastTimestamp = timestamp;
 
-    const orbit = viewer.getCameraOrbit();
-    const newTheta = orbit.theta + delta * speed;
+    if (isEnabledFn()) {
+      const orbit = viewer.getCameraOrbit();
+      let newTheta = orbit.theta + delta * speed;
 
-    viewer.cameraOrbit = `${newTheta}rad ${orbit.phi}rad ${orbit.radius}m`;
+      // Normalizar el valor de theta entre 0 y 2π para evitar overflow
+      newTheta = ((newTheta % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
+      viewer.cameraOrbit = `${newTheta}rad ${orbit.phi}rad ${orbit.radius}m`;
+    }
 
     requestAnimationFrame(rotate);
   }
@@ -105,3 +110,4 @@ export function snapToNearestSide(viewer) {
   // radius en automático para no cambiar zoom
   viewer.cameraOrbit = `${targetDeg}deg 90deg auto`;
 }
+
