@@ -35,8 +35,8 @@ html, body {
 .logo {
   display: block;
   margin: 2rem auto 1rem auto;
-  max-width: 300px;
-  width: 80%;
+  max-width: 250px;
+  width: 70%;
   height: auto;
 }
 
@@ -71,7 +71,7 @@ a:hover {
 /* =====================
    Página: index.html
 ===================== */
-.index-page {
+.index_container {
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
@@ -87,7 +87,7 @@ a:hover {
   margin-top: 20px;
   font-size: 18px;
   color: #ccc;
-  max-width: 600px;
+  max-width: 500px;
   padding: 1em;
   text-align: center;
 }
@@ -101,7 +101,7 @@ a:hover {
 ===================== */
 model-viewer {
   width: 100%;
-  height: 80vh;
+  height: 90vh;
   transition: filter 0.3s ease;
 }
 model-viewer.hold {
@@ -233,5 +233,6 @@ model-viewer.hold {
 .skip-button:hover {
   background: rgba(255, 255, 255, 0.2);
 }
+
 
 
