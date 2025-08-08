@@ -8,6 +8,11 @@
   "loading": "Loading...",
   "error_card_not_found": "Card not found",
   "error_invalid_id": "Invalid or missing card ID",
+  "error_model_not_found": "3D model file not found",
+  "error_video_not_found": "Video file not found",
+  "error_model_load_failed": "Failed to load 3D model", 
+  "warning_video_unavailable": "Video unavailable",
   "card_hold_to_play": "Hold the card to play the animation",
   "video_skip": "Skip"
+
 }
