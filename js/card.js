@@ -175,6 +175,40 @@ import {
     }
   }
 
+  // --- Deshabilitar pan y context menu del Model-Viewer para prevenir comportamientos no deseados ---
+  function disablePanMovement() {
+    if (!isModelViewerReady()) {
+      console.warn('Model-viewer no está listo para configurar controles');
+      return;
+    }
+
+    try {
+      // Deshabilitar pan programáticamente (por si no está en HTML)
+      viewer.disablePan = true;
+    
+      // Prevenir el menú contextual del click derecho
+      viewer.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        return false;
+        });
+
+      // Prevenir drag con botón derecho/medio
+      viewer.addEventListener('mousedown', (e) => {
+        if (e.button === 1 || e.button === 2) { // Botón medio o derecho
+          e.preventDefault();
+          return false;
+        }
+      });
+
+      if (config.DEBUG_MODE) {
+        console.log('Pan movement disabled successfully');
+      }
+    
+    } catch (error) {
+      console.error('Error deshabilitando pan movement:', error);
+    }
+  }
+
   // --- Función para limpiar todos los timeouts ---
   function clearAllTimeouts() {
     clearTimeout(holdTimeout);
@@ -282,6 +316,9 @@ import {
 
   // --- Función para configurar event listeners ---
   function setupEventListeners() {
+    // Deshabilitar movimiento de pan
+    disablePanMovement();
+    
     // Botón para saltar video y volver al modelo 3D
     skipButton.addEventListener("click", returnToModel);
 
@@ -409,3 +446,4 @@ import {
   initializeModelViewer();
 
 })();
+
