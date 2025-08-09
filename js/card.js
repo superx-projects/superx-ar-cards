@@ -104,13 +104,40 @@ import {
   let isAutoRotateEnabled = true;
   let currentState = 'model'; // 'model', 'transitioning', 'video'
 
-  // --- Variables de control de timeouts ---
+  // --- Variables de control de timeouts y progreso ---
   let holdTimeout = null;
   let particleInterval = null;
   let videoTransitionTimeout = null;
   let modelTransitionTimeout = null;
   let autoRotateTimeout = null;
   let snapTimeout = null;
+  let progressInterval = null;
+
+  // --- Variables para el progreso del indicador ---
+  let holdStartTime = 0;
+  const TOTAL_HOLD_TIME = config.HOLD_DURATION + config.VIDEO_ACTIVATION_DELAY; // Tiempo total real
+
+  // --- Función para actualizar progreso del indicador ---
+  function updateHoldProgress() {
+    if (!isHolding) return;
+    
+    const elapsed = Date.now() - holdStartTime;
+    const progress = Math.min(elapsed / TOTAL_HOLD_TIME, 1);
+    
+    // Calcular ancho basado en el progreso
+    const maxWidth = window.innerWidth <= 768 
+      ? (window.innerWidth <= 480 ? '60vw' : '65vw') 
+      : '70vw';
+    
+    const currentWidth = progress * (maxWidth === '60vw' ? 60 : maxWidth === '65vw' ? 65 : 70);
+    indicator.style.width = `${currentWidth}vw`;
+    
+    // Si llegamos al 100%, no necesitamos más actualizaciones
+    if (progress >= 1) {
+      clearInterval(progressInterval);
+      progressInterval = null;
+    }
+  }
 
   // --- Funciones de validación de Model-Viewer ---
   function isModelViewerReady() {
@@ -217,6 +244,7 @@ import {
     clearTimeout(autoRotateTimeout);
     clearTimeout(snapTimeout);
     clearInterval(particleInterval);
+    clearInterval(progressInterval); // Agregamos el nuevo interval
     
     holdTimeout = null;
     videoTransitionTimeout = null;
@@ -224,6 +252,7 @@ import {
     autoRotateTimeout = null;
     snapTimeout = null;
     particleInterval = null;
+    progressInterval = null;
   }
 
   // --- Función para gestionar isAutoRotateEnabled de forma centralizada ---
@@ -307,10 +336,13 @@ import {
     // Limpiar timeouts específicos del hold
     clearTimeout(holdTimeout);
     clearInterval(particleInterval);
+    clearInterval(progressInterval); // Limpiar progreso
     holdTimeout = null;
     particleInterval = null;
+    progressInterval = null;
 
     indicator.classList.remove("active");
+    indicator.style.width = '0'; // Reset manual del ancho
     viewer.classList.remove("hold");
   }
 
@@ -335,13 +367,19 @@ import {
       holdTimeout = setTimeout(() => {
         if (!modelMoved && currentState === 'model') {
           isHolding = true;
+          holdStartTime = Date.now(); // Marcar inicio del hold
           viewer.classList.add("hold");
           indicator.classList.add("active");
 
+          // Iniciar progreso visual sincronizado
+          progressInterval = setInterval(updateHoldProgress, 16); // ~60fps
+
+          // Iniciar partículas
           particleInterval = setInterval(() => {
             spawnParticles(x, y, particlesContainer);
           }, config.PARTICLE_SPAWN_INTERVAL);
 
+          // Mostrar video después del tiempo total configurado
           setTimeout(() => {
             if (isHolding && currentState === 'model') {
               showVideo();
@@ -446,4 +484,3 @@ import {
   initializeModelViewer();
 
 })();
-
