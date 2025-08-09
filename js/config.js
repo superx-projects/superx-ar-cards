@@ -19,7 +19,7 @@ export const VIDEO_PATH = "assets/videos/";
 export const CARDS_DATA_PATH = "data/cards.json";
 
 // Tiempo de espera para iniciar el video tras mostrar el modelo (en milisegundos)
-export const VIDEO_ACTIVATION_DELAY = 2000;
+export const VIDEO_ACTIVATION_DELAY = 1000;
 
 // Tiempo que debe mantenerse presionado para activar el video (en milisegundos)
 export const HOLD_DURATION = 1000;
@@ -47,4 +47,5 @@ export const AUTO_ROTATE_RESET_TIMEOUT = 3000; // tiempo de espera tras interacc
 
 // Habilitar debug mode
 export const DEBUG_MODE = false;
+
 
