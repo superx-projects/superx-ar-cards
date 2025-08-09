@@ -123,7 +123,7 @@ import {
     if ('vibrate' in navigator && /Mobi|Android/i.test(navigator.userAgent)) {
       try {
         // Vibración muy sutil: 50ms
-        navigator.vibrate(50);
+        navigator.vibrate(150);
       } catch (error) {
         // Ignorar errores silenciosamente
         console.debug('Vibración no disponible:', error);
@@ -499,3 +499,4 @@ import {
   initializeModelViewer();
 
 })();
+
