@@ -111,11 +111,25 @@ import {
   let modelTransitionTimeout = null;
   let autoRotateTimeout = null;
   let snapTimeout = null;
-  let progressInterval = null;
+  let progressInterval = null; // Nuevo para controlar el progreso del indicador
 
   // --- Variables para el progreso del indicador ---
   let holdStartTime = 0;
   const TOTAL_HOLD_TIME = config.HOLD_DURATION + config.VIDEO_ACTIVATION_DELAY; // Tiempo total real
+
+  // --- Función para activar vibración sutil ---
+  function triggerHapticFeedback() {
+    // Solo en dispositivos móviles y si está disponible
+    if ('vibrate' in navigator && /Mobi|Android/i.test(navigator.userAgent)) {
+      try {
+        // Vibración muy sutil: 50ms
+        navigator.vibrate(50);
+      } catch (error) {
+        // Ignorar errores silenciosamente
+        console.debug('Vibración no disponible:', error);
+      }
+    }
+  }
 
   // --- Función para actualizar progreso del indicador ---
   function updateHoldProgress() {
@@ -132,8 +146,9 @@ import {
     const currentWidth = progress * (maxWidth === '60vw' ? 60 : maxWidth === '65vw' ? 65 : 70);
     indicator.style.width = `${currentWidth}vw`;
     
-    // Si llegamos al 100%, no necesitamos más actualizaciones
+    // Si llegamos al 100%, activar vibración y no necesitamos más actualizaciones
     if (progress >= 1) {
+      triggerHapticFeedback(); // Vibración sutil al completar
       clearInterval(progressInterval);
       progressInterval = null;
     }
