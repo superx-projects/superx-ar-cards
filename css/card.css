@@ -61,7 +61,7 @@
   height: 4px;
   background: linear-gradient(to right, #00ffff, #0080ff, #00ffff);
   border-radius: 2px;
-  transition: width 0.8s ease;
+  transition: none;
   z-index: 501;
   box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
 }
@@ -288,4 +288,5 @@
   .info-box {
     height: 25vh;
   }
+
 }
