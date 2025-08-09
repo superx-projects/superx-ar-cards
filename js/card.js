@@ -3,7 +3,8 @@ import * as config from "./config.js";
 import {
   spawnParticles,
   customAutoRotate,
-  snapToNearestSide
+  snapToNearestSide,
+  validateResource
 } from "./utils.js";
 
 (async function () {
@@ -41,18 +42,7 @@ import {
     document.body.innerHTML = `<p style='color:white;text-align:center;'>${translations["error_card_not_found"] || "Card not found"}</p>`;
     return;
   }
-
-  // --- Función para validar recursos ---
-  async function validateResource(url, resourceType) {
-    try {
-      const response = await fetch(url, { method: 'HEAD' });
-      return response.ok;
-    } catch (error) {
-      console.error(`Error validando ${resourceType}: ${url}`, error);
-      return false;
-    }
-  }
-
+  
   // Construir rutas de recursos
   const modelPath = `${config.MODEL_PATH}${cardData.model}`;
   const videoPath = `${config.VIDEO_PATH}${cardData.video}`;
@@ -93,11 +83,6 @@ import {
   viewer.setAttribute("src", modelPath);
   video.src = videoPath;
 
-  // --- Validación adicional de carga del modelo 3D ---
-  viewer.addEventListener('error', () => {
-    document.body.innerHTML = `<p style='color:white;text-align:center;'>${translations["error_model_load_failed"] || "Failed to load 3D model"}</p>`;
-  });
-
   // --- Validación adicional de carga del video ---
   video.addEventListener('error', () => {
     console.error('Error cargando video:', videoPath);
@@ -113,21 +98,127 @@ import {
 
   // --- Variables de control ---
   let isHolding = false;
-  let holdTimeout = null;
-  let particleInterval = null;
   let activePointerId = null;
   let lastCameraOrbit = null;
   let modelMoved = false;
   let isAutoRotateEnabled = true;
+  let currentState = 'model'; // 'model', 'transitioning', 'video'
+
+  // --- Variables de control de timeouts ---
+  let holdTimeout = null;
+  let particleInterval = null;
+  let videoTransitionTimeout = null;
+  let modelTransitionTimeout = null;
+  let autoRotateTimeout = null;
+  let snapTimeout = null;
+
+  // --- Funciones de validación de Model-Viewer ---
+  function isModelViewerReady() {
+    return (
+      typeof window.customElements !== 'undefined' &&
+      window.customElements.get('model-viewer') &&
+      viewer &&
+      typeof viewer.getCameraOrbit === 'function'
+    );
+  }
+
+  function waitForModelViewer(maxAttempts = 50, interval = 100) {
+    return new Promise((resolve, reject) => {
+      let attempts = 0;
+      
+      const checkReady = () => {
+        attempts++;
+        
+        if (isModelViewerReady()) {
+          resolve(true);
+          return;
+        }
+        
+        if (attempts >= maxAttempts) {
+          reject(new Error('Model-viewer no se cargó correctamente'));
+          return;
+        }
+        
+        setTimeout(checkReady, interval);
+      };
+      
+      checkReady();
+    });
+  }
+
+  function safeGetCameraOrbit() {
+    if (!isModelViewerReady()) {
+      console.warn('Model-viewer no está listo');
+      return null;
+    }
+    
+    try {
+      return viewer.getCameraOrbit();
+    } catch (error) {
+      console.error('Error al obtener camera orbit:', error);
+      return null;
+    }
+  }
+
+  function safeSetCameraOrbit(orbitString) {
+    if (!isModelViewerReady()) {
+      console.warn('Model-viewer no está listo para cambiar cámara');
+      return false;
+    }
+    
+    try {
+      viewer.cameraOrbit = orbitString;
+      return true;
+    } catch (error) {
+      console.error('Error al establecer camera orbit:', error);
+      return false;
+    }
+  }
+
+  // --- Función para limpiar todos los timeouts ---
+  function clearAllTimeouts() {
+    clearTimeout(holdTimeout);
+    clearTimeout(videoTransitionTimeout);
+    clearTimeout(modelTransitionTimeout);  
+    clearTimeout(autoRotateTimeout);
+    clearTimeout(snapTimeout);
+    clearInterval(particleInterval);
+    
+    holdTimeout = null;
+    videoTransitionTimeout = null;
+    modelTransitionTimeout = null;
+    autoRotateTimeout = null;
+    snapTimeout = null;
+    particleInterval = null;
+  }
+
+  // --- Función para gestionar isAutoRotateEnabled de forma centralizada ---
+  function setAutoRotateState(enabled, delay = 0) {
+    clearTimeout(autoRotateTimeout);
+    
+    if (delay > 0) {
+      autoRotateTimeout = setTimeout(() => {
+        isAutoRotateEnabled = enabled;
+        autoRotateTimeout = null;
+      }, delay);
+    } else {
+      isAutoRotateEnabled = enabled;
+    }
+  }
 
   // --- Funciones auxiliares ---
 
   // Mostrar video con transición
   function showVideo() {
-    isAutoRotateEnabled = false;
+    if (currentState !== 'model') return; // Evitar múltiples llamadas
+    
+    currentState = 'transitioning';
+    clearAllTimeouts(); // Limpiar cualquier timeout pendiente
+    
+    setAutoRotateState(false);
     fade.classList.add("active");
 
-    setTimeout(() => {
+    videoTransitionTimeout = setTimeout(() => {
       viewer.style.display = "none";
       infoBox.style.display = "none";
       logo.classList.add("hidden");
@@ -140,14 +231,21 @@ import {
       video.play();
 
       particlesContainer.innerHTML = "";
+      currentState = 'video';
+      videoTransitionTimeout = null;
     }, config.FADE_DURATION);
   }
 
   // Volver al modelo 3D con transición
   function returnToModel() {
+    if (currentState !== 'video') return; // Evitar múltiples llamadas
+    
+    currentState = 'transitioning';
+    clearAllTimeouts(); // Limpiar cualquier timeout pendiente
+    
     fade.classList.add("active");
 
-    setTimeout(() => {
+    modelTransitionTimeout = setTimeout(() => {
       video.classList.remove("showing");
       video.pause();
       video.currentTime = 0;
@@ -159,109 +257,155 @@ import {
       logo.classList.remove("hidden");
 
       fade.classList.remove("active");
+      currentState = 'model';
+      modelTransitionTimeout = null;
+      
+      // Activar auto-rotate después de un delay
+      setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
     }, config.FADE_DURATION);
-
-    setTimeout(() => {
-      isAutoRotateEnabled = true;
-    }, config.VIDEO_ACTIVATION_DELAY);
   }
 
   // Cancelar el estado de "hold" (mantener presionado)
   function cancelHold() {
     isHolding = false;
     activePointerId = null;
+    
+    // Limpiar timeouts específicos del hold
     clearTimeout(holdTimeout);
-
-    if (particleInterval) {
-      clearInterval(particleInterval);
-      particleInterval = null;
-    }
+    clearInterval(particleInterval);
+    holdTimeout = null;
+    particleInterval = null;
 
     indicator.classList.remove("active");
     viewer.classList.remove("hold");
   }
 
-  // --- Event listeners ---
+  // --- Función para configurar event listeners ---
+  function setupEventListeners() {
+    // Botón para saltar video y volver al modelo 3D
+    skipButton.addEventListener("click", returnToModel);
 
-  // Botón para saltar video y volver al modelo 3D
-  skipButton.addEventListener("click", returnToModel);
+    // Iniciar "hold" al presionar puntero (mouse o touch)
+    viewer.addEventListener("pointerdown", (e) => {
+      if (activePointerId !== null || currentState !== 'model') return;
+      activePointerId = e.pointerId;
 
-  // Iniciar "hold" al presionar puntero (mouse o touch)
-  viewer.addEventListener("pointerdown", (e) => {
-    if (activePointerId !== null) return;
-    activePointerId = e.pointerId;
+      const x = e.clientX;
+      const y = e.clientY;
+      modelMoved = false;
+      lastCameraOrbit = safeGetCameraOrbit();
 
-    const x = e.clientX;
-    const y = e.clientY;
-    modelMoved = false;
-    lastCameraOrbit = viewer.getCameraOrbit ? viewer.getCameraOrbit() : null;
+      holdTimeout = setTimeout(() => {
+        if (!modelMoved && currentState === 'model') {
+          isHolding = true;
+          viewer.classList.add("hold");
+          indicator.classList.add("active");
 
-    holdTimeout = setTimeout(() => {
-      if (!modelMoved) {
-        isHolding = true;
-        viewer.classList.add("hold");
-        indicator.classList.add("active");
+          particleInterval = setInterval(() => {
+            spawnParticles(x, y, particlesContainer);
+          }, config.PARTICLE_SPAWN_INTERVAL);
 
-        particleInterval = setInterval(() => {
-          spawnParticles(x, y, particlesContainer);
-        }, config.PARTICLE_SPAWN_INTERVAL);
+          setTimeout(() => {
+            if (isHolding && currentState === 'model') {
+              showVideo();
+            }
+          }, config.VIDEO_ACTIVATION_DELAY);
+        }
+      }, config.HOLD_DURATION);
+    });
 
-        setTimeout(() => {
-          if (isHolding) showVideo();
-        }, config.VIDEO_ACTIVATION_DELAY);
+    // Detectar movimiento de cámara para cancelar "hold"
+    viewer.addEventListener("pointermove", () => {
+      if (!lastCameraOrbit) return;
+
+      const currentOrbit = safeGetCameraOrbit();
+      if (currentOrbit && currentOrbit.theta !== lastCameraOrbit.theta) {
+        modelMoved = true;
+        clearTimeout(holdTimeout);
       }
-    }, config.HOLD_DURATION);
-  });
+    });
 
-  // Detectar movimiento de cámara para cancelar "hold"
-  viewer.addEventListener("pointermove", () => {
-    if (!lastCameraOrbit) return;
+    // Al soltar puntero, cancelar "hold" y activar rotación automática
+    viewer.addEventListener("pointerup", (e) => {
+      if (e.pointerId !== activePointerId) return;
+      
+      cancelHold();
 
-    const currentOrbit = viewer.getCameraOrbit ? viewer.getCameraOrbit() : null;
-    if (currentOrbit && currentOrbit.theta !== lastCameraOrbit.theta) {
-      modelMoved = true;
-      clearTimeout(holdTimeout);
+      if (currentState === 'model') {
+        // Realizar snap al soltar para orientar bien la carta
+        snapToNearestSide(viewer);
+        setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
+      }
+    });
+
+    // Cancelar hold si puntero sale o se cancela
+    viewer.addEventListener("pointercancel", (e) => {
+      if (e.pointerId !== activePointerId) return;
+      cancelHold();
+    });
+
+    viewer.addEventListener("pointerleave", (e) => {
+      if (e.pointerId !== activePointerId) return;
+      cancelHold();
+    });
+
+    // Al finalizar video, volver al modelo
+    video.addEventListener("ended", returnToModel);
+
+    // Snap de rotación horizontal
+    viewer.addEventListener("camera-change", () => {
+      if (currentState !== 'model') return;
+      
+      clearTimeout(snapTimeout);
+
+      snapTimeout = setTimeout(() => {
+        if (currentState === 'model') {
+          setAutoRotateState(false);
+          snapToNearestSide(viewer);
+          setAutoRotateState(true, config.CAMERA_SNAP_TRANSITION);
+        }
+        snapTimeout = null;
+      }, config.CAMERA_SNAP_DELAY);
+    });
+  }
+
+  // --- Inicialización con validación ---
+  async function initializeModelViewer() {
+    try {
+      // Esperar a que model-viewer esté completamente cargado
+      await waitForModelViewer();
+      
+      // Validación adicional del modelo
+      viewer.addEventListener('load', () => {
+        console.log('Modelo 3D cargado exitosamente');
+        if (config.DEBUG_MODE) {
+          console.log('Model-viewer inicializado:', {
+            hasGetCameraOrbit: typeof viewer.getCameraOrbit === 'function',
+            initialOrbit: safeGetCameraOrbit()
+          });
+        }
+      });
+      
+      viewer.addEventListener('error', (event) => {
+        console.error('Error en model-viewer:', event);
+        document.body.innerHTML = `<p style='color:white;text-align:center;'>${translations["error_model_load_failed"] || "Failed to load 3D model"}</p>`;
+      });
+      
+      // Configurar event listeners solo después de que model-viewer esté listo
+      setupEventListeners();
+      
+      // Iniciar rotación automática si está habilitada
+      if (config.AUTO_ROTATE_ENABLED) {
+        customAutoRotate(viewer, () => isAutoRotateEnabled, config.AUTO_ROTATE_SPEED);
+      }
+      
+    } catch (error) {
+      console.error('Error inicializando model-viewer:', error);
+      document.body.innerHTML = `<p style='color:white;text-align:center;'>Error: ${translations["error_model_load_failed"] || "Failed to load 3D model"} - ${error.message}</p>`;
     }
-  });
+  }
 
-  // Al soltar puntero, cancelar "hold" y activar rotación automática
-  viewer.addEventListener("pointerup", (e) => {
-    if (e.pointerId !== activePointerId) return;
-    cancelHold();
-
-    // Realizar snap al soltar para orientar bien la carta
-    snapToNearestSide(viewer);
-
-    setTimeout(() => {
-      isAutoRotateEnabled = true;
-    }, config.VIDEO_ACTIVATION_DELAY);
-  });
-
-  // Cancelar hold si puntero sale o se cancela
-  viewer.addEventListener("pointercancel", cancelHold);
-  viewer.addEventListener("pointerleave", cancelHold);
-
-  // Al finalizar video, volver al modelo
-  video.addEventListener("ended", returnToModel);
-
-  // --- Snap de rotación horizontal (por si el usuario gira manualmente) ---
-  // Esta función ya realiza un snap gradual, puede coexistir con el snap en pointerup
-  let snapTimeout = null;
-
-  viewer.addEventListener("camera-change", () => {
-    clearTimeout(snapTimeout);
-
-    snapTimeout = setTimeout(() => {
-      isAutoRotateEnabled = false;
-      snapToNearestSide(viewer);
-
-      setTimeout(() => {
-        isAutoRotateEnabled = true;
-      }, config.CAMERA_SNAP_TRANSITION);
-    }, config.CAMERA_SNAP_DELAY);
-  });
-
-  // --- Iniciar rotación automática ---
-  //customAutoRotate(viewer, () => isAutoRotateEnabled, config.AUTO_ROTATE_SPEED);
+  // --- Inicializar todo ---
+  initializeModelViewer();
 
 })();
