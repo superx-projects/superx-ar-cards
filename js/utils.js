@@ -109,15 +109,41 @@ export function getSnapAngle(deg) {
  * @param {HTMLElement} viewer - <model-viewer>
  */
 export function snapToNearestSide(viewer) {
-  if (!viewer.getCameraOrbit) return;
+  if (!viewer || typeof viewer.getCameraOrbit !== 'function') {
+    console.warn('Model-viewer no está listo para snap');
+    return;
+  }
 
-  const orbit = viewer.getCameraOrbit();
-  const thetaDeg = radToDeg(orbit.theta);
-  const normalized = normalizeAngle(thetaDeg);
-  const targetDeg = getSnapAngle(normalized);
+  try {
+    const orbit = viewer.getCameraOrbit();
+    if (!orbit) return;
+    
+    const thetaDeg = radToDeg(orbit.theta);
+    const normalized = normalizeAngle(thetaDeg);
+    const targetDeg = getSnapAngle(normalized);
 
-  // Se fija phi (elevación) a 90 grados (horizontal),
-  // toma el orbit.radius para mantener el zoom actual
-  viewer.cameraOrbit = `${targetDeg}deg 90deg ${orbit.radius}m`;
+    // Se fija phi (elevación) a 90 grados (horizontal),
+    // toma el orbit.radius para mantener el zoom actual
+    viewer.cameraOrbit = `${targetDeg}deg 90deg ${orbit.radius}m`;
+  } catch (error) {
+    console.error('Error en snapToNearestSide:', error);
+  }
 }
+
+/**
+ * Valida que un recurso (imagen, video, modelo 3D, etc.) esté disponible
+ * @param {string} url - URL del recurso a validar
+ * @param {string} resourceType - Tipo de recurso (para logging)
+ * @returns {Promise<boolean>} - true si el recurso está disponible
+ */
+export async function validateResource(url, resourceType) {
+  try {
+    const response = await fetch(url, { method: 'HEAD' });
+    return response.ok;
+  } catch (error) {
+    console.error(`Error validando ${resourceType}: ${url}`, error);
+    return false;
+  }
+}
+
 
