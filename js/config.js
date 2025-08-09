@@ -22,7 +22,7 @@ export const CARDS_DATA_PATH = "data/cards.json";
 export const VIDEO_ACTIVATION_DELAY = 1000;
 
 // Tiempo que debe mantenerse presionado para activar el video (en milisegundos)
-export const HOLD_DURATION = 1000;
+export const HOLD_DURATION = 500;
 
 // Tiempo de duracion del efecto fade al iniciar o finalizar el video (en milisegundos)
 // Si se modifica, actualizar tambien la linea "transition: opacity 0.4s ease" en card.css#fade_effect
@@ -47,5 +47,6 @@ export const AUTO_ROTATE_RESET_TIMEOUT = 3000; // tiempo de espera tras interacc
 
 // Habilitar debug mode
 export const DEBUG_MODE = false;
+
 
 
