@@ -1,57 +1,75 @@
 /* ==========================================
    index.css - Estilos específicos para index.html
    Proyecto: Super X Immersive Cards
+   Optimizado para móviles
 ========================================== */
 
 /* =====================
-   INDEX PAGE LAYOUT
+   LAYOUT PRINCIPAL INDEX
 ===================== */
 #index_main {
-  min-height: 100vh;
   justify-content: center;
-  padding-top: clamp(2rem, 5vh, 4rem);
+  padding: 2rem 1rem;
+  gap: 1.5rem;
 }
 
 /* =====================
-   INDEX CONTENT
+   LOGO INDEX
+===================== */
+#index_logo {
+  margin-bottom: 1rem;
+}
+
+/* =====================
+   CONTENIDO INDEX
 ===================== */
 #index_title {
-  font-size: clamp(2rem, 5vw, 3.5rem);
-  margin-bottom: 1.5rem;
-  font-weight: bold;
-  text-align: center;
+  font-size: clamp(2.2rem, 8vw, 4rem);
+  margin-bottom: 0.5rem;
+  background: linear-gradient(135deg, #ffffff, #00bfff);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 10px rgba(0, 191, 255, 0.3);
 }
 
 #index_instructions {
-  font-size: clamp(1.1rem, 3vw, 1.4rem);
-  color: #ccc;
+  font-size: clamp(1.1rem, 4vw, 1.6rem);
+  color: #e0e0e0;
+  max-width: 90vw;
   margin-bottom: 1rem;
-  max-width: 600px;
-  line-height: 1.6;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 #index_note {
-  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
-  color: #888;
-  max-width: 500px;
-  line-height: 1.5;
+  font-size: clamp(0.9rem, 3vw, 1.2rem);
+  color: #999;
+  max-width: 85vw;
   font-style: italic;
+  opacity: 0.8;
 }
 
 /* =====================
-   RESPONSIVE ADJUSTMENTS
+   RESPONSIVE INDEX
 ===================== */
 @media (max-width: 768px) {
   #index_main {
-    padding: 1rem;
+    padding: 1.5rem 1rem;
+    gap: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  #index_main {
+    padding: 1rem 0.8rem;
+    gap: 1rem;
   }
   
   #index_title {
-    margin-bottom: 1rem;
+    margin-bottom: 0.3rem;
   }
   
-  #index_instructions,
-  #index_note {
-    padding: 0 0.5rem;
+  #index_instructions {
+    margin-bottom: 0.8rem;
   }
 }

@@ -1,34 +1,38 @@
 /* ==========================================
    card.css - Estilos específicos para card.html
    Proyecto: Super X Immersive Cards
+   Optimizado para experiencia inmersiva móvil
 ========================================== */
 
 /* =====================
-   CARD PAGE LAYOUT
+   LAYOUT PRINCIPAL CARD
 ===================== */
 #card_main {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   padding: 0;
-  box-sizing: border-box;
-}
-
-#card_logo {
-  height: 5vh;
-  width: auto;
-  margin: 1rem auto;
-  max-width: 200px;
+  gap: 0;
+  justify-content: flex-start;
 }
 
 /* =====================
-   MODEL VIEWER
+   LOGO CARD (Parte superior)
+===================== */
+#card_logo {
+  height: 8vh;
+  width: 75vw;
+  max-width: 300px;
+  margin: 1vh auto;
+  flex-shrink: 0;
+}
+
+/* =====================
+   MODEL VIEWER (Parte central - prioritaria)
 ===================== */
 #card_viewer {
-  width: 100%;
-  height: 75vh;
+  width: 100vw;
+  height: 70vh;
+  flex-grow: 1;
   transition: filter 0.3s ease;
+  background: transparent;
 }
 
 #card_viewer.hold {
@@ -36,51 +40,73 @@
 }
 
 /* =====================
-   HOLD INDICATOR AREA
+   ÁREA INDICADOR HOLD (Entre modelo y info)
 ===================== */
 .hold-indicator-area {
-  height: 5vh;
-  width: 100%;
+  height: 4vh;
+  width: 100vw;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
+  flex-shrink: 0;
+}
+
+#card_hold_indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 4px;
+  background: linear-gradient(to right, #00ffff, #0080ff, #00ffff);
+  border-radius: 2px;
+  transition: width 0.8s ease;
+  z-index: 501;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+#card_hold_indicator.active {
+  width: 70vw;
+  max-width: 280px;
 }
 
 /* =====================
    INFO BOX (Parte inferior)
 ===================== */
 .info-box {
-  height: 15vh;
-  width: 100%;
+  height: 18vh;
+  min-height: 100px;
+  width: 100vw;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  box-sizing: border-box;
+  padding: 1rem 1.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(15px);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
   flex-shrink: 0;
 }
 
 #card_title {
-  font-size: clamp(1.2rem, 3vw, 1.8rem);
-  margin-bottom: 0.5rem;
-  font-weight: bold;
+  font-size: clamp(1.3rem, 4vw, 2rem);
+  margin-bottom: 0.8rem;
   color: white;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  max-width: 90vw;
 }
 
 #card_instructions {
-  font-size: clamp(0.9rem, 2vw, 1.1rem);
-  color: #ccc;
-  margin: 0;
+  font-size: clamp(1rem, 3vw, 1.3rem);
+  color: #ddd;
+  opacity: 0.9;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
 /* =====================
-   VIDEO PLAYER
+   VIDEO PLAYER (Pantalla completa inmersiva)
 ===================== */
 #card_video {
   position: fixed;
@@ -90,7 +116,7 @@
   height: 100vh;
   background-color: black;
   z-index: 999;
-  object-fit: contain;
+  object-fit: cover; /* Cambiado de contain a cover para pantalla completa */
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.5s ease;
@@ -102,28 +128,7 @@
 }
 
 /* =====================
-   HOLD INDICATOR
-===================== */
-#card_hold_indicator {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 0;
-  height: 6px;
-  background: linear-gradient(to right, cyan, blue);
-  border-radius: 4px;
-  transition: width 0.8s ease;
-  z-index: 501;
-}
-
-#card_hold_indicator.active {
-  width: 80%;
-  max-width: 300px;
-}
-
-/* =====================
-   PARTICLES SYSTEM
+   SISTEMA DE PARTÍCULAS
 ===================== */
 #card_particles_container {
   position: fixed;
@@ -138,12 +143,13 @@
 
 .particle {
   position: absolute;
-  width: 8px;
-  height: 8px;
-  background: radial-gradient(circle, #fff, #0ff, transparent);
+  width: 6px;
+  height: 6px;
+  background: radial-gradient(circle, #fff, #00ffff, transparent);
   border-radius: 50%;
-  opacity: 0.8;
+  opacity: 0.9;
   animation: fly 0.6s ease-out forwards;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.7);
 }
 
 @keyframes fly {
@@ -152,78 +158,134 @@
     opacity: 1;
   }
   100% {
-    transform: translate(var(--dx), var(--dy)) scale(0.2);
+    transform: translate(var(--dx), var(--dy)) scale(0.1);
     opacity: 0;
   }
 }
 
 /* =====================
-   SKIP BUTTON
+   BOTÓN SKIP VIDEO
 ===================== */
 .skip-button {
   position: fixed;
   bottom: 20px;
   right: 20px;
   z-index: 1001;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.8);
   color: white;
-  border: 1px solid white;
-  padding: 0.5em 1em;
-  border-radius: 6px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 0.8rem 1.5rem;
+  border-radius: 25px;
   font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.3s ease;
-  backdrop-filter: blur(5px);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .skip-button:hover {
   background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: scale(1.05);
+}
+
+.skip-button:active {
+  transform: scale(0.95);
 }
 
 /* =====================
-   RESPONSIVE ADJUSTMENTS
+   RESPONSIVE MÓVIL
 ===================== */
 @media (max-width: 768px) {
   #card_logo {
-    height: 4vh;
-    margin: 0.5rem auto;
+    height: 7vh;
+    width: 80vw;
+    margin: 0.8vh auto;
   }
   
   #card_viewer {
-    height: 70vh;
+    height: 68vh;
   }
   
   .info-box {
-    height: 21vh;
-    padding: 0.8rem;
-  }
-  
-  #card_title {
-    font-size: clamp(1rem, 4vw, 1.5rem);
-  }
-  
-  #card_instructions {
-    font-size: clamp(0.8rem, 3vw, 1rem);
+    height: 20vh;
+    padding: 1rem;
   }
   
   #card_hold_indicator.active {
-    width: 70%;
+    width: 65vw;
   }
   
   .skip-button {
     bottom: 15px;
     right: 15px;
-    padding: 0.4em 0.8em;
+    padding: 0.7rem 1.2rem;
     font-size: 0.9rem;
   }
 }
 
 @media (max-width: 480px) {
-  .info-box {
-    height: 25vh;
+  #card_logo {
+    height: 6vh;
+    width: 85vw;
+    margin: 0.5vh auto;
   }
   
   #card_viewer {
-    height: 65vh;
+    height: 66vh;
+  }
+  
+  .info-box {
+    height: 24vh;
+    padding: 0.8rem;
+  }
+  
+  .hold-indicator-area {
+    height: 3vh;
+  }
+  
+  #card_hold_indicator {
+    height: 3px;
+  }
+  
+  #card_hold_indicator.active {
+    width: 60vw;
+  }
+  
+  .skip-button {
+    bottom: 12px;
+    right: 12px;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 360px) {
+  #card_logo {
+    height: 5vh;
+    width: 90vw;
+  }
+  
+  .info-box {
+    height: 26vh;
+  }
+}
+
+/* =====================
+   ORIENTACIÓN LANDSCAPE (opcional)
+===================== */
+@media (orientation: landscape) and (max-height: 600px) {
+  #card_logo {
+    height: 12vh;
+  }
+  
+  #card_viewer {
+    height: 60vh;
+  }
+  
+  .info-box {
+    height: 25vh;
   }
 }

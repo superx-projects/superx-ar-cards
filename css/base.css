@@ -1,6 +1,7 @@
 /* ==========================================
    base.css - Estilos base y reutilizables
    Proyecto: Super X Immersive Cards
+   Optimizado para móviles
 ========================================== */
 
 /* =====================
@@ -22,80 +23,96 @@ html, body {
   font-family: Arial, sans-serif;
   background-color: #121212;
   color: white;
-  overflow: auto;
+  overflow: hidden; /* Optimizado para experiencia inmersiva móvil */
 }
 
 body {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
 }
 
 /* =====================
-   COMPONENTES REUTILIZABLES
+   CONTENEDOR PRINCIPAL
 ===================== */
-
-/* Main container */
 .main {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  flex: 1;
   position: relative;
 }
 
-/* Logo component */
+/* =====================
+   COMPONENTE LOGO
+===================== */
 .logo {
   display: block;
-  margin: 2rem auto 1rem auto;
-  max-width: 250px;
-  width: 70%;
+  width: 80vw;
+  max-width: 350px;
   height: auto;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .logo.hidden {
   display: none;
 }
 
-/* Button base styles */
+/* =====================
+   COMPONENTES BASE
+===================== */
+
+/* Botones base */
 button {
   cursor: pointer;
   background: none;
   border: none;
   color: inherit;
   font: inherit;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  transition: background-color 0.2s ease;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+  font-size: 1rem;
 }
 
 button:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
-/* Link styles */
+button:active {
+  transform: scale(0.98);
+}
+
+/* Enlaces */
 a {
   color: #00bfff;
   text-decoration: none;
+  transition: color 0.2s ease;
 }
 
 a:hover {
+  color: #33ccff;
   text-decoration: underline;
 }
 
-/* =====================
-   UTILITY CLASSES
-===================== */
-.js-hidden {
-  display: none;
+/* Títulos */
+h1 {
+  font-weight: bold;
+  line-height: 1.2;
+  margin: 0;
 }
 
+/* Párrafos */
+p {
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* =====================
+   EFECTOS Y TRANSICIONES
+===================== */
 .fade-effect {
   position: fixed;
   top: 0;
@@ -111,5 +128,35 @@ a:hover {
 
 .fade-effect.active {
   opacity: 1;
+}
 
+/* =====================
+   UTILITY CLASSES
+===================== */
+.js-hidden {
+  display: none;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =====================
+   RESPONSIVE BASE
+===================== */
+@media (max-width: 480px) {
+  .logo {
+    width: 85vw;
+  }
+  
+  button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
 }
