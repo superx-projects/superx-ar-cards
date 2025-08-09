@@ -41,8 +41,10 @@ export const CAMERA_SNAP_DELAY = 800;
 export const CAMERA_SNAP_TRANSITION = 1000;
 
 // Ajustes de rotación automática
+export const AUTO_ROTATE_ENABLED = false; // habilitar o deshabilitar la rotacion automatica custom
 export const AUTO_ROTATE_SPEED = 0.002;  // radianes por frame (aproximado)
 export const AUTO_ROTATE_RESET_TIMEOUT = 3000; // tiempo de espera tras interacción (en ms)
 
 // Habilitar debug mode
 export const DEBUG_MODE = false;
+
