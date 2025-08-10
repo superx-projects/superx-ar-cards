@@ -104,6 +104,13 @@ import {
   let isAutoRotateEnabled = true;
   let currentState = 'model'; // 'model', 'transitioning', 'video'
 
+  // --- Variables de control específicas para interacción ---
+  let touchStartPosition = null;
+  let touchCurrentPosition = null;
+  let isDragging = false;
+  let dragThreshold = 10; // píxeles de tolerancia antes de considerar que es drag
+  let interactionLocked = false; // Bloquear interacciones durante transiciones
+
   // --- Variables de control de timeouts y progreso ---
   let holdTimeout = null;
   let particleInterval = null;
@@ -111,21 +118,19 @@ import {
   let modelTransitionTimeout = null;
   let autoRotateTimeout = null;
   let snapTimeout = null;
-  let progressInterval = null; // Nuevo para controlar el progreso del indicador
+  let progressInterval = null;
+  let dragCheckTimeout = null; // Nuevo timeout para verificar drag
 
   // --- Variables para el progreso del indicador ---
   let holdStartTime = 0;
-  const TOTAL_HOLD_TIME = config.HOLD_DURATION + config.VIDEO_ACTIVATION_DELAY; // Tiempo total real
+  const TOTAL_HOLD_TIME = config.HOLD_DURATION + config.VIDEO_ACTIVATION_DELAY;
 
   // --- Función para activar vibración sutil ---
   function triggerHapticFeedback() {
-    // Solo en dispositivos móviles y si está disponible
     if ('vibrate' in navigator && /Mobi|Android/i.test(navigator.userAgent)) {
       try {
-        // Vibración muy sutil: 50ms
-        navigator.vibrate(150);
+        navigator.vibrate(50);
       } catch (error) {
-        // Ignorar errores silenciosamente
         console.debug('Vibración no disponible:', error);
       }
     }
@@ -138,7 +143,6 @@ import {
     const elapsed = Date.now() - holdStartTime;
     const progress = Math.min(elapsed / TOTAL_HOLD_TIME, 1);
     
-    // Calcular ancho basado en el progreso
     const maxWidth = window.innerWidth <= 768 
       ? (window.innerWidth <= 480 ? '60vw' : '65vw') 
       : '70vw';
@@ -146,9 +150,8 @@ import {
     const currentWidth = progress * (maxWidth === '60vw' ? 60 : maxWidth === '65vw' ? 65 : 70);
     indicator.style.width = `${currentWidth}vw`;
     
-    // Si llegamos al 100%, activar vibración y no necesitamos más actualizaciones
     if (progress >= 1) {
-      triggerHapticFeedback(); // Vibración sutil al completar
+      triggerHapticFeedback();
       clearInterval(progressInterval);
       progressInterval = null;
     }
@@ -217,7 +220,47 @@ import {
     }
   }
 
-  // --- Deshabilitar pan y context menu del Model-Viewer para prevenir comportamientos no deseados ---
+  // --- Función para controlar los controles de model-viewer ---
+  function setModelViewerInteraction(enabled) {
+    if (!isModelViewerReady()) return;
+    
+    try {
+      if (enabled) {
+        // Habilitar interacciones normales
+        viewer.removeAttribute('interaction-prompt-style');
+        viewer.style.pointerEvents = 'auto';
+      } else {
+        // Deshabilitar temporalmente las interacciones
+        viewer.setAttribute('interaction-prompt-style', 'none');
+        viewer.style.pointerEvents = 'none';
+        // Re-habilitar solo para nuestros eventos personalizados
+        setTimeout(() => {
+          viewer.style.pointerEvents = 'auto';
+        }, 50);
+      }
+    } catch (error) {
+      console.error('Error controlando interacciones de model-viewer:', error);
+    }
+  }
+
+  // --- Función mejorada para detectar si el usuario está intentando hacer drag ---
+  function calculateDragDistance(startPos, currentPos) {
+    if (!startPos || !currentPos) return 0;
+    
+    const deltaX = currentPos.x - startPos.x;
+    const deltaY = currentPos.y - startPos.y;
+    return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+  }
+
+  // --- Función para obtener posición del evento (unified touch/mouse) ---
+  function getEventPosition(event) {
+    return {
+      x: event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : 0),
+      y: event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : 0)
+    };
+  }
+
+  // --- Deshabilitar pan y context menu del Model-Viewer ---
   function disablePanMovement() {
     if (!isModelViewerReady()) {
       console.warn('Model-viewer no está listo para configurar controles');
@@ -225,18 +268,15 @@ import {
     }
 
     try {
-      // Deshabilitar pan programáticamente (por si no está en HTML)
       viewer.disablePan = true;
     
-      // Prevenir el menú contextual del click derecho
       viewer.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         return false;
-        });
+      });
 
-      // Prevenir drag con botón derecho/medio
       viewer.addEventListener('mousedown', (e) => {
-        if (e.button === 1 || e.button === 2) { // Botón medio o derecho
+        if (e.button === 1 || e.button === 2) {
           e.preventDefault();
           return false;
         }
@@ -258,14 +298,16 @@ import {
     clearTimeout(modelTransitionTimeout);  
     clearTimeout(autoRotateTimeout);
     clearTimeout(snapTimeout);
+    clearTimeout(dragCheckTimeout);
     clearInterval(particleInterval);
-    clearInterval(progressInterval); // Agregamos el nuevo interval
+    clearInterval(progressInterval);
     
     holdTimeout = null;
     videoTransitionTimeout = null;
     modelTransitionTimeout = null;
     autoRotateTimeout = null;
     snapTimeout = null;
+    dragCheckTimeout = null;
     particleInterval = null;
     progressInterval = null;
   }
@@ -288,10 +330,11 @@ import {
 
   // Mostrar video con transición
   function showVideo() {
-    if (currentState !== 'model') return; // Evitar múltiples llamadas
+    if (currentState !== 'model') return;
     
     currentState = 'transitioning';
-    clearAllTimeouts(); // Limpiar cualquier timeout pendiente
+    interactionLocked = true;
+    clearAllTimeouts();
     
     setAutoRotateState(false);
     fade.classList.add("active");
@@ -310,16 +353,18 @@ import {
 
       particlesContainer.innerHTML = "";
       currentState = 'video';
+      interactionLocked = false;
       videoTransitionTimeout = null;
     }, config.FADE_DURATION);
   }
 
   // Volver al modelo 3D con transición
   function returnToModel() {
-    if (currentState !== 'video') return; // Evitar múltiples llamadas
+    if (currentState !== 'video') return;
     
     currentState = 'transitioning';
-    clearAllTimeouts(); // Limpiar cualquier timeout pendiente
+    interactionLocked = true;
+    clearAllTimeouts();
     
     fade.classList.add("active");
 
@@ -336,6 +381,7 @@ import {
 
       fade.classList.remove("active");
       currentState = 'model';
+      interactionLocked = false;
       modelTransitionTimeout = null;
       
       // Activar auto-rotate después de un delay
@@ -343,113 +389,189 @@ import {
     }, config.FADE_DURATION);
   }
 
-  // Cancelar el estado de "hold" (mantener presionado)
+  // Cancelar el estado de "hold"
   function cancelHold() {
     isHolding = false;
     activePointerId = null;
+    isDragging = false;
+    touchStartPosition = null;
+    touchCurrentPosition = null;
     
-    // Limpiar timeouts específicos del hold
+    // Restaurar interacciones normales del model-viewer
+    setModelViewerInteraction(true);
+    
     clearTimeout(holdTimeout);
+    clearTimeout(dragCheckTimeout);
     clearInterval(particleInterval);
-    clearInterval(progressInterval); // Limpiar progreso
+    clearInterval(progressInterval);
     holdTimeout = null;
+    dragCheckTimeout = null;
     particleInterval = null;
     progressInterval = null;
 
     indicator.classList.remove("active");
-    indicator.style.width = '0'; // Reset manual del ancho
+    indicator.style.width = '0';
     viewer.classList.remove("hold");
+  }
+
+  // --- Sistema de detección inteligente de intención del usuario ---
+  function startHoldDetection(event) {
+    if (activePointerId !== null || currentState !== 'model' || interactionLocked) {
+      return;
+    }
+
+    activePointerId = event.pointerId;
+    touchStartPosition = getEventPosition(event);
+    touchCurrentPosition = touchStartPosition;
+    modelMoved = false;
+    isDragging = false;
+    lastCameraOrbit = safeGetCameraOrbit();
+
+    // Temporalmente reducir la sensibilidad del model-viewer
+    setModelViewerInteraction(false);
+
+    // Timeout corto para determinar la intención
+    dragCheckTimeout = setTimeout(() => {
+      const dragDistance = calculateDragDistance(touchStartPosition, touchCurrentPosition);
+      
+      if (dragDistance < dragThreshold && !modelMoved) {
+        // El usuario parece querer hacer hold, iniciar detección
+        initializeHoldState(touchStartPosition);
+      } else {
+        // El usuario quiere hacer drag, restaurar controles normales
+        setModelViewerInteraction(true);
+        activePointerId = null;
+      }
+      
+      dragCheckTimeout = null;
+    }, 150); // 150ms para determinar intención
+  }
+
+  function initializeHoldState(position) {
+    // Iniciar el proceso de hold
+    holdTimeout = setTimeout(() => {
+      if (!modelMoved && !isDragging && currentState === 'model' && !interactionLocked) {
+        isHolding = true;
+        holdStartTime = Date.now();
+        viewer.classList.add("hold");
+        indicator.classList.add("active");
+
+        // Feedback visual y háptico
+        triggerHapticFeedback();
+
+        // Iniciar progreso visual
+        progressInterval = setInterval(updateHoldProgress, 16);
+
+        // Iniciar partículas
+        particleInterval = setInterval(() => {
+          spawnParticles(position.x, position.y, particlesContainer);
+        }, config.PARTICLE_SPAWN_INTERVAL);
+
+        // Activar video después del tiempo configurado
+        setTimeout(() => {
+          if (isHolding && currentState === 'model' && !interactionLocked) {
+            showVideo();
+          }
+        }, config.VIDEO_ACTIVATION_DELAY);
+      }
+    }, config.HOLD_DURATION);
+  }
+
+  function updateHoldDetection(event) {
+    if (event.pointerId !== activePointerId) return;
+
+    touchCurrentPosition = getEventPosition(event);
+    
+    // Calcular distancia de movimiento
+    const dragDistance = calculateDragDistance(touchStartPosition, touchCurrentPosition);
+    
+    if (dragDistance > dragThreshold) {
+      isDragging = true;
+      
+      // Si estaba esperando para iniciar hold, cancelar y habilitar drag normal
+      if (dragCheckTimeout) {
+        clearTimeout(dragCheckTimeout);
+        dragCheckTimeout = null;
+        setModelViewerInteraction(true);
+        activePointerId = null;
+        return;
+      }
+      
+      // Si ya estaba en hold, cancelarlo
+      if (isHolding) {
+        cancelHold();
+      }
+    }
+
+    // Detectar movimiento de cámara para cancelar hold existente
+    if (!lastCameraOrbit) return;
+
+    const currentOrbit = safeGetCameraOrbit();
+    if (currentOrbit && currentOrbit.theta !== lastCameraOrbit.theta) {
+      modelMoved = true;
+      
+      if (isHolding) {
+        cancelHold();
+      }
+      
+      if (dragCheckTimeout) {
+        clearTimeout(dragCheckTimeout);
+        dragCheckTimeout = null;
+        setModelViewerInteraction(true);
+        activePointerId = null;
+      }
+    }
+  }
+
+  function endHoldDetection(event) {
+    if (event.pointerId !== activePointerId) return;
+    
+    // Limpiar detección pendiente
+    if (dragCheckTimeout) {
+      clearTimeout(dragCheckTimeout);
+      dragCheckTimeout = null;
+    }
+    
+    // Restaurar interacciones normales
+    setModelViewerInteraction(true);
+    
+    // Cancelar hold si estaba activo
+    cancelHold();
+
+    // Realizar snap y activar auto-rotate si estamos en modelo
+    if (currentState === 'model' && !interactionLocked) {
+      snapToNearestSide(viewer);
+      setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
+    }
   }
 
   // --- Función para configurar event listeners ---
   function setupEventListeners() {
-    // Deshabilitar movimiento de pan
     disablePanMovement();
     
-    // Botón para saltar video y volver al modelo 3D
     skipButton.addEventListener("click", returnToModel);
 
-    // Iniciar "hold" al presionar puntero (mouse o touch)
-    viewer.addEventListener("pointerdown", (e) => {
-      if (activePointerId !== null || currentState !== 'model') return;
-      activePointerId = e.pointerId;
+    // Sistema mejorado de detección de eventos
+    viewer.addEventListener("pointerdown", startHoldDetection, { passive: false });
+    viewer.addEventListener("pointermove", updateHoldDetection, { passive: false });
+    viewer.addEventListener("pointerup", endHoldDetection, { passive: false });
+    viewer.addEventListener("pointercancel", endHoldDetection, { passive: false });
+    viewer.addEventListener("pointerleave", endHoldDetection, { passive: false });
 
-      const x = e.clientX;
-      const y = e.clientY;
-      modelMoved = false;
-      lastCameraOrbit = safeGetCameraOrbit();
+    // Prevenir comportamientos no deseados
+    viewer.addEventListener("dragstart", (e) => e.preventDefault());
+    viewer.addEventListener("selectstart", (e) => e.preventDefault());
 
-      holdTimeout = setTimeout(() => {
-        if (!modelMoved && currentState === 'model') {
-          isHolding = true;
-          holdStartTime = Date.now(); // Marcar inicio del hold
-          viewer.classList.add("hold");
-          indicator.classList.add("active");
-
-          // Iniciar progreso visual sincronizado
-          progressInterval = setInterval(updateHoldProgress, 16); // ~60fps
-
-          // Iniciar partículas
-          particleInterval = setInterval(() => {
-            spawnParticles(x, y, particlesContainer);
-          }, config.PARTICLE_SPAWN_INTERVAL);
-
-          // Mostrar video después del tiempo total configurado
-          setTimeout(() => {
-            if (isHolding && currentState === 'model') {
-              showVideo();
-            }
-          }, config.VIDEO_ACTIVATION_DELAY);
-        }
-      }, config.HOLD_DURATION);
-    });
-
-    // Detectar movimiento de cámara para cancelar "hold"
-    viewer.addEventListener("pointermove", () => {
-      if (!lastCameraOrbit) return;
-
-      const currentOrbit = safeGetCameraOrbit();
-      if (currentOrbit && currentOrbit.theta !== lastCameraOrbit.theta) {
-        modelMoved = true;
-        clearTimeout(holdTimeout);
-      }
-    });
-
-    // Al soltar puntero, cancelar "hold" y activar rotación automática
-    viewer.addEventListener("pointerup", (e) => {
-      if (e.pointerId !== activePointerId) return;
-      
-      cancelHold();
-
-      if (currentState === 'model') {
-        // Realizar snap al soltar para orientar bien la carta
-        snapToNearestSide(viewer);
-        setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
-      }
-    });
-
-    // Cancelar hold si puntero sale o se cancela
-    viewer.addEventListener("pointercancel", (e) => {
-      if (e.pointerId !== activePointerId) return;
-      cancelHold();
-    });
-
-    viewer.addEventListener("pointerleave", (e) => {
-      if (e.pointerId !== activePointerId) return;
-      cancelHold();
-    });
-
-    // Al finalizar video, volver al modelo
     video.addEventListener("ended", returnToModel);
 
     // Snap de rotación horizontal
     viewer.addEventListener("camera-change", () => {
-      if (currentState !== 'model') return;
+      if (currentState !== 'model' || interactionLocked) return;
       
       clearTimeout(snapTimeout);
 
       snapTimeout = setTimeout(() => {
-        if (currentState === 'model') {
+        if (currentState === 'model' && !interactionLocked) {
           setAutoRotateState(false);
           snapToNearestSide(viewer);
           setAutoRotateState(true, config.CAMERA_SNAP_TRANSITION);
@@ -462,10 +584,8 @@ import {
   // --- Inicialización con validación ---
   async function initializeModelViewer() {
     try {
-      // Esperar a que model-viewer esté completamente cargado
       await waitForModelViewer();
       
-      // Validación adicional del modelo
       viewer.addEventListener('load', () => {
         console.log('Modelo 3D cargado exitosamente');
         if (config.DEBUG_MODE) {
@@ -481,10 +601,8 @@ import {
         document.body.innerHTML = `<p style='color:white;text-align:center;'>${translations["error_model_load_failed"] || "Failed to load 3D model"}</p>`;
       });
       
-      // Configurar event listeners solo después de que model-viewer esté listo
       setupEventListeners();
       
-      // Iniciar rotación automática si está habilitada
       if (config.AUTO_ROTATE_ENABLED) {
         customAutoRotate(viewer, () => isAutoRotateEnabled, config.AUTO_ROTATE_SPEED);
       }
@@ -499,4 +617,3 @@ import {
   initializeModelViewer();
 
 })();
-
