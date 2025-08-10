@@ -139,17 +139,13 @@ import {
   // --- Función para actualizar progreso del indicador ---
   function updateHoldProgress() {
     if (!isHolding) return;
-    
+  
     const elapsed = Date.now() - holdStartTime;
     const progress = Math.min(elapsed / TOTAL_HOLD_TIME, 1);
     
-    const maxWidth = window.innerWidth <= 768 
-      ? (window.innerWidth <= 480 ? '60vw' : '65vw') 
-      : '70vw';
-    
-    const currentWidth = progress * (maxWidth === '60vw' ? 60 : maxWidth === '65vw' ? 65 : 70);
+    const currentWidth = progress * 90; // 90% del viewport width
     indicator.style.width = `${currentWidth}vw`;
-    
+  
     if (progress >= 1) {
       triggerHapticFeedback();
       clearInterval(progressInterval);
@@ -617,3 +613,4 @@ import {
   initializeModelViewer();
 
 })();
+
