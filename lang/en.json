@@ -13,6 +13,14 @@
   "error_model_load_failed": "Failed to load 3D model", 
   "warning_video_unavailable": "Video unavailable",
   "card_hold_to_play": "Hold the card to play the animation",
-  "video_skip": "Skip"
-
+  "video_skip": "Skip",
+  
+  "share_button": "Share",
+  "share_title": "Share your experience!",
+  "share_text": "Check out this amazing immersive 3D card I got at {storeName}! 🎮✨\n\n📍 {instagramHandle}",
+  "share_preparing": "Preparing capture...",
+  "share_success": "Image ready to share!",
+  "share_error": "Error preparing image",
+  "share_not_supported": "Your browser doesn't support the share function",
+  "share_fallback": "Image copied. Paste it on your social media"
 }
