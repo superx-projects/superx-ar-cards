@@ -565,14 +565,8 @@ import {
       restoreModelPosition(viewer, originalOrbit);
 
       // Generar texto para compartir según la plataforma
-      const platform = detectPlatform();
-      let shareText;
-      
-      if (platform === 'instagram') {
-        shareText = generateInstagramStoriesText(title, config.SHARE_CONFIG, translations);
-      } else {
-        shareText = generateShareText(title, config.SHARE_CONFIG, translations);
-      }
+	  const platform = detectPlatform();
+	  const shareText = generateShareText(title, config.SHARE_CONFIG, translations, platform);
       
       const shareTitle = translations.share_title || '¡Comparte tu experiencia!';
 

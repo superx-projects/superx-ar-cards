@@ -22,7 +22,7 @@ export const CARDS_DATA_PATH = "data/cards.json";
 export const VIDEO_ACTIVATION_DELAY = 1000;
 
 // Tiempo que debe mantenerse presionado para activar el video (en milisegundos)
-export const HOLD_DURATION = 500;
+export const HOLD_DURATION = 1000;
 
 // Tiempo de duracion del efecto fade al iniciar o finalizar el video (en milisegundos)
 // Si se modifica, actualizar tambien la linea "transition: opacity 0.4s ease" en card.css#fade_effect
@@ -48,44 +48,37 @@ export const AUTO_ROTATE_RESET_TIMEOUT = 3000; // tiempo de espera tras interacc
 // Habilitar debug mode
 export const DEBUG_MODE = false;
 
-// =====================
-// CONFIGURACIONES PARA COMPARTIR
-// =====================
-
-// Configuraciones para la funcionalidad de compartir
+// Configuración para compartir cartas en redes sociales
 export const SHARE_CONFIG = {
-  // Texto predeterminado para compartir
-  defaultText: "¡Mira esta increíble carta 3D inmersiva que conseguí!",
+  // Configuración de captura
+  captureOrbit: '0deg 90deg auto', // Posición ideal para captura (frente de la carta)
+  transitionDelay: 500, // Tiempo para esperar la transición antes de capturar
   
-  // Hashtags para redes sociales
-  hashtags: ["CartasAR", "SuperXCards", "Experiencia3D"],
+  // Configuración de html2canvas
+  scale: 2, // Escala para mejor calidad
+  width: 800,
+  height: 800,
+  backgroundColor: '#000000',
+  imageFormat: 'image/png',
+  imageQuality: 0.9,
   
-  // Nombre de la tienda (personalizar según tu local)
-  storeName: "Super X",
+  // Configuración de redes sociales
+  hashtags: ['#SuperX', '#ARCards', '#Coleccionables', '#3D'],
+  filename: 'super-x-card', // Nombre base para archivos descargados
   
-  // Instagram handle de tu tienda (PERSONALIZAR CON TU @)
-  instagramHandle: "@superx_coleccionables",  // Cambia por tu handle real
-  
-  // Handles de redes sociales adicionales
+  // Handles específicos por plataforma
   socialHandles: {
-    instagram: "@superx_coleccionables",      // Tu Instagram
-    tiktok: "@superxcoleccionables",         // Tu TikTok (opcional)
-    twitter: "@superx_store"         // Tu Twitter/X (opcional)
+    instagram: '@SuperXStore',
+    facebook: '@SuperXStore',
+    twitter: '@SuperXStore',
+    whatsapp: '@SuperXStore',
+    default: '@SuperXStore' // Handle por defecto para plataformas no especificadas
   },
   
-  // Calidad de la captura de pantalla (0.1 a 1.0)
-  screenshotQuality: 0.9,
-  
-  // Formato de la imagen de captura
-  screenshotFormat: "image/png",
-  
-  // Dimensiones del canvas para captura (optimizado para redes sociales)
-  captureWidth: 1080,
-  captureHeight: 1080,
-  
-  // Tiempo de espera antes de tomar la captura (para asegurar que el modelo esté bien posicionado)
-  captureDelay: 500,
-  
-  // Posición óptima de la cámara para la captura (formato: "thetaRad phiRad radius")
-  optimalCameraPosition: "0deg 90deg 2m"
+  // Opciones adicionales de html2canvas si las necesitas
+  html2canvasOptions: {
+    allowTaint: true,
+    useCORS: true,
+    logging: false
+  }
 };

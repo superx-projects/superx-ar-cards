@@ -1,4 +1,3 @@
-
 /**
  * Genera partículas visuales en una posición (x,y) dentro de un contenedor dado.
  * Para animaciones breves y efecto visual de "sparkles" o "explosión".
@@ -147,247 +146,246 @@ export async function validateResource(url, resourceType) {
 }
 
 /* ================================
-   FUNCIONES PARA COMPARTIR EN REDES SOCIALES
+   FUNCIONES PARA COMPARTIR CARTAS
 ================================ */
 
 /**
- * Captura una imagen del modelo 3D en el canvas
+ * Prepara el modelo para la captura posicionándolo correctamente
  * @param {HTMLElement} viewer - elemento model-viewer
- * @param {Object} config - configuración de captura
- * @returns {Promise<Blob>} - imagen como blob
+ * @param {Object} shareConfig - configuración para el share
+ * @returns {Promise<Object>} - órbita original para restaurar después
  */
-export async function captureModelScreenshot(viewer, config) {
-  return new Promise((resolve, reject) => {
-    try {
-      // Crear canvas para la captura
-      const canvas = document.createElement('canvas');
-      canvas.width = config.captureWidth;
-      canvas.height = config.captureHeight;
-      const ctx = canvas.getContext('2d');
+export async function prepareModelForCapture(viewer, shareConfig) {
+  if (!viewer || typeof viewer.getCameraOrbit !== 'function') {
+    throw new Error('Model-viewer not available');
+  }
 
-      // Fondo transparente o negro
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Obtener la imagen del model-viewer
-      viewer.toBlob((blob) => {
-        if (!blob) {
-          reject(new Error('No se pudo generar la captura del modelo'));
-          return;
-        }
-
-        const img = new Image();
-        img.onload = () => {
-          // Centrar y escalar la imagen del modelo
-          const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
-          const scaledWidth = img.width * scale;
-          const scaledHeight = img.height * scale;
-          const x = (canvas.width - scaledWidth) / 2;
-          const y = (canvas.height - scaledHeight) / 2;
-
-          ctx.drawImage(img, x, y, scaledWidth, scaledHeight);
-
-          // Agregar marca de agua (opcional)
-          addWatermark(ctx, canvas, config);
-
-          // Convertir canvas a blob
-          canvas.toBlob(resolve, config.screenshotFormat, config.screenshotQuality);
-        };
-
-        img.onerror = () => reject(new Error('Error al procesar la imagen del modelo'));
-        img.src = URL.createObjectURL(blob);
-      }, config.screenshotFormat, config.screenshotQuality);
-
-    } catch (error) {
-      reject(error);
-    }
-  });
+  // Guardar posición original
+  const originalOrbit = viewer.getCameraOrbit();
+  
+  // Configurar posición ideal para captura
+  const captureOrbit = shareConfig?.captureOrbit || '0deg 90deg auto';
+  viewer.cameraOrbit = captureOrbit;
+  
+  // Esperar a que se aplique la transición
+  await new Promise(resolve => setTimeout(resolve, shareConfig?.transitionDelay || 500));
+  
+  return originalOrbit;
 }
 
 /**
- * Agrega una marca de agua sutil al canvas
- * @param {CanvasRenderingContext2D} ctx - contexto del canvas
- * @param {HTMLCanvasElement} canvas - elemento canvas
- * @param {Object} config - configuración
- */
-function addWatermark(ctx, canvas, config) {
-  // Configurar estilo de texto para marca de agua
-  ctx.save();
-  ctx.globalAlpha = 0.7;
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-  ctx.lineWidth = 2;
-  
-  // Texto de la marca de agua
-  const watermarkText = config.storeName || 'Super X Cards';
-  const fontSize = Math.max(canvas.width * 0.04, 24);
-  ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-  ctx.textAlign = 'center';
-  
-  // Posicionar en la parte inferior
-  const x = canvas.width / 2;
-  const y = canvas.height - fontSize - 20;
-  
-  // Dibujar texto con contorno
-  ctx.strokeText(watermarkText, x, y);
-  ctx.fillText(watermarkText, x, y);
-  
-  ctx.restore();
-}
-
-/**
- * Prepara y posiciona el modelo para la captura óptima
+ * Restaura la posición original del modelo después de la captura
  * @param {HTMLElement} viewer - elemento model-viewer
- * @param {Object} config - configuración de captura
- * @returns {Promise<void>}
- */
-export async function prepareModelForCapture(viewer, config) {
-  return new Promise((resolve) => {
-    // Guardar posición actual
-    const currentOrbit = viewer.getCameraOrbit();
-    
-    // Establecer posición óptima para captura
-    viewer.cameraOrbit = config.optimalCameraPosition;
-    
-    // Esperar un momento para que se estabilice
-    setTimeout(() => {
-      resolve(currentOrbit);
-    }, config.captureDelay);
-  });
-}
-
-/**
- * Restaura la posición original del modelo
- * @param {HTMLElement} viewer - elemento model-viewer
- * @param {Object} originalOrbit - órbita original de la cámara
+ * @param {Object} originalOrbit - órbita original guardada
  */
 export function restoreModelPosition(viewer, originalOrbit) {
-  if (originalOrbit) {
+  if (!viewer || !originalOrbit) return;
+  
+  try {
     viewer.cameraOrbit = `${originalOrbit.theta}rad ${originalOrbit.phi}rad ${originalOrbit.radius}m`;
+  } catch (error) {
+    console.error('Error restaurando posición del modelo:', error);
   }
 }
 
 /**
- * Genera el texto para compartir en redes sociales
- * @param {string} cardTitle - título de la carta
- * @param {Object} config - configuración de compartir
- * @param {Object} translations - traducciones
- * @returns {string} - texto formateado para compartir
+ * Captura screenshot del modelo 3D usando html2canvas
+ * @param {HTMLElement} viewer - elemento model-viewer
+ * @param {Object} shareConfig - configuración para la captura
+ * @returns {Promise<Blob>} - blob de la imagen capturada
  */
-export function generateShareText(cardTitle, config, translations) {
-  let baseText = translations.share_text
-    .replace('{storeName}', config.storeName)
-    .replace('{instagramHandle}', config.instagramHandle);
+export async function captureModelScreenshot(viewer, shareConfig = {}) {
+  return new Promise((resolve, reject) => {
+    // Verificar que html2canvas esté disponible
+    if (typeof html2canvas === 'undefined') {
+      reject(new Error('html2canvas not loaded'));
+      return;
+    }
+
+    const config = {
+      allowTaint: true,
+      useCORS: true,
+      scale: shareConfig.scale || 2,
+      width: shareConfig.width || 800,
+      height: shareConfig.height || 800,
+      backgroundColor: shareConfig.backgroundColor || '#000000',
+      logging: false,
+      ...shareConfig.html2canvasOptions
+    };
+
+    html2canvas(viewer, config)
+      .then(canvas => {
+        canvas.toBlob(
+          blob => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Error generating image blob'));
+            }
+          },
+          shareConfig.imageFormat || 'image/png',
+          shareConfig.imageQuality || 0.9
+        );
+      })
+      .catch(error => {
+        console.error('Error en html2canvas:', error);
+        reject(error);
+      });
+  });
+}
+
+/**
+ * Obtiene el handle específico para la plataforma detectada
+ * @param {string} platform - plataforma detectada
+ * @param {Object} shareConfig - configuración del share
+ * @returns {string} - handle específico para la plataforma
+ */
+export function getPlatformHandle(platform, shareConfig) {
+  const socialHandles = shareConfig?.socialHandles || {};
+  return socialHandles[platform] || socialHandles.default || '';
+}
+
+/**
+ * Genera texto optimizado para la plataforma específica
+ * @param {string} cardTitle - título de la carta
+ * @param {Object} shareConfig - configuración del share
+ * @param {Object} translations - traducciones
+ * @param {string} platform - plataforma específica
+ * @returns {string} - texto optimizado para la plataforma
+ */
+export function generatePlatformSpecificText(cardTitle, shareConfig, translations, platform) {
+  const hashtags = shareConfig?.hashtags || [];
+  const storeHandle = getPlatformHandle(platform, shareConfig);
   
-  const hashtags = config.hashtags.map(tag => `#${tag}`).join(' ');
+  // Intentar obtener texto específico para la plataforma
+  const platformKey = `share_${platform}_text`;
+  let shareText = translations[platformKey] || translations.share_text || '';
   
-  // Estructura optimizada para diferentes redes sociales
-  return `${baseText}\n\n🎯 ${cardTitle}\n\n${hashtags}`;
+  // Reemplazar variables en el texto
+  shareText = shareText.replace('{cardTitle}', cardTitle);
+  shareText = shareText.replace('{storeHandle}', storeHandle);
+  
+  // Para algunas plataformas, agregar hashtags
+  const hashtagText = hashtags.join(' ');
+  
+  // Instagram y Twitter suelen usar hashtags más frecuentemente
+  if (platform === 'instagram' || platform === 'twitter') {
+    return `${shareText}\n\n${hashtagText}`;
+  }
+  
+  // Facebook y WhatsApp pueden o no usar hashtags según preferencia
+  return shareText;
+}
+
+/**
+ * Genera texto para compartir en redes sociales
+ * @param {string} cardTitle - título de la carta
+ * @param {Object} shareConfig - configuración del share
+ * @param {Object} translations - traducciones
+ * @param {string} platform - plataforma específica (opcional)
+ * @returns {string} - texto para compartir
+ */
+export function generateShareText(cardTitle, shareConfig, translations, platform = null) {
+  // Si no se especifica plataforma, detectarla
+  const targetPlatform = platform || detectPlatform();
+  
+  // Usar texto específico de plataforma si está disponible
+  return generatePlatformSpecificText(cardTitle, shareConfig, translations, targetPlatform);
 }
 
 /**
  * Genera texto específico para Instagram Stories
  * @param {string} cardTitle - título de la carta
- * @param {Object} config - configuración de compartir
+ * @param {Object} shareConfig - configuración del share
  * @param {Object} translations - traducciones
- * @returns {string} - texto optimizado para Stories
+ * @returns {string} - texto para Instagram Stories
  */
-export function generateInstagramStoriesText(cardTitle, config, translations) {
-  // Formato más corto y directo para Stories
-  const baseText = translations.share_text
-    .replace('{storeName}', config.storeName)
-    .replace('{instagramHandle}', config.instagramHandle);
-  
-  return `${baseText}\n\n🎯 ${cardTitle}`;
+export function generateInstagramStoriesText(cardTitle, shareConfig, translations) {
+  return generatePlatformSpecificText(cardTitle, shareConfig, translations, 'instagram');
 }
 
 /**
- * Detecta si el usuario está en una app específica o navegador
+ * Detecta la plataforma/dispositivo del usuario
  * @returns {string} - plataforma detectada
  */
 export function detectPlatform() {
   const userAgent = navigator.userAgent.toLowerCase();
+  const platform = navigator.platform.toLowerCase();
   
   if (userAgent.includes('instagram')) return 'instagram';
-  if (userAgent.includes('tiktok')) return 'tiktok';  
   if (userAgent.includes('twitter') || userAgent.includes('x.com')) return 'twitter';
+  if (userAgent.includes('facebook')) return 'facebook';
   if (userAgent.includes('whatsapp')) return 'whatsapp';
+  if (platform.includes('iphone') || platform.includes('ipad')) return 'ios';
+  if (platform.includes('android')) return 'android';
   
-  return 'generic';
+  return 'web';
 }
 
 /**
- * Intenta usar la API nativa de compartir del navegador
+ * Intenta compartir usando la Web Share API nativa
  * @param {Blob} imageBlob - imagen a compartir
  * @param {string} text - texto para compartir
  * @param {string} title - título para compartir
- * @returns {Promise<boolean>} - true si se pudo compartir nativamente
+ * @param {Object} shareConfig - configuración para nombre de archivo
+ * @returns {Promise<boolean>} - true si se compartió exitosamente
  */
-export async function tryNativeShare(imageBlob, text, title) {
-  if (!navigator.share) {
-    return false;
-  }
-
+export async function tryNativeShare(imageBlob, text, title, shareConfig = {}) {
+  if (!navigator.share) return false;
+  
   try {
-    const file = new File([imageBlob], 'super-x-card.png', { type: 'image/png' });
+    // Crear archivo desde el blob
+    const filename = `${shareConfig.filename || 'super-x-card'}.png`;
+    const file = new File([imageBlob], filename, { type: imageBlob.type });
     
-    const shareData = {
+    await navigator.share({
       title: title,
       text: text,
       files: [file]
-    };
-
-    // Verificar si el navegador puede compartir archivos
-    if (navigator.canShare && !navigator.canShare(shareData)) {
-      return false;
-    }
-
-    await navigator.share(shareData);
-    return true;
-  } catch (error) {
-    console.debug('Error en compartir nativo:', error);
-    return false;
-  }
-}
-
-/**
- * Fallback: copia la imagen al clipboard
- * @param {Blob} imageBlob - imagen a copiar
- * @returns {Promise<boolean>} - true si se pudo copiar
- */
-export async function copyImageToClipboard(imageBlob) {
-  if (!navigator.clipboard || !navigator.clipboard.write) {
-    return false;
-  }
-
-  try {
-    const clipboardItem = new ClipboardItem({
-      'image/png': imageBlob
     });
     
-    await navigator.clipboard.write([clipboardItem]);
     return true;
   } catch (error) {
-    console.debug('Error copiando al clipboard:', error);
+    console.log('Native share falló o fue cancelado:', error);
     return false;
   }
 }
 
 /**
- * Crea un enlace de descarga como último recurso
+ * Intenta copiar la imagen al clipboard
+ * @param {Blob} imageBlob - imagen a copiar
+ * @returns {Promise<boolean>} - true si se copió exitosamente
+ */
+export async function copyImageToClipboard(imageBlob) {
+  if (!navigator.clipboard || !navigator.clipboard.write) return false;
+  
+  try {
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        [imageBlob.type]: imageBlob
+      })
+    ]);
+    
+    return true;
+  } catch (error) {
+    console.log('Copy to clipboard falló:', error);
+    return false;
+  }
+}
+
+/**
+ * Descarga la imagen como último recurso
  * @param {Blob} imageBlob - imagen a descargar
  * @param {string} filename - nombre del archivo
  */
-export function downloadImage(imageBlob, filename = 'super-x-card.png') {
+export function downloadImage(imageBlob, filename) {
   const url = URL.createObjectURL(imageBlob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.style.display = 'none';
-  
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
   
   // Limpiar URL después de un tiempo
   setTimeout(() => URL.revokeObjectURL(url), 1000);
