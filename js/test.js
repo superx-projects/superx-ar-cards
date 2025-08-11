@@ -26,10 +26,6 @@ import {
   } catch (error) {
     console.error("Error al cargar traducciones:", error);
   }
-  
-  // Si no se pasa id, que muestre la primer carta, para testeo unicamente
-  // eliminar en la version final
-  id = !id ? "e3y7pz" : id;
 
   // Validar parámetro id
   if (!id) {
@@ -617,3 +613,4 @@ import {
   initializeModelViewer();
 
 })();
+
