@@ -16,11 +16,15 @@
   "video_skip": "Saltar",
   
   "share_button": "Compartir",
-  "share_title": "¡Comparte tu experiencia!",
-  "share_text": "¡Mira esta increíble carta 3D inmersiva que conseguí en {storeName}! 🎮✨\n\n📍 {instagramHandle}",
   "share_preparing": "Preparando captura...",
   "share_success": "¡Imagen lista para compartir!",
   "share_error": "Error al preparar la imagen",
-  "share_not_supported": "Tu navegador no soporta la función de compartir",
-  "share_fallback": "Imagen copiada. Pégala en tus redes sociales"
+  "share_fallback": "Imagen copiada. Pégala en tus redes sociales",
+  "share_title": "¡Comparte tu experiencia!",
+  "share_text": "¡Mira mi carta 3D \"{cardTitle}\"! 🎮✨\n¡Visita {storeHandle} para conseguir la tuya!",
+  "share_instagram_text": "¡Mi carta 3D \"{cardTitle}\"! 🔥\nConsigue la tuya en {storeHandle}",
+  "share_facebook_text": "¡Mira mi increíble carta 3D \"{cardTitle}\"! 🎮✨\nVisita {storeHandle} para conseguir la tuya y únete a la experiencia AR.",
+  "share_twitter_text": "¡Mi carta 3D \"{cardTitle}\" es increíble! 🎮✨\nConsigue la tuya en {storeHandle}",
+  "share_whatsapp_text": "¡Mira qué genial! Mi carta 3D \"{cardTitle}\" 🎮✨\nPuedes conseguir la tuya en {storeHandle}"
 }
+
