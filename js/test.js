@@ -4,7 +4,16 @@ import {
   spawnParticles,
   customAutoRotate,
   snapToNearestSide,
-  validateResource
+  validateResource,
+  captureModelScreenshot,
+  prepareModelForCapture,
+  restoreModelPosition,
+  generateShareText,
+  generateInstagramStoriesText,
+  detectPlatform,
+  tryNativeShare,
+  copyImageToClipboard,
+  downloadImage
 } from "./utils.js";
 
 (async function () {
@@ -70,6 +79,7 @@ import {
   const indicator = document.getElementById("card_hold_indicator");
   const particlesContainer = document.getElementById("card_particles_container");
   const skipButton = document.getElementById("card_skip_button");
+  const shareButton = document.getElementById("card_share_button");
   const infoBox = document.getElementById("card_info_box");
   const logo = document.getElementById("card_logo");
 
@@ -86,13 +96,11 @@ import {
   // --- Validación adicional de carga del video ---
   video.addEventListener('error', () => {
     console.error('Error cargando video:', videoPath);
-    // Mostrar advertencia pero no detener la aplicación
     const warningDiv = document.createElement('div');
     warningDiv.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(255,165,0,0.9);color:black;padding:0.5rem 1rem;border-radius:4px;z-index:1002;';
     warningDiv.textContent = translations["warning_video_unavailable"] || "Video unavailable";
     document.body.appendChild(warningDiv);
     
-    // Ocultar advertencia después de 3 segundos
     setTimeout(() => warningDiv.remove(), 3000);
   });
 
@@ -108,8 +116,8 @@ import {
   let touchStartPosition = null;
   let touchCurrentPosition = null;
   let isDragging = false;
-  let dragThreshold = 10; // píxeles de tolerancia antes de considerar que es drag
-  let interactionLocked = false; // Bloquear interacciones durante transiciones
+  let dragThreshold = 10;
+  let interactionLocked = false;
 
   // --- Variables de control de timeouts y progreso ---
   let holdTimeout = null;
@@ -119,7 +127,7 @@ import {
   let autoRotateTimeout = null;
   let snapTimeout = null;
   let progressInterval = null;
-  let dragCheckTimeout = null; // Nuevo timeout para verificar drag
+  let dragCheckTimeout = null;
 
   // --- Variables para el progreso del indicador ---
   let holdStartTime = 0;
@@ -139,13 +147,13 @@ import {
   // --- Función para actualizar progreso del indicador ---
   function updateHoldProgress() {
     if (!isHolding) return;
-  
+    
     const elapsed = Date.now() - holdStartTime;
     const progress = Math.min(elapsed / TOTAL_HOLD_TIME, 1);
     
-    const currentWidth = progress * 90; // 90% del viewport width
+    const currentWidth = progress * 90;
     indicator.style.width = `${currentWidth}vw`;
-  
+    
     if (progress >= 1) {
       triggerHapticFeedback();
       clearInterval(progressInterval);
@@ -222,14 +230,11 @@ import {
     
     try {
       if (enabled) {
-        // Habilitar interacciones normales
         viewer.removeAttribute('interaction-prompt-style');
         viewer.style.pointerEvents = 'auto';
       } else {
-        // Deshabilitar temporalmente las interacciones
         viewer.setAttribute('interaction-prompt-style', 'none');
         viewer.style.pointerEvents = 'none';
-        // Re-habilitar solo para nuestros eventos personalizados
         setTimeout(() => {
           viewer.style.pointerEvents = 'auto';
         }, 50);
@@ -248,7 +253,6 @@ import {
     return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
   }
 
-  // --- Función para obtener posición del evento (unified touch/mouse) ---
   function getEventPosition(event) {
     return {
       x: event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : 0),
@@ -256,7 +260,6 @@ import {
     };
   }
 
-  // --- Deshabilitar pan y context menu del Model-Viewer ---
   function disablePanMovement() {
     if (!isModelViewerReady()) {
       console.warn('Model-viewer no está listo para configurar controles');
@@ -287,7 +290,6 @@ import {
     }
   }
 
-  // --- Función para limpiar todos los timeouts ---
   function clearAllTimeouts() {
     clearTimeout(holdTimeout);
     clearTimeout(videoTransitionTimeout);
@@ -308,7 +310,6 @@ import {
     progressInterval = null;
   }
 
-  // --- Función para gestionar isAutoRotateEnabled de forma centralizada ---
   function setAutoRotateState(enabled, delay = 0) {
     clearTimeout(autoRotateTimeout);
     
@@ -324,7 +325,6 @@ import {
 
   // --- Funciones auxiliares ---
 
-  // Mostrar video con transición
   function showVideo() {
     if (currentState !== 'model') return;
     
@@ -336,10 +336,13 @@ import {
     fade.classList.add("active");
 
     videoTransitionTimeout = setTimeout(() => {
+      // Ocultar todos los elementos del modelo
       viewer.style.display = "none";
       infoBox.style.display = "none";
       logo.classList.add("hidden");
+      shareButton.style.display = "none"; // Ocultar botón de compartir
 
+      // Mostrar elementos del video
       video.style.display = "block";
       video.classList.add("showing");
       skipButton.style.display = "block";
@@ -354,7 +357,6 @@ import {
     }, config.FADE_DURATION);
   }
 
-  // Volver al modelo 3D con transición
   function returnToModel() {
     if (currentState !== 'video') return;
     
@@ -365,27 +367,28 @@ import {
     fade.classList.add("active");
 
     modelTransitionTimeout = setTimeout(() => {
+      // Ocultar elementos del video
       video.classList.remove("showing");
       video.pause();
       video.currentTime = 0;
       video.style.display = "none";
       skipButton.style.display = "none";
 
+      // Mostrar elementos del modelo
       viewer.style.display = "block";
       infoBox.style.display = "block";
       logo.classList.remove("hidden");
+      shareButton.style.display = "block"; // Mostrar botón de compartir otra vez
 
       fade.classList.remove("active");
       currentState = 'model';
       interactionLocked = false;
       modelTransitionTimeout = null;
       
-      // Activar auto-rotate después de un delay
       setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
     }, config.FADE_DURATION);
   }
 
-  // Cancelar el estado de "hold"
   function cancelHold() {
     isHolding = false;
     activePointerId = null;
@@ -393,7 +396,6 @@ import {
     touchStartPosition = null;
     touchCurrentPosition = null;
     
-    // Restaurar interacciones normales del model-viewer
     setModelViewerInteraction(true);
     
     clearTimeout(holdTimeout);
@@ -423,28 +425,23 @@ import {
     isDragging = false;
     lastCameraOrbit = safeGetCameraOrbit();
 
-    // Temporalmente reducir la sensibilidad del model-viewer
     setModelViewerInteraction(false);
 
-    // Timeout corto para determinar la intención
     dragCheckTimeout = setTimeout(() => {
       const dragDistance = calculateDragDistance(touchStartPosition, touchCurrentPosition);
       
       if (dragDistance < dragThreshold && !modelMoved) {
-        // El usuario parece querer hacer hold, iniciar detección
         initializeHoldState(touchStartPosition);
       } else {
-        // El usuario quiere hacer drag, restaurar controles normales
         setModelViewerInteraction(true);
         activePointerId = null;
       }
       
       dragCheckTimeout = null;
-    }, 150); // 150ms para determinar intención
+    }, 150);
   }
 
   function initializeHoldState(position) {
-    // Iniciar el proceso de hold
     holdTimeout = setTimeout(() => {
       if (!modelMoved && !isDragging && currentState === 'model' && !interactionLocked) {
         isHolding = true;
@@ -452,18 +449,14 @@ import {
         viewer.classList.add("hold");
         indicator.classList.add("active");
 
-        // Feedback visual y háptico
         triggerHapticFeedback();
 
-        // Iniciar progreso visual
         progressInterval = setInterval(updateHoldProgress, 16);
 
-        // Iniciar partículas
         particleInterval = setInterval(() => {
           spawnParticles(position.x, position.y, particlesContainer);
         }, config.PARTICLE_SPAWN_INTERVAL);
 
-        // Activar video después del tiempo configurado
         setTimeout(() => {
           if (isHolding && currentState === 'model' && !interactionLocked) {
             showVideo();
@@ -478,13 +471,11 @@ import {
 
     touchCurrentPosition = getEventPosition(event);
     
-    // Calcular distancia de movimiento
     const dragDistance = calculateDragDistance(touchStartPosition, touchCurrentPosition);
     
     if (dragDistance > dragThreshold) {
       isDragging = true;
       
-      // Si estaba esperando para iniciar hold, cancelar y habilitar drag normal
       if (dragCheckTimeout) {
         clearTimeout(dragCheckTimeout);
         dragCheckTimeout = null;
@@ -493,13 +484,11 @@ import {
         return;
       }
       
-      // Si ya estaba en hold, cancelarlo
       if (isHolding) {
         cancelHold();
       }
     }
 
-    // Detectar movimiento de cámara para cancelar hold existente
     if (!lastCameraOrbit) return;
 
     const currentOrbit = safeGetCameraOrbit();
@@ -522,22 +511,101 @@ import {
   function endHoldDetection(event) {
     if (event.pointerId !== activePointerId) return;
     
-    // Limpiar detección pendiente
     if (dragCheckTimeout) {
       clearTimeout(dragCheckTimeout);
       dragCheckTimeout = null;
     }
     
-    // Restaurar interacciones normales
     setModelViewerInteraction(true);
-    
-    // Cancelar hold si estaba activo
     cancelHold();
 
-    // Realizar snap y activar auto-rotate si estamos en modelo
     if (currentState === 'model' && !interactionLocked) {
       snapToNearestSide(viewer);
       setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
+    }
+  }
+
+  // --- Funcionalidad de compartir ---
+  function showNotification(message, type = 'info', duration = 3000) {
+    const notification = document.createElement('div');
+    notification.className = `share-notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    // Mostrar notificación
+    setTimeout(() => notification.classList.add('show'), 100);
+
+    // Ocultar y remover notificación
+    setTimeout(() => {
+      notification.classList.remove('show');
+      setTimeout(() => {
+        if (notification.parentElement) {
+          document.body.removeChild(notification);
+        }
+      }, 300);
+    }, duration);
+  }
+
+  async function handleShareCard() {
+    if (currentState !== 'model' || interactionLocked) return;
+
+    try {
+      // Mostrar estado de carga
+      shareButton.classList.add('loading');
+      shareButton.textContent = translations.share_preparing || 'Preparando captura...';
+      showNotification(translations.share_preparing || 'Preparando captura...');
+
+      // Preparar modelo para captura
+      const originalOrbit = await prepareModelForCapture(viewer, config.SHARE_CONFIG);
+
+      // Capturar screenshot
+      const imageBlob = await captureModelScreenshot(viewer, config.SHARE_CONFIG);
+
+      // Restaurar posición original
+      restoreModelPosition(viewer, originalOrbit);
+
+      // Generar texto para compartir según la plataforma
+      const platform = detectPlatform();
+      let shareText;
+      
+      if (platform === 'instagram') {
+        shareText = generateInstagramStoriesText(title, config.SHARE_CONFIG, translations);
+      } else {
+        shareText = generateShareText(title, config.SHARE_CONFIG, translations);
+      }
+      
+      const shareTitle = translations.share_title || '¡Comparte tu experiencia!';
+
+      // Intentar compartir nativamente
+      const nativeShared = await tryNativeShare(imageBlob, shareText, shareTitle);
+      
+      if (nativeShared) {
+        showNotification(translations.share_success || '¡Imagen lista para compartir!', 'success');
+      } else {
+        // Fallback: copiar al clipboard
+        const copied = await copyImageToClipboard(imageBlob);
+        
+        if (copied) {
+          showNotification(translations.share_fallback || 'Imagen copiada. Pégala en tus redes sociales', 'success');
+        } else {
+          // Último recurso: descargar imagen
+          downloadImage(imageBlob, `super-x-card-${id}.png`);
+          showNotification(translations.share_success || '¡Imagen lista para compartir!', 'success');
+        }
+      }
+
+    } catch (error) {
+      console.error('Error al compartir:', error);
+      showNotification(translations.share_error || 'Error al preparar la imagen', 'error');
+    } finally {
+      // Restaurar estado del botón
+      shareButton.classList.remove('loading');
+      shareButton.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.50-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z" fill="currentColor"/>
+        </svg>
+        <span data-i18n="share_button">${translations.share_button || 'Compartir'}</span>
+      `;
     }
   }
 
@@ -546,21 +614,19 @@ import {
     disablePanMovement();
     
     skipButton.addEventListener("click", returnToModel);
+    shareButton.addEventListener("click", handleShareCard);
 
-    // Sistema mejorado de detección de eventos
     viewer.addEventListener("pointerdown", startHoldDetection, { passive: false });
     viewer.addEventListener("pointermove", updateHoldDetection, { passive: false });
     viewer.addEventListener("pointerup", endHoldDetection, { passive: false });
     viewer.addEventListener("pointercancel", endHoldDetection, { passive: false });
     viewer.addEventListener("pointerleave", endHoldDetection, { passive: false });
 
-    // Prevenir comportamientos no deseados
     viewer.addEventListener("dragstart", (e) => e.preventDefault());
     viewer.addEventListener("selectstart", (e) => e.preventDefault());
 
     video.addEventListener("ended", returnToModel);
 
-    // Snap de rotación horizontal
     viewer.addEventListener("camera-change", () => {
       if (currentState !== 'model' || interactionLocked) return;
       
@@ -609,8 +675,6 @@ import {
     }
   }
 
-  // --- Inicializar todo ---
   initializeModelViewer();
 
 })();
-
