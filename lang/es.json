@@ -13,6 +13,14 @@
   "error_model_load_failed": "Error al cargar el modelo 3D",
   "warning_video_unavailable": "Video no disponible",
   "card_hold_to_play": "Mantén presionada la carta para reproducir la animación",
-  "video_skip": "Saltar"
+  "video_skip": "Saltar",
+  
+  "share_button": "Compartir",
+  "share_title": "¡Comparte tu experiencia!",
+  "share_text": "¡Mira esta increíble carta 3D inmersiva que conseguí en {storeName}! 🎮✨\n\n📍 {instagramHandle}",
+  "share_preparing": "Preparando captura...",
+  "share_success": "¡Imagen lista para compartir!",
+  "share_error": "Error al preparar la imagen",
+  "share_not_supported": "Tu navegador no soporta la función de compartir",
+  "share_fallback": "Imagen copiada. Pégala en tus redes sociales"
 }
-
