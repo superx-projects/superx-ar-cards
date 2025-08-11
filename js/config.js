@@ -48,5 +48,44 @@ export const AUTO_ROTATE_RESET_TIMEOUT = 3000; // tiempo de espera tras interacc
 // Habilitar debug mode
 export const DEBUG_MODE = false;
 
+// =====================
+// CONFIGURACIONES PARA COMPARTIR
+// =====================
 
-
+// Configuraciones para la funcionalidad de compartir
+export const SHARE_CONFIG = {
+  // Texto predeterminado para compartir
+  defaultText: "¡Mira esta increíble carta 3D inmersiva que conseguí!",
+  
+  // Hashtags para redes sociales
+  hashtags: ["CartasAR", "SuperXCards", "Experiencia3D"],
+  
+  // Nombre de la tienda (personalizar según tu local)
+  storeName: "Super X",
+  
+  // Instagram handle de tu tienda (PERSONALIZAR CON TU @)
+  instagramHandle: "@superx_coleccionables",  // Cambia por tu handle real
+  
+  // Handles de redes sociales adicionales
+  socialHandles: {
+    instagram: "@superx_coleccionables",      // Tu Instagram
+    tiktok: "@superxcoleccionables",         // Tu TikTok (opcional)
+    twitter: "@superx_store"         // Tu Twitter/X (opcional)
+  },
+  
+  // Calidad de la captura de pantalla (0.1 a 1.0)
+  screenshotQuality: 0.9,
+  
+  // Formato de la imagen de captura
+  screenshotFormat: "image/png",
+  
+  // Dimensiones del canvas para captura (optimizado para redes sociales)
+  captureWidth: 1080,
+  captureHeight: 1080,
+  
+  // Tiempo de espera antes de tomar la captura (para asegurar que el modelo esté bien posicionado)
+  captureDelay: 500,
+  
+  // Posición óptima de la cámara para la captura (formato: "thetaRad phiRad radius")
+  optimalCameraPosition: "0deg 90deg 2m"
+};
