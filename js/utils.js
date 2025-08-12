@@ -202,6 +202,7 @@ export async function captureModelScreenshot(viewer, shareConfig = {}) {
       return;
     }
 
+    // Configuración específica para capturar elementos WebGL/Canvas
     const config = {
       allowTaint: true,
       useCORS: true,
@@ -210,22 +211,83 @@ export async function captureModelScreenshot(viewer, shareConfig = {}) {
       height: shareConfig.height || 800,
       backgroundColor: shareConfig.backgroundColor || '#000000',
       logging: false,
+      // Configuraciones específicas para WebGL/Canvas
+      foreignObjectRendering: true,
+      removeContainer: true,
+      imageTimeout: 15000,
+      // Preservar canvas y elementos 3D
+      canvas: viewer.shadowRoot?.querySelector('canvas') || viewer.querySelector('canvas'),
+      onclone: function(clonedDoc, element) {
+        // Intentar preservar el canvas del modelo 3D
+        const modelCanvas = viewer.shadowRoot?.querySelector('canvas');
+        if (modelCanvas) {
+          const clonedCanvas = clonedDoc.createElement('canvas');
+          clonedCanvas.width = modelCanvas.width;
+          clonedCanvas.height = modelCanvas.height;
+          const ctx = clonedCanvas.getContext('2d');
+          if (ctx && modelCanvas.getContext) {
+            try {
+              ctx.drawImage(modelCanvas, 0, 0);
+            } catch (e) {
+              console.warn('No se pudo copiar el canvas del modelo:', e);
+            }
+          }
+          element.appendChild(clonedCanvas);
+        }
+      },
       ...shareConfig.html2canvasOptions
     };
 
+    // Intentar diferentes enfoques para capturar
     html2canvas(viewer, config)
       .then(canvas => {
-        canvas.toBlob(
-          blob => {
-            if (blob) {
-              resolve(blob);
-            } else {
-              reject(new Error('Error generating image blob'));
-            }
-          },
-          shareConfig.imageFormat || 'image/png',
-          shareConfig.imageQuality || 0.9
-        );
+        // Verificar si el canvas está vacío (completamente negro/transparente)
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imageData.data;
+        let hasContent = false;
+        
+        // Verificar si hay pixeles no negros
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i] > 10 || data[i + 1] > 10 || data[i + 2] > 10) {
+            hasContent = true;
+            break;
+          }
+        }
+
+        if (!hasContent) {
+          console.warn('Canvas capturado parece estar vacío, intentando método alternativo...');
+          // Intentar capturar todo el viewport como alternativa
+          html2canvas(document.body, {
+            ...config,
+            width: window.innerWidth,
+            height: window.innerHeight
+          }).then(fallbackCanvas => {
+            fallbackCanvas.toBlob(
+              blob => {
+                if (blob) {
+                  resolve(blob);
+                } else {
+                  reject(new Error('Error generating fallback image blob'));
+                }
+              },
+              shareConfig.imageFormat || 'image/png',
+              shareConfig.imageQuality || 0.9
+            );
+          }).catch(reject);
+        } else {
+          canvas.toBlob(
+            blob => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error('Error generating image blob'));
+              }
+            },
+            shareConfig.imageFormat || 'image/png',
+            shareConfig.imageQuality || 0.9
+          );
+        }
       })
       .catch(error => {
         console.error('Error en html2canvas:', error);
@@ -389,4 +451,5 @@ export function downloadImage(imageBlob, filename) {
   
   // Limpiar URL después de un tiempo
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+
 }
