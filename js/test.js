@@ -559,7 +559,13 @@ import {
       const originalOrbit = await prepareModelForCapture(viewer, config.SHARE_CONFIG);
 
       // Capturar screenshot
-      const imageBlob = await captureModelScreenshot(viewer, config.SHARE_CONFIG);
+      let imageBlob;
+	  try {
+	    imageBlob = await captureModelScreenshot(viewer, config.SHARE_CONFIG);
+	  } catch (error) {
+		console.warn('Método principal falló, intentando método alternativo:', error);
+		imageBlob = await captureModelAlternative(viewer, config.SHARE_CONFIG);
+	  }
 
       // Restaurar posición original
       restoreModelPosition(viewer, originalOrbit);

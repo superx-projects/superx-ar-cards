@@ -297,6 +297,39 @@ export async function captureModelScreenshot(viewer, shareConfig = {}) {
 }
 
 /**
+ * Función alternativa para capturar usando toDataURL del modelo
+ */
+export async function captureModelAlternative(viewer, shareConfig = {}) {
+  return new Promise((resolve, reject) => {
+    try {
+      // Buscar el canvas dentro del model-viewer
+      const canvas = viewer.shadowRoot?.querySelector('canvas') || 
+                    viewer.querySelector('canvas');
+      
+      if (!canvas) {
+        reject(new Error('No se encontró canvas del modelo 3D'));
+        return;
+      }
+
+      // Intentar obtener los datos del canvas directamente
+      canvas.toBlob(
+        blob => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Error generando blob desde canvas'));
+          }
+        },
+        shareConfig.imageFormat || 'image/png',
+        shareConfig.imageQuality || 0.9
+      );
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+/**
  * Obtiene el handle específico para la plataforma detectada
  * @param {string} platform - plataforma detectada
  * @param {Object} shareConfig - configuración del share
@@ -451,5 +484,4 @@ export function downloadImage(imageBlob, filename) {
   
   // Limpiar URL después de un tiempo
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-
 }
