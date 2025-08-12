@@ -68,11 +68,11 @@ export const SHARE_CONFIG = {
   
   // Handles específicos por plataforma
   socialHandles: {
-    instagram: '@SuperXStore',
-    facebook: '@SuperXStore',
-    twitter: '@SuperXStore',
-    whatsapp: '@SuperXStore',
-    default: '@SuperXStore' // Handle por defecto para plataformas no especificadas
+    instagram: '@superx_coleccionables',
+    facebook: '@people/Super-X/61561087176792',
+    twitter: '@superx_store',
+    whatsapp: '@+543426121680',
+    default: '@superx_coleccionables' // Handle por defecto para plataformas no especificadas
   },
   
   // Opciones adicionales de html2canvas si las necesitas
@@ -81,4 +81,5 @@ export const SHARE_CONFIG = {
     useCORS: true,
     logging: false
   }
+
 };
