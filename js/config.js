@@ -50,15 +50,15 @@ export const DEBUG_MODE = false;
 
 // Configuración para compartir cartas en redes sociales
 export const SHARE_CONFIG = {
-  // Configuración de captura
-  captureOrbit: '0deg 90deg auto', // Posición ideal para captura (frente de la carta)
-  transitionDelay: 500, // Tiempo para esperar la transición antes de capturar
+  // Configuración de imágenes pre-renderizadas
+  shareImagePath: 'assets/images/', // Carpeta donde están las imágenes de share
+  shareImageExtension: 'png', // Extensión de las imágenes de share
+  allowPlaceholder: true, // Permitir generar placeholder si no existe la imagen
   
-  // Configuración de html2canvas
-  scale: 2, // Escala para mejor calidad
+  // Configuración de imagen generada (para placeholder)
   width: 800,
   height: 800,
-  backgroundColor: '#000000',
+  backgroundColor: '#1a1a2e',
   imageFormat: 'image/png',
   imageQuality: 0.9,
   
@@ -69,17 +69,9 @@ export const SHARE_CONFIG = {
   // Handles específicos por plataforma
   socialHandles: {
     instagram: '@superx_coleccionables',
-    facebook: '@people/Super-X/61561087176792',
-    twitter: '@superx_store',
-    whatsapp: '@+543426121680',
+    facebook: '@SuperXStore',
+    twitter: '@superx_coleccionables',
+    whatsapp: '@+543244121680',
     default: '@superx_coleccionables' // Handle por defecto para plataformas no especificadas
-  },
-  
-  // Opciones adicionales de html2canvas si las necesitas
-  html2canvasOptions: {
-    allowTaint: true,
-    useCORS: true,
-    logging: false
   }
-
 };

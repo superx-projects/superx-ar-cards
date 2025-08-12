@@ -150,183 +150,142 @@ export async function validateResource(url, resourceType) {
 ================================ */
 
 /**
- * Prepara el modelo para la captura posicionándolo correctamente
- * @param {HTMLElement} viewer - elemento model-viewer
- * @param {Object} shareConfig - configuración para el share
- * @returns {Promise<Object>} - órbita original para restaurar después
+ * Obtiene la imagen pre-renderizada para compartir
+ * @param {string} cardId - ID de la carta
+ * @param {Object} shareConfig - configuración del share
+ * @returns {Promise<Blob>} - blob de la imagen pre-renderizada
  */
-export async function prepareModelForCapture(viewer, shareConfig) {
-  if (!viewer || typeof viewer.getCameraOrbit !== 'function') {
-    throw new Error('Model-viewer not available');
-  }
-
-  // Guardar posición original
-  const originalOrbit = viewer.getCameraOrbit();
-  
-  // Configurar posición ideal para captura
-  const captureOrbit = shareConfig?.captureOrbit || '0deg 90deg auto';
-  viewer.cameraOrbit = captureOrbit;
-  
-  // Esperar a que se aplique la transición
-  await new Promise(resolve => setTimeout(resolve, shareConfig?.transitionDelay || 500));
-  
-  return originalOrbit;
-}
-
-/**
- * Restaura la posición original del modelo después de la captura
- * @param {HTMLElement} viewer - elemento model-viewer
- * @param {Object} originalOrbit - órbita original guardada
- */
-export function restoreModelPosition(viewer, originalOrbit) {
-  if (!viewer || !originalOrbit) return;
-  
+export async function getShareImage(cardId, shareConfig = {}) {
   try {
-    viewer.cameraOrbit = `${originalOrbit.theta}rad ${originalOrbit.phi}rad ${originalOrbit.radius}m`;
+    // Construir la ruta de la imagen de share
+    const imageExtension = shareConfig.shareImageExtension || 'png';
+    const imagePath = `${shareConfig.shareImagePath || 'assets/images/'}${cardId}_share.${imageExtension}`;
+    
+    // Cargar la imagen
+    const response = await fetch(imagePath);
+    
+    if (!response.ok) {
+      throw new Error(`Share image not found: ${imagePath}`);
+    }
+    
+    const imageBlob = await response.blob();
+    return imageBlob;
+    
   } catch (error) {
-    console.error('Error restaurando posición del modelo:', error);
+    console.error('Error loading share image:', error);
+    throw error;
   }
 }
 
 /**
- * Captura screenshot del modelo 3D usando html2canvas
- * @param {HTMLElement} viewer - elemento model-viewer
- * @param {Object} shareConfig - configuración para la captura
- * @returns {Promise<Blob>} - blob de la imagen capturada
+ * Función de respaldo: genera imagen placeholder si no existe la imagen específica
+ * @param {string} cardTitle - título de la carta
+ * @param {Object} shareConfig - configuración del share
+ * @returns {Promise<Blob>} - blob de imagen placeholder
  */
-export async function captureModelScreenshot(viewer, shareConfig = {}) {
-  return new Promise((resolve, reject) => {
-    // Verificar que html2canvas esté disponible
-    if (typeof html2canvas === 'undefined') {
-      reject(new Error('html2canvas not loaded'));
-      return;
-    }
-
-    // Configuración específica para capturar elementos WebGL/Canvas
-    const config = {
-      allowTaint: true,
-      useCORS: true,
-      scale: shareConfig.scale || 2,
-      width: shareConfig.width || 800,
-      height: shareConfig.height || 800,
-      backgroundColor: shareConfig.backgroundColor || '#000000',
-      logging: false,
-      // Configuraciones específicas para WebGL/Canvas
-      foreignObjectRendering: true,
-      removeContainer: true,
-      imageTimeout: 15000,
-      // Preservar canvas y elementos 3D
-      canvas: viewer.shadowRoot?.querySelector('canvas') || viewer.querySelector('canvas'),
-      onclone: function(clonedDoc, element) {
-        // Intentar preservar el canvas del modelo 3D
-        const modelCanvas = viewer.shadowRoot?.querySelector('canvas');
-        if (modelCanvas) {
-          const clonedCanvas = clonedDoc.createElement('canvas');
-          clonedCanvas.width = modelCanvas.width;
-          clonedCanvas.height = modelCanvas.height;
-          const ctx = clonedCanvas.getContext('2d');
-          if (ctx && modelCanvas.getContext) {
-            try {
-              ctx.drawImage(modelCanvas, 0, 0);
-            } catch (e) {
-              console.warn('No se pudo copiar el canvas del modelo:', e);
-            }
-          }
-          element.appendChild(clonedCanvas);
-        }
-      },
-      ...shareConfig.html2canvasOptions
-    };
-
-    // Intentar diferentes enfoques para capturar
-    html2canvas(viewer, config)
-      .then(canvas => {
-        // Verificar si el canvas está vacío (completamente negro/transparente)
-        const ctx = canvas.getContext('2d');
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-        let hasContent = false;
-        
-        // Verificar si hay pixeles no negros
-        for (let i = 0; i < data.length; i += 4) {
-          if (data[i] > 10 || data[i + 1] > 10 || data[i + 2] > 10) {
-            hasContent = true;
-            break;
-          }
-        }
-
-        if (!hasContent) {
-          console.warn('Canvas capturado parece estar vacío, intentando método alternativo...');
-          // Intentar capturar todo el viewport como alternativa
-          html2canvas(document.body, {
-            ...config,
-            width: window.innerWidth,
-            height: window.innerHeight
-          }).then(fallbackCanvas => {
-            fallbackCanvas.toBlob(
-              blob => {
-                if (blob) {
-                  resolve(blob);
-                } else {
-                  reject(new Error('Error generating fallback image blob'));
-                }
-              },
-              shareConfig.imageFormat || 'image/png',
-              shareConfig.imageQuality || 0.9
-            );
-          }).catch(reject);
-        } else {
-          canvas.toBlob(
-            blob => {
-              if (blob) {
-                resolve(blob);
-              } else {
-                reject(new Error('Error generating image blob'));
-              }
-            },
-            shareConfig.imageFormat || 'image/png',
-            shareConfig.imageQuality || 0.9
-          );
-        }
-      })
-      .catch(error => {
-        console.error('Error en html2canvas:', error);
-        reject(error);
-      });
-  });
-}
-
-/**
- * Función alternativa para capturar usando toDataURL del modelo
- */
-export async function captureModelAlternative(viewer, shareConfig = {}) {
+export async function generatePlaceholderShareImage(cardTitle, shareConfig = {}) {
   return new Promise((resolve, reject) => {
     try {
-      // Buscar el canvas dentro del model-viewer
-      const canvas = viewer.shadowRoot?.querySelector('canvas') || 
-                    viewer.querySelector('canvas');
+      // Crear un canvas simple con texto
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
       
-      if (!canvas) {
-        reject(new Error('No se encontró canvas del modelo 3D'));
-        return;
-      }
-
-      // Intentar obtener los datos del canvas directamente
+      // Configurar tamaño
+      canvas.width = shareConfig.width || 800;
+      canvas.height = shareConfig.height || 800;
+      
+      // Fondo
+      ctx.fillStyle = shareConfig.backgroundColor || '#1a1a2e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Gradiente de fondo
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+      gradient.addColorStop(0, '#1a1a2e');
+      gradient.addColorStop(1, '#16213e');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Texto principal
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 48px Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // Título de la carta
+      const lines = wrapText(ctx, cardTitle, canvas.width - 100, 48);
+      const startY = canvas.height / 2 - (lines.length * 30);
+      
+      lines.forEach((line, index) => {
+        ctx.fillText(line, canvas.width / 2, startY + (index * 60));
+      });
+      
+      // Subtítulo
+      ctx.font = '32px Arial, sans-serif';
+      ctx.fillStyle = '#cccccc';
+      ctx.fillText('3D Card Experience', canvas.width / 2, canvas.height - 100);
+      
+      // Convertir a blob
       canvas.toBlob(
         blob => {
           if (blob) {
             resolve(blob);
           } else {
-            reject(new Error('Error generando blob desde canvas'));
+            reject(new Error('Error generating placeholder image'));
           }
         },
         shareConfig.imageFormat || 'image/png',
         shareConfig.imageQuality || 0.9
       );
+      
     } catch (error) {
       reject(error);
     }
   });
+}
+
+/**
+ * Helper function para dividir texto en líneas
+ */
+function wrapText(ctx, text, maxWidth, fontSize) {
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = words[0];
+
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i];
+    const width = ctx.measureText(currentLine + ' ' + word).width;
+    if (width < maxWidth) {
+      currentLine += ' ' + word;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+  lines.push(currentLine);
+  return lines;
+}
+
+/**
+ * Función principal para obtener imagen de share (con fallback)
+ * @param {string} cardId - ID de la carta
+ * @param {string} cardTitle - título de la carta (para fallback)
+ * @param {Object} shareConfig - configuración del share
+ * @returns {Promise<Blob>} - blob de la imagen para compartir
+ */
+export async function getCardShareImage(cardId, cardTitle, shareConfig = {}) {
+  try {
+    // Intentar obtener la imagen pre-renderizada
+    return await getShareImage(cardId, shareConfig);
+  } catch (error) {
+    console.warn(`Share image not found for card ${cardId}, using placeholder:`, error);
+    
+    if (shareConfig.allowPlaceholder !== false) {
+      // Generar imagen placeholder
+      return await generatePlaceholderShareImage(cardTitle, shareConfig);
+    } else {
+      throw error;
+    }
+  }
 }
 
 /**

@@ -5,9 +5,7 @@ import {
   customAutoRotate,
   snapToNearestSide,
   validateResource,
-  captureModelScreenshot,
-  prepareModelForCapture,
-  restoreModelPosition,
+  getCardShareImage,
   generateShareText,
   generateInstagramStoriesText,
   detectPlatform,
@@ -547,65 +545,52 @@ import {
   }
 
   async function handleShareCard() {
-    if (currentState !== 'model' || interactionLocked) return;
+  if (currentState !== 'model' || interactionLocked) return;
 
-    try {
-      // Mostrar estado de carga
-      shareButton.classList.add('loading');
-      shareButton.textContent = translations.share_preparing || 'Preparando captura...';
-      showNotification(translations.share_preparing || 'Preparando captura...');
+  try {
+    // Mostrar estado de carga
+    shareButton.classList.add('loading');
+    shareButton.textContent = translations.share_preparing || 'Preparando captura...';
+    showNotification(translations.share_preparing || 'Preparando captura...');
 
-      // Preparar modelo para captura
-      const originalOrbit = await prepareModelForCapture(viewer, config.SHARE_CONFIG);
+    // Obtener imagen pre-renderizada para compartir
+    const imageBlob = await getCardShareImage(id, title, config.SHARE_CONFIG);
 
-      // Capturar screenshot
-      let imageBlob;
-	  try {
-	    imageBlob = await captureModelScreenshot(viewer, config.SHARE_CONFIG);
-	  } catch (error) {
-		console.warn('Método principal falló, intentando método alternativo:', error);
-		imageBlob = await captureModelAlternative(viewer, config.SHARE_CONFIG);
-	  }
+    // Generar texto para compartir según la plataforma
+    const platform = detectPlatform();
+    const shareText = generateShareText(title, config.SHARE_CONFIG, translations, platform);
+    const shareTitle = translations.share_title || '¡Comparte tu experiencia!';
 
-      // Restaurar posición original
-      restoreModelPosition(viewer, originalOrbit);
-
-      // Generar texto para compartir según la plataforma
-	  const platform = detectPlatform();
-	  const shareText = generateShareText(title, config.SHARE_CONFIG, translations, platform);
+    // Intentar compartir nativamente
+    const nativeShared = await tryNativeShare(imageBlob, shareText, shareTitle, config.SHARE_CONFIG);
+    
+    if (nativeShared) {
+      showNotification(translations.share_success || '¡Imagen lista para compartir!', 'success');
+    } else {
+      // Fallback: copiar al clipboard
+      const copied = await copyImageToClipboard(imageBlob);
       
-      const shareTitle = translations.share_title || '¡Comparte tu experiencia!';
-
-      // Intentar compartir nativamente
-      const nativeShared = await tryNativeShare(imageBlob, shareText, shareTitle);
-      
-      if (nativeShared) {
-        showNotification(translations.share_success || '¡Imagen lista para compartir!', 'success');
+      if (copied) {
+        showNotification(translations.share_fallback || 'Imagen copiada. Pégala en tus redes sociales', 'success');
       } else {
-        // Fallback: copiar al clipboard
-        const copied = await copyImageToClipboard(imageBlob);
-        
-        if (copied) {
-          showNotification(translations.share_fallback || 'Imagen copiada. Pégala en tus redes sociales', 'success');
-        } else {
-          // Último recurso: descargar imagen
-          downloadImage(imageBlob, `super-x-card-${id}.png`);
-          showNotification(translations.share_success || '¡Imagen lista para compartir!', 'success');
-        }
+        // Último recurso: descargar imagen
+        downloadImage(imageBlob, `${config.SHARE_CONFIG.filename}-${id}.png`);
+        showNotification(translations.share_success || '¡Imagen lista para compartir!', 'success');
       }
+    }
 
     } catch (error) {
-      console.error('Error al compartir:', error);
-      showNotification(translations.share_error || 'Error al preparar la imagen', 'error');
+    console.error('Error al compartir:', error);
+    showNotification(translations.share_error || 'Error al preparar la imagen', 'error');
     } finally {
-      // Restaurar estado del botón
-      shareButton.classList.remove('loading');
-      shareButton.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.50-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z" fill="currentColor"/>
-        </svg>
-        <span data-i18n="share_button">${translations.share_button || 'Compartir'}</span>
-      `;
+    // Restaurar estado del botón
+    shareButton.classList.remove('loading');
+    shareButton.innerHTML = `
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.50-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z" fill="currentColor"/>
+      </svg>
+      <span data-i18n="share_button">${translations.share_button || 'Compartir'}</span>
+    `;
     }
   }
 
