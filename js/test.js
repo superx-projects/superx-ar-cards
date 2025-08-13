@@ -53,6 +53,7 @@ import {
   // Construir rutas de recursos
   const modelPath = `${config.MODEL_PATH}${cardData.model}`;
   const videoPath = `${config.VIDEO_PATH}${cardData.video}`;
+  const sharePath = `${config.IMAGE_PATH}${cardData.share}`;
 
   // Validar que los archivos de recursos existan
   const [modelExists, videoExists] = await Promise.all([

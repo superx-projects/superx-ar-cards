@@ -155,17 +155,13 @@ export async function validateResource(url, resourceType) {
  * @param {Object} shareConfig - configuración del share
  * @returns {Promise<Blob>} - blob de la imagen pre-renderizada
  */
-export async function getShareImage(cardId, shareConfig = {}) {
+export async function getShareImage(sharePath, shareConfig = {}) {
   try {
-    // Construir la ruta de la imagen de share
-    const imageExtension = shareConfig.shareImageExtension || 'png';
-    const imagePath = `${shareConfig.shareImagePath || 'assets/images/'}${cardId}_share.${imageExtension}`;
-    
     // Cargar la imagen
-    const response = await fetch(imagePath);
+    const response = await fetch(sharePath);
     
     if (!response.ok) {
-      throw new Error(`Share image not found: ${imagePath}`);
+      throw new Error(`Share image not found: ${sharePath}`);
     }
     
     const imageBlob = await response.blob();

@@ -56,8 +56,8 @@ export const SHARE_CONFIG = {
   allowPlaceholder: true, // Permitir generar placeholder si no existe la imagen
   
   // Configuración de imagen generada (para placeholder)
-  width: 800,
-  height: 800,
+  width: 1080,
+  height: 1920,
   backgroundColor: '#1a1a2e',
   imageFormat: 'image/png',
   imageQuality: 0.9,
