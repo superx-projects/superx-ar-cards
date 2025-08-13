@@ -271,13 +271,14 @@
 ===================== */
 #card_video {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: auto;
+  top: 50%;
+  left: 50%;
+  width: 100vw;
   height: 100vh;
   background-color: black;
   z-index: 999;
-  object-fit: cover; /* Cambiado de contain a cover para pantalla completa */
+  object-fit: contain; /* Mantiene la proporción sin cortar */
+  transform: translate(-50%, -50%); /* Centrado absoluto */
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.5s ease;
@@ -528,3 +529,4 @@
   }
 
 }
+
