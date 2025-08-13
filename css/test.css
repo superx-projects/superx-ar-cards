@@ -110,7 +110,7 @@
   height: 4px;
   background: linear-gradient(to right, #00ffff, #0080ff, #00ffff);
   border-radius: 2px;
-  transition: none; /* Removemos la transición CSS para control manual */
+  transition: none;
   z-index: 501;
   box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
 }
@@ -184,12 +184,14 @@
 }
 
 /* =====================
-   BOTÓN DE COMPARTIR
+   BOTÓN DE COMPARTIR - MODIFICADO (opción 1)
 ===================== */
 .share-button {
   position: fixed;
-  bottom: 20px;
-  left: 20px;
+  top: 20px;
+  right: 20px;
+  bottom: auto;
+  left: auto;
   z-index: 1001;
   background: rgba(0, 191, 255, 0.9);
   color: white;
@@ -208,14 +210,14 @@
   gap: 0.5rem;
   box-shadow: 0 4px 15px rgba(0, 191, 255, 0.3);
   opacity: 0;
-  transform: translateY(20px) scale(0.9);
+  transform: translateY(-20px) scale(0.9);
   animation: shareButtonFadeIn 1s ease-out 1.5s forwards;
 }
 
 @keyframes shareButtonFadeIn {
   0% {
     opacity: 0;
-    transform: translateY(20px) scale(0.9);
+    transform: translateY(-20px) scale(0.9);
   }
   100% {
     opacity: 1;
@@ -277,8 +279,8 @@
   height: 100vh;
   background-color: black;
   z-index: 999;
-  object-fit: contain; /* Mantiene la proporción sin cortar */
-  transform: translate(-50%, -50%); /* Centrado absoluto */
+  object-fit: contain;
+  transform: translate(-50%, -50%);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.5s ease;
@@ -416,8 +418,8 @@
   }
   
   .share-button {
-    bottom: 15px;
-    left: 15px;
+    top: 15px;
+    right: 15px;
     padding: 0.7rem 1rem;
     font-size: 0.85rem;
     gap: 0.4rem;
@@ -461,8 +463,8 @@
   }
   
   .share-button {
-    bottom: 12px;
-    left: 12px;
+    top: 12px;
+    right: 12px;
     padding: 0.6rem 0.9rem;
     font-size: 0.8rem;
   }
@@ -505,8 +507,8 @@
   }
   
   .share-button {
-    bottom: 10px;
-    left: 10px;
+    top: 10px;
+    right: 10px;
     padding: 0.5rem 0.8rem;
     font-size: 0.75rem;
   }
@@ -527,6 +529,4 @@
   .info-box {
     height: 25vh;
   }
-
 }
-
