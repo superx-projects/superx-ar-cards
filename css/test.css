@@ -39,7 +39,6 @@
    MODEL VIEWER (Parte central - prioritaria)
 ===================== */
 #card_viewer {
-  position: relative; /* necesario para ubicar el botón dentro */
   width: 100vw;
   height: 75vh;
   flex-grow: 1;
@@ -87,89 +86,6 @@
     background-position: 200% 200%;
     opacity: 0.6;
   }
-}
-
-/* =====================
-   BOTÓN DE COMPARTIR (dentro del model-viewer)
-===================== */
-.share-button {
-  position: absolute;
-  top: 10px;
-  right: 20px;
-  background: rgba(0, 191, 255, 0.9);
-  color: white;
-  border: 2px solid rgba(0, 255, 255, 0.5);
-  padding: 0.8rem 1.2rem;
-  border-radius: 25px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 4px 15px rgba(0, 191, 255, 0.3);
-  opacity: 0;
-  transform: translateY(-10px) scale(0.9);
-  animation: shareButtonFadeIn 1s ease-out 1.5s forwards;
-  z-index: 10; /* sobre el modelo 3D */
-}
-
-@keyframes shareButtonFadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.9);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.share-button:hover {
-  background: rgba(0, 255, 255, 0.8);
-  border-color: rgba(0, 255, 255, 0.8);
-  transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(0, 255, 255, 0.4);
-}
-
-.share-button:active {
-  transform: scale(0.95);
-  box-shadow: 0 2px 10px rgba(0, 255, 255, 0.5);
-}
-
-.share-button svg {
-  flex-shrink: 0;
-  transition: transform 0.2s ease;
-}
-
-.share-button:hover svg {
-  transform: rotate(15deg);
-}
-
-.share-button.loading {
-  opacity: 0.7;
-  cursor: wait;
-  pointer-events: none;
-}
-
-.share-button.loading::after {
-  content: '';
-  width: 16px;
-  height: 16px;
-  border: 2px solid transparent;
-  border-top: 2px solid currentColor;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-left: 0.5rem;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 /* =====================
@@ -268,7 +184,90 @@
 }
 
 /* =====================
-   VIDEO PLAYER
+   BOTÓN DE COMPARTIR
+===================== */
+.share-button {
+  position: absolute; 
+  top: 9vh;
+  right: 20px;
+  z-index: 1001;
+  background: rgba(0, 191, 255, 0.9);
+  color: white;
+  border: 2px solid rgba(0, 255, 255, 0.5);
+  padding: 0.8rem 1.2rem;
+  border-radius: 25px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 15px rgba(0, 191, 255, 0.3);
+  opacity: 0;
+  transform: translateY(20px) scale(0.9);
+  animation: shareButtonFadeIn 1s ease-out 1.5s forwards;
+}
+
+@keyframes shareButtonFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.share-button:hover {
+  background: rgba(0, 255, 255, 0.8);
+  border-color: rgba(0, 255, 255, 0.8);
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(0, 255, 255, 0.4);
+}
+
+.share-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 10px rgba(0, 255, 255, 0.5);
+}
+
+.share-button svg {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.share-button:hover svg {
+  transform: rotate(15deg);
+}
+
+.share-button.loading {
+  opacity: 0.7;
+  cursor: wait;
+  pointer-events: none;
+}
+
+.share-button.loading::after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 0.5rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* =====================
+   VIDEO PLAYER 
 ===================== */
 #card_video {
   position: fixed;
@@ -278,7 +277,7 @@
   height: 100vh;
   background-color: black;
   z-index: 999;
-  object-fit: contain;
+  object-fit: contain; 
   transform: translate(-50%, -50%);
   opacity: 0;
   pointer-events: none;
@@ -417,7 +416,7 @@
   }
   
   .share-button {
-    top: 8px;
+    top: 8vh;
     right: 15px;
     padding: 0.7rem 1rem;
     font-size: 0.85rem;
@@ -448,8 +447,21 @@
     height: 71vh;
   }
   
+  .info-box {
+    height: 18vh;
+    padding: 0.6rem;
+  }
+  
+  .hold-indicator-area {
+    height: 2vh;
+  }
+  
+  #card_hold_indicator {
+    height: 3px;
+  }
+  
   .share-button {
-    top: 6px;
+    top: 7vh;
     right: 12px;
     padding: 0.6rem 0.9rem;
     font-size: 0.8rem;
@@ -480,19 +492,6 @@
   .share-notification.show {
     transform: translateX(0) translateY(0);
   }
-
-  .info-box {
-    height: 18vh;
-    padding: 0.6rem;
-  }
-  
-  .hold-indicator-area {
-    height: 2vh;
-  }
-  
-  #card_hold_indicator {
-    height: 3px;
-  }
 }
 
 @media (max-width: 360px) {
@@ -501,20 +500,20 @@
     width: 90vw;
   }
   
+  .info-box {
+    height: 20vh;
+  }
+  
   .share-button {
-    top: 5px;
+    top: 6vh;
     right: 10px;
     padding: 0.5rem 0.8rem;
     font-size: 0.75rem;
   }
-  
-  .info-box {
-    height: 20vh;
-  }
 }
 
 /* =====================
-   ORIENTACIÓN LANDSCAPE
+   ORIENTACIÓN LANDSCAPE (opcional)
 ===================== */
 @media (orientation: landscape) and (max-height: 600px) {
   #card_logo {
@@ -528,4 +527,5 @@
   .info-box {
     height: 25vh;
   }
+
 }
