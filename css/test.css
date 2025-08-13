@@ -273,7 +273,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
+  width: auto;
   height: 100vh;
   background-color: black;
   z-index: 999;
@@ -526,4 +526,5 @@
   .info-box {
     height: 25vh;
   }
+
 }
