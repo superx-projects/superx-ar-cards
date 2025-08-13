@@ -151,7 +151,7 @@ export async function validateResource(url, resourceType) {
 
 /**
  * Obtiene la imagen pre-renderizada para compartir
- * @param {string} cardId - ID de la carta
+ * @param {string} sharePath - path de la carta
  * @param {Object} shareConfig - configuración del share
  * @returns {Promise<Blob>} - blob de la imagen pre-renderizada
  */
@@ -263,17 +263,17 @@ function wrapText(ctx, text, maxWidth, fontSize) {
 
 /**
  * Función principal para obtener imagen de share (con fallback)
- * @param {string} cardId - ID de la carta
+ * @param {string} sharePath - path de la carta
  * @param {string} cardTitle - título de la carta (para fallback)
  * @param {Object} shareConfig - configuración del share
  * @returns {Promise<Blob>} - blob de la imagen para compartir
  */
-export async function getCardShareImage(cardId, cardTitle, shareConfig = {}) {
+export async function getCardShareImage(sharePath, cardTitle, shareConfig = {}) {
   try {
     // Intentar obtener la imagen pre-renderizada
-    return await getShareImage(cardId, shareConfig);
+    return await getShareImage(sharePath, shareConfig);
   } catch (error) {
-    console.warn(`Share image not found for card ${cardId}, using placeholder:`, error);
+    console.warn(`Share image not found for card using placeholder:`, error);
     
     if (shareConfig.allowPlaceholder !== false) {
       // Generar imagen placeholder

@@ -555,7 +555,7 @@ import {
     showNotification(translations.share_preparing || 'Preparando captura...');
 
     // Obtener imagen pre-renderizada para compartir
-    const imageBlob = await getCardShareImage(id, title, config.SHARE_CONFIG);
+    const imageBlob = await getCardShareImage(sharePath, title, config.SHARE_CONFIG);
 
     // Generar texto para compartir según la plataforma
     const platform = detectPlatform();
