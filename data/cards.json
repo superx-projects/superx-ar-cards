@@ -1,6 +1,7 @@
 {
   "e3y7pz": {
     "model": "card0001.glb",
+	"share": "card0001_share.png",
     "video": "card0001.mp4",
     "title": {
       "en": "Dragon Ball (Akira Toriyama)",
@@ -9,6 +10,7 @@
   },
   "b2h6df": {
     "model": "card0002.glb",
+	"share": "card0002_share.png",
     "video": "card0002.mp4",
     "title": {
       "en": "One Piece (Eiichirō Oda)",
@@ -17,6 +19,7 @@
   },
   "j7k3xa": {
     "model": "card0003.glb",
+	"share": "card0003_share.png",
     "video": "card0003.mp4",
     "title": {
       "en": "Demon Slayer (Koyoharu Gotouge)",
@@ -25,6 +28,7 @@
   },
   "k9r5tm": {
     "model": "card0004.glb",
+	"share": "card0004_share.png",
     "video": "card0004.mp4",
     "title": {
       "en": "My Hero Academy (Kōhei Horikoshi)",
@@ -33,6 +37,7 @@
   },
   "l8f3wo": {
     "model": "card0005.glb",
+	"share": "card0005_share.png",
     "video": "card0005.mp4",
     "title": {
       "en": "Dandadan (Yukinobu Tatsu)",
@@ -41,6 +46,7 @@
   },
   "m4t7qs": {
     "model": "card0006.glb",
+	"share": "card0006_share.png",
     "video": "card0006.mp4",
     "title": {
       "en": "Fantastic Four (by Jack Kirby)",
@@ -49,6 +55,7 @@
   },
   "q5c2nw": {
     "model": "card0007.glb",
+	"share": "card0007_share.png",
     "video": "card0007.mp4",
     "title": {
       "en": "Superman (by Dan Mora)",
@@ -57,6 +64,7 @@
   },
   "u9z8mp": {
     "model": "card0008.glb",
+	"share": "card0008_share.png",
     "video": "card0008.mp4",
     "title": {
       "en": "Batman (by Frank Miller)",
@@ -65,6 +73,7 @@
   },
   "x1v9ke": {
     "model": "card0009.glb",
+	"share": "card0009_share.png",
     "video": "card0009.mp4",
     "title": {
       "en": "Spiderman (by Todd McFarlane)",
@@ -72,6 +81,5 @@
     }
   }
 }
-
 
 
