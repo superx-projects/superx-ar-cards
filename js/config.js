@@ -154,5 +154,3 @@ export const DEFAULT_TEXTS = {
     holdToPlay: "Mantén presionada la carta para reproducir la animación"
   }
 };
-
-/* =====================
