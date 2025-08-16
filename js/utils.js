@@ -1,442 +1,575 @@
 /**
- * Genera partículas visuales en una posición (x,y) dentro de un contenedor dado.
- * Para animaciones breves y efecto visual de "sparkles" o "explosión".
+ * utils.js - Funciones utilitarias
+ * Proyecto: Super X Immersive Cards
+ * 
+ * Contiene funciones auxiliares para efectos visuales, geometría,
+ * validación de recursos y funcionalidades de compartir.
  */
-export function spawnParticles(x, y, container) {
-  for (let i = 0; i < 5; i++) {
-    const particle = document.createElement("div");
-    particle.className = "particle";
-    particle.style.left = `${x}px`;
-    particle.style.top = `${y}px`;
 
-    const angle = Math.random() * 2 * Math.PI;
-    const distance = Math.random() * 60 + 20;
-    const dx = Math.cos(angle) * distance;
-    const dy = Math.sin(angle) * distance;
+import { PARTICLE_SPAWN_DURATION } from "./config.js";
 
-    particle.style.setProperty("--dx", `${dx}px`);
-    particle.style.setProperty("--dy", `${dy}px`);
+/* =====================
+   SISTEMA DE PARTÍCULAS
+===================== */
 
-    container.appendChild(particle);
-
+/**
+ * Genera partículas visuales en una posición específica
+ * @param {number} x - Posición X en píxeles
+ * @param {number} y - Posición Y en píxeles
+ * @param {HTMLElement} container - Contenedor donde crear las partículas
+ * @param {Object} [options={}] - Opciones de personalización
+ */
+export function spawnParticles(x, y, container, options = {}) {
+  if (!container || !container.appendChild) {
+    console.warn('Contenedor de partículas inválido');
+    return;
+  }
+  
+  const config = {
+    count: 5,
+    minDistance: 20,
+    maxDistance: 80,
+    ...options
+  };
+  
+  const fragment = document.createDocumentFragment();
+  
+  for (let i = 0; i < config.count; i++) {
+    const particle = createParticle(x, y, config);
+    fragment.appendChild(particle);
+    
+    // Limpieza automática
     setTimeout(() => {
       if (particle.parentElement) {
-        container.removeChild(particle);
+        particle.parentElement.removeChild(particle);
       }
-    }, 600);
+    }, PARTICLE_SPAWN_DURATION);
   }
+  
+  container.appendChild(fragment);
 }
 
 /**
- * Realiza rotación automática suave en el modelo 3D siempre que isEnabledFn() retorne true.
- * @param {HTMLElement} viewer - el elemento <model-viewer>
- * @param {Function} isEnabledFn - función que devuelve true para activar rotación automática
- * @param {number} speed - velocidad de rotación en rad/ms (por defecto 0.0005)
+ * Crea una partícula individual
+ * @private
+ */
+function createParticle(x, y, config) {
+  const particle = document.createElement("div");
+  particle.className = "particle";
+  particle.style.left = `${x}px`;
+  particle.style.top = `${y}px`;
+  
+  // Calcular dirección aleatoria
+  const angle = Math.random() * 2 * Math.PI;
+  const distance = Math.random() * (config.maxDistance - config.minDistance) + config.minDistance;
+  const dx = Math.cos(angle) * distance;
+  const dy = Math.sin(angle) * distance;
+  
+  particle.style.setProperty("--dx", `${dx}px`);
+  particle.style.setProperty("--dy", `${dy}px`);
+  
+  return particle;
+}
+
+/* =====================
+   ROTACIÓN AUTOMÁTICA
+===================== */
+
+/**
+ * Controla la rotación automática del modelo 3D
+ * @param {HTMLElement} viewer - Elemento model-viewer
+ * @param {Function} isEnabledFn - Función que retorna true para activar rotación
+ * @param {number} [speed=0.0005] - Velocidad de rotación en radianes por milisegundo
  */
 export function customAutoRotate(viewer, isEnabledFn, speed = 0.0005) {
+  if (!viewer || typeof isEnabledFn !== 'function') {
+    console.error('customAutoRotate: parámetros inválidos');
+    return;
+  }
+  
   let lastTimestamp = null;
-
+  let animationId = null;
+  
   function rotate(timestamp) {
-    if (!viewer.getCameraOrbit) {
-      requestAnimationFrame(rotate);
+    // Verificar que model-viewer esté listo
+    if (!isModelViewerReady(viewer)) {
+      animationId = requestAnimationFrame(rotate);
       return;
     }
-
+    
     if (!lastTimestamp) lastTimestamp = timestamp;
     const delta = timestamp - lastTimestamp;
     lastTimestamp = timestamp;
-
+    
     if (isEnabledFn()) {
-      const orbit = viewer.getCameraOrbit();
-      let newTheta = orbit.theta + delta * speed;
-
-      // Normalizar el valor de theta entre 0 y 2π para evitar overflow
-      newTheta = ((newTheta % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-
-      viewer.cameraOrbit = `${newTheta}rad ${orbit.phi}rad ${orbit.radius}m`;
+      try {
+        const orbit = viewer.getCameraOrbit();
+        let newTheta = orbit.theta + delta * speed;
+        
+        // Normalizar ángulo para evitar overflow
+        newTheta = normalizeRadians(newTheta);
+        
+        viewer.cameraOrbit = `${newTheta}rad ${orbit.phi}rad ${orbit.radius}m`;
+      } catch (error) {
+        console.warn('Error en rotación automática:', error);
+      }
     }
-
-    requestAnimationFrame(rotate);
+    
+    animationId = requestAnimationFrame(rotate);
   }
-
-  requestAnimationFrame(rotate);
+  
+  animationId = requestAnimationFrame(rotate);
+  
+  // Retornar función para detener la animación
+  return () => {
+    if (animationId) {
+      cancelAnimationFrame(animationId);
+      animationId = null;
+    }
+  };
 }
 
-/* ================================
-   FUNCIONES PARA EL "SNAP" DE ROTACIÓN
-================================ */
+/* =====================
+   FUNCIONES GEOMÉTRICAS
+===================== */
 
 /**
- * Convierte grados a radianes.
- * @param {number} deg - grados
- * @returns {number} radianes
+ * Convierte grados a radianes
+ * @param {number} degrees - Ángulo en grados
+ * @returns {number} Ángulo en radianes
  */
-export function degToRad(deg) {
-  return (deg * Math.PI) / 180;
-}
-
-/**
- * Convierte radianes a grados.
- * @param {number} rad - radianes
- * @returns {number} grados
- */
-export function radToDeg(rad) {
-  return (rad * 180) / Math.PI;
-}
-
-/**
- * Normaliza ángulo en grados para estar siempre en rango [0,360).
- * @param {number} deg
- * @returns {number}
- */
-export function normalizeAngle(deg) {
-  return ((deg % 360) + 360) % 360;
+export function degToRad(degrees) {
+  return (degrees * Math.PI) / 180;
 }
 
 /**
- * Devuelve el ángulo objetivo (en grados) más cercano para el snap: 0° o 180°.
- * @param {number} deg - ángulo actual normalizado
- * @returns {number} - ángulo snap (0 o 180)
+ * Convierte radianes a grados
+ * @param {number} radians - Ángulo en radianes
+ * @returns {number} Ángulo en grados
  */
-export function getSnapAngle(deg) {
-  return deg > 90 && deg < 270 ? 180 : 0;
+export function radToDeg(radians) {
+  return (radians * 180) / Math.PI;
 }
 
 /**
- * Realiza el snap de la cámara al lado más cercano (frontal o posterior)
- * para que la carta quede derecha y bien orientada.
- * @param {HTMLElement} viewer - <model-viewer>
+ * Normaliza un ángulo en grados al rango [0, 360)
+ * @param {number} degrees - Ángulo en grados
+ * @returns {number} Ángulo normalizado
  */
-export function snapToNearestSide(viewer) {
-  if (!viewer || typeof viewer.getCameraOrbit !== 'function') {
+export function normalizeAngle(degrees) {
+  return ((degrees % 360) + 360) % 360;
+}
+
+/**
+ * Normaliza un ángulo en radianes al rango [0, 2π)
+ * @param {number} radians - Ángulo en radianes
+ * @returns {number} Ángulo normalizado
+ */
+export function normalizeRadians(radians) {
+  return ((radians % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+}
+
+/**
+ * Encuentra el ángulo de snap más cercano
+ * @param {number} currentAngle - Ángulo actual en grados
+ * @param {number[]} [snapAngles=[0, 180]] - Ángulos permitidos para snap
+ * @returns {number} Ángulo de snap más cercano
+ */
+export function getClosestSnapAngle(currentAngle, snapAngles = [0, 180]) {
+  const normalized = normalizeAngle(currentAngle);
+  
+  return snapAngles.reduce((closest, angle) => {
+    const distance = Math.abs(normalized - angle);
+    const wrappedDistance = Math.abs(normalized - (angle + 360));
+    const minDistance = Math.min(distance, wrappedDistance);
+    
+    const closestDistance = Math.abs(normalized - closest);
+    const closestWrappedDistance = Math.abs(normalized - (closest + 360));
+    const minClosestDistance = Math.min(closestDistance, closestWrappedDistance);
+    
+    return minDistance < minClosestDistance ? angle : closest;
+  });
+}
+
+/* =====================
+   CONTROL DEL MODEL-VIEWER
+===================== */
+
+/**
+ * Verifica si model-viewer está listo para usar
+ * @param {HTMLElement} viewer - Elemento model-viewer
+ * @returns {boolean} True si está listo
+ */
+export function isModelViewerReady(viewer) {
+  return (
+    viewer &&
+    typeof window.customElements !== 'undefined' &&
+    window.customElements.get('model-viewer') &&
+    typeof viewer.getCameraOrbit === 'function'
+  );
+}
+
+/**
+ * Realiza snap de la cámara al lado más cercano
+ * @param {HTMLElement} viewer - Elemento model-viewer
+ * @param {number[]} [snapAngles] - Ángulos permitidos para snap
+ */
+export function snapToNearestSide(viewer, snapAngles) {
+  if (!isModelViewerReady(viewer)) {
     console.warn('Model-viewer no está listo para snap');
     return;
   }
-
+  
   try {
     const orbit = viewer.getCameraOrbit();
     if (!orbit) return;
     
-    const thetaDeg = radToDeg(orbit.theta);
-    const normalized = normalizeAngle(thetaDeg);
-    const targetDeg = getSnapAngle(normalized);
-
-    // Se fija phi (elevación) a 90 grados (horizontal),
-    // toma el orbit.radius para mantener el zoom actual
-    viewer.cameraOrbit = `${targetDeg}deg 90deg ${orbit.radius}m`;
+    const currentDegrees = radToDeg(orbit.theta);
+    const targetDegrees = getClosestSnapAngle(currentDegrees, snapAngles);
+    
+    // Mantener phi en 90° (horizontal) y el radio actual
+    viewer.cameraOrbit = `${targetDegrees}deg 90deg ${orbit.radius}m`;
+    
   } catch (error) {
     console.error('Error en snapToNearestSide:', error);
   }
 }
 
+/* =====================
+   VALIDACIÓN DE RECURSOS
+===================== */
+
 /**
- * Valida que un recurso (imagen, video, modelo 3D, etc.) esté disponible
- * @param {string} url - URL del recurso a validar
- * @param {string} resourceType - Tipo de recurso (para logging)
- * @returns {Promise<boolean>} - true si el recurso está disponible
+ * Valida que un recurso esté disponible
+ * @param {string} url - URL del recurso
+ * @param {string} [resourceType='resource'] - Tipo de recurso para logging
+ * @param {number} [timeout=5000] - Timeout en milisegundos
+ * @returns {Promise<boolean>} True si el recurso está disponible
  */
-export async function validateResource(url, resourceType) {
+export async function validateResource(url, resourceType = 'resource', timeout = 5000) {
+  if (!url || typeof url !== 'string') {
+    console.error(`URL inválida para ${resourceType}:`, url);
+    return false;
+  }
+  
   try {
-    const response = await fetch(url, { method: 'HEAD' });
-    return response.ok;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
+    const response = await fetch(url, { 
+      method: 'HEAD',
+      signal: controller.signal
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (response.ok) {
+      console.log(`✓ ${resourceType} validado: ${url}`);
+      return true;
+    } else {
+      console.warn(`✗ ${resourceType} no disponible (${response.status}): ${url}`);
+      return false;
+    }
+    
   } catch (error) {
-    console.error(`Error validando ${resourceType}: ${url}`, error);
+    if (error.name === 'AbortError') {
+      console.error(`Timeout validando ${resourceType}: ${url}`);
+    } else {
+      console.error(`Error validando ${resourceType}: ${url}`, error);
+    }
     return false;
   }
 }
 
-/* ================================
-   FUNCIONES PARA COMPARTIR CARTAS
-================================ */
+/* =====================
+   SISTEMA DE COMPARTIR
+===================== */
 
 /**
- * Obtiene la imagen pre-renderizada para compartir
- * @param {string} sharePath - path de la carta
- * @param {Object} shareConfig - configuración del share
- * @returns {Promise<Blob>} - blob de la imagen pre-renderizada
+ * Obtiene la imagen para compartir
+ * @param {string} sharePath - Path de la imagen de share
+ * @returns {Promise<Blob|null>} Blob de la imagen o null si no existe
  */
-export async function getShareImage(sharePath, shareConfig = {}) {
+export async function getCardShareImage(sharePath) {
   try {
-    // Cargar la imagen
     const response = await fetch(sharePath);
     
-    if (!response.ok) {
-      throw new Error(`Share image not found: ${sharePath}`);
+    if (response.ok) {
+      return await response.blob();
     }
     
-    const imageBlob = await response.blob();
-    return imageBlob;
+    return null;
     
   } catch (error) {
-    console.error('Error loading share image:', error);
-    throw error;
+    console.warn('Imagen no disponible:', error.message);
+    return null;
   }
-}
-
-/**
- * Función de respaldo: genera imagen placeholder si no existe la imagen específica
- * @param {string} cardTitle - título de la carta
- * @param {Object} shareConfig - configuración del share
- * @returns {Promise<Blob>} - blob de imagen placeholder
- */
-export async function generatePlaceholderShareImage(cardTitle, shareConfig = {}) {
-  return new Promise((resolve, reject) => {
-    try {
-      // Crear un canvas simple con texto
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      
-      // Configurar tamaño
-      canvas.width = shareConfig.width || 800;
-      canvas.height = shareConfig.height || 800;
-      
-      // Fondo
-      ctx.fillStyle = shareConfig.backgroundColor || '#1a1a2e';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Gradiente de fondo
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      gradient.addColorStop(0, '#1a1a2e');
-      gradient.addColorStop(1, '#16213e');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Texto principal
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 48px Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
-      // Título de la carta
-      const lines = wrapText(ctx, cardTitle, canvas.width - 100, 48);
-      const startY = canvas.height / 2 - (lines.length * 30);
-      
-      lines.forEach((line, index) => {
-        ctx.fillText(line, canvas.width / 2, startY + (index * 60));
-      });
-      
-      // Subtítulo
-      ctx.font = '32px Arial, sans-serif';
-      ctx.fillStyle = '#cccccc';
-      ctx.fillText('3D Card Experience', canvas.width / 2, canvas.height - 100);
-      
-      // Convertir a blob
-      canvas.toBlob(
-        blob => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Error generating placeholder image'));
-          }
-        },
-        shareConfig.imageFormat || 'image/png',
-        shareConfig.imageQuality || 0.9
-      );
-      
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
-
-/**
- * Helper function para dividir texto en líneas
- */
-function wrapText(ctx, text, maxWidth, fontSize) {
-  const words = text.split(' ');
-  const lines = [];
-  let currentLine = words[0];
-
-  for (let i = 1; i < words.length; i++) {
-    const word = words[i];
-    const width = ctx.measureText(currentLine + ' ' + word).width;
-    if (width < maxWidth) {
-      currentLine += ' ' + word;
-    } else {
-      lines.push(currentLine);
-      currentLine = word;
-    }
-  }
-  lines.push(currentLine);
-  return lines;
-}
-
-/**
- * Función principal para obtener imagen de share (con fallback)
- * @param {string} sharePath - path de la carta
- * @param {string} cardTitle - título de la carta (para fallback)
- * @param {Object} shareConfig - configuración del share
- * @returns {Promise<Blob>} - blob de la imagen para compartir
- */
-export async function getCardShareImage(sharePath, cardTitle, shareConfig = {}) {
-  try {
-    // Intentar obtener la imagen pre-renderizada
-    return await getShareImage(sharePath, shareConfig);
-  } catch (error) {
-    console.warn(`Share image not found for card using placeholder:`, error);
-    
-    if (shareConfig.allowPlaceholder !== false) {
-      // Generar imagen placeholder
-      return await generatePlaceholderShareImage(cardTitle, shareConfig);
-    } else {
-      throw error;
-    }
-  }
-}
-
-/**
- * Obtiene el handle específico para la plataforma detectada
- * @param {string} platform - plataforma detectada
- * @param {Object} shareConfig - configuración del share
- * @returns {string} - handle específico para la plataforma
- */
-export function getPlatformHandle(platform, shareConfig) {
-  const socialHandles = shareConfig?.socialHandles || {};
-  return socialHandles[platform] || socialHandles.default || '';
-}
-
-/**
- * Genera texto optimizado para la plataforma específica
- * @param {string} cardTitle - título de la carta
- * @param {Object} shareConfig - configuración del share
- * @param {Object} translations - traducciones
- * @param {string} platform - plataforma específica
- * @returns {string} - texto optimizado para la plataforma
- */
-export function generatePlatformSpecificText(cardTitle, shareConfig, translations, platform) {
-  const hashtags = shareConfig?.hashtags || [];
-  const storeHandle = getPlatformHandle(platform, shareConfig);
-  
-  // Intentar obtener texto específico para la plataforma
-  const platformKey = `share_${platform}_text`;
-  let shareText = translations[platformKey] || translations.share_text || '';
-  
-  // Reemplazar variables en el texto
-  shareText = shareText.replace('{cardTitle}', cardTitle);
-  shareText = shareText.replace('{storeHandle}', storeHandle);
-  
-  // Para algunas plataformas, agregar hashtags
-  const hashtagText = hashtags.join(' ');
-  
-  // Instagram y Twitter suelen usar hashtags más frecuentemente
-  if (platform === 'instagram' || platform === 'twitter') {
-    return `${shareText}\n\n${hashtagText}`;
-  }
-  
-  // Facebook y WhatsApp pueden o no usar hashtags según preferencia
-  return shareText;
-}
-
-/**
- * Genera texto para compartir en redes sociales
- * @param {string} cardTitle - título de la carta
- * @param {Object} shareConfig - configuración del share
- * @param {Object} translations - traducciones
- * @param {string} platform - plataforma específica (opcional)
- * @returns {string} - texto para compartir
- */
-export function generateShareText(cardTitle, shareConfig, translations, platform = null) {
-  // Si no se especifica plataforma, detectarla
-  const targetPlatform = platform || detectPlatform();
-  
-  // Usar texto específico de plataforma si está disponible
-  return generatePlatformSpecificText(cardTitle, shareConfig, translations, targetPlatform);
-}
-
-/**
- * Genera texto específico para Instagram Stories
- * @param {string} cardTitle - título de la carta
- * @param {Object} shareConfig - configuración del share
- * @param {Object} translations - traducciones
- * @returns {string} - texto para Instagram Stories
- */
-export function generateInstagramStoriesText(cardTitle, shareConfig, translations) {
-  return generatePlatformSpecificText(cardTitle, shareConfig, translations, 'instagram');
-}
-
-/**
- * Detecta la plataforma/dispositivo del usuario
- * @returns {string} - plataforma detectada
- */
-export function detectPlatform() {
-  const userAgent = navigator.userAgent.toLowerCase();
-  const platform = navigator.platform.toLowerCase();
-  
-  if (userAgent.includes('instagram')) return 'instagram';
-  if (userAgent.includes('twitter') || userAgent.includes('x.com')) return 'twitter';
-  if (userAgent.includes('facebook')) return 'facebook';
-  if (userAgent.includes('whatsapp')) return 'whatsapp';
-  if (platform.includes('iphone') || platform.includes('ipad')) return 'ios';
-  if (platform.includes('android')) return 'android';
-  
-  return 'web';
 }
 
 /**
  * Intenta compartir usando la Web Share API nativa
- * @param {Blob} imageBlob - imagen a compartir
- * @param {string} text - texto para compartir
- * @param {string} title - título para compartir
- * @param {Object} shareConfig - configuración para nombre de archivo
- * @returns {Promise<boolean>} - true si se compartió exitosamente
+ * @param {Blob} imageBlob - Imagen a compartir
+ * @param {string} text - Texto genérico para compartir
+ * @returns {Promise<boolean>} True si se compartió exitosamente
  */
-export async function tryNativeShare(imageBlob, text, title, shareConfig = {}) {
-  if (!navigator.share) return false;
+export async function tryNativeShare(imageBlob, text) {
+  if (!navigator.share) {
+    console.log('Web Share API no disponible');
+    return false;
+  }
   
   try {
-    // Crear archivo desde el blob
-    const filename = `${shareConfig.filename || 'super-x-card'}.png`;
-    const file = new File([imageBlob], filename, { type: imageBlob.type });
+    const file = new File([imageBlob], 'super-x-card.png', { type: 'image/png' });
     
     await navigator.share({
-      title: title,
       text: text,
       files: [file]
     });
     
     return true;
+    
   } catch (error) {
-    console.log('Native share falló o fue cancelado:', error);
+    if (error.name === 'AbortError') {
+      console.log('Share cancelado por el usuario');
+    } else {
+      console.log('Error en share nativo:', error.message);
+    }
     return false;
   }
 }
 
 /**
- * Intenta copiar la imagen al clipboard
- * @param {Blob} imageBlob - imagen a copiar
- * @returns {Promise<boolean>} - true si se copió exitosamente
+ * Intenta copiar imagen al clipboard
+ * @param {Blob} imageBlob - Imagen a copiar
+ * @returns {Promise<boolean>} True si se copió exitosamente
  */
 export async function copyImageToClipboard(imageBlob) {
-  if (!navigator.clipboard || !navigator.clipboard.write) return false;
+  if (!navigator.clipboard?.write) {
+    console.log('Clipboard API no disponible');
+    return false;
+  }
   
   try {
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        [imageBlob.type]: imageBlob
-      })
-    ]);
+    const clipboardItem = new ClipboardItem({
+      [imageBlob.type]: imageBlob
+    });
     
+    await navigator.clipboard.write([clipboardItem]);
+    console.log('Imagen copiada al clipboard');
     return true;
+    
   } catch (error) {
-    console.log('Copy to clipboard falló:', error);
+    console.log('Error copiando al clipboard:', error.message);
     return false;
   }
 }
 
 /**
- * Descarga la imagen como último recurso
- * @param {Blob} imageBlob - imagen a descargar
- * @param {string} filename - nombre del archivo
+ * Descarga imagen como último recurso
+ * @param {Blob} imageBlob - Imagen a descargar
+ * @param {string} filename - Nombre del archivo
  */
 export function downloadImage(imageBlob, filename) {
-  const url = URL.createObjectURL(imageBlob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  try {
+    const url = URL.createObjectURL(imageBlob);
+    const link = document.createElement('a');
+    
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Limpiar URL después de un tiempo
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    
+    console.log(`Imagen descargada: ${filename}`);
+    
+  } catch (error) {
+    console.error('Error descargando imagen:', error);
+  }
+}
+
+/* =====================
+   DETECCIÓN DE PLATAFORMAS Y DISPOSITIVOS
+===================== */
+
+/**
+ * Detecta la plataforma o aplicación desde la que se accede
+ * @returns {string} Plataforma detectada
+ */
+export function detectPlatform() {
+  const userAgent = navigator.userAgent.toLowerCase();
+  const platform = navigator.platform.toLowerCase();
   
-  // Limpiar URL después de un tiempo
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  // Detección de aplicaciones específicas
+  if (userAgent.includes('instagram')) return 'instagram';
+  if (userAgent.includes('tiktok')) return 'tiktok';
+  if (userAgent.includes('twitter') || userAgent.includes('x.com')) return 'twitter';
+  if (userAgent.includes('facebook')) return 'facebook';
+  if (userAgent.includes('whatsapp')) return 'whatsapp';
+  if (userAgent.includes('linkedin')) return 'linkedin';
+  if (userAgent.includes('telegram')) return 'telegram';
+  
+  // Detección de sistemas operativos
+  if (platform.includes('iphone') || platform.includes('ipad') || userAgent.includes('ios')) return 'ios';
+  if (platform.includes('android') || userAgent.includes('android')) return 'android';
+  if (platform.includes('mac')) return 'macos';
+  if (platform.includes('win')) return 'windows';
+  if (platform.includes('linux')) return 'linux';
+  
+  return 'web';
+}
+
+/**
+ * Verifica si el dispositivo soporta funcionalidades específicas
+ * @returns {Object} Objeto con capacidades del dispositivo
+ */
+export function getDeviceCapabilities() {
+  return {
+    hasTouch: 'ontouchstart' in window,
+    hasVibration: 'vibrate' in navigator,
+    hasClipboard: !!navigator.clipboard,
+    hasShareAPI: !!navigator.share,
+    isMobile: /Mobi|Android/i.test(navigator.userAgent),
+    supportsWebGL: (() => {
+      try {
+        const canvas = document.createElement('canvas');
+        return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+      } catch (e) {
+        return false;
+      }
+    })()
+  };
+}
+
+/* =====================
+   FUNCIONES AUXILIARES
+===================== */
+
+/**
+ * Activa vibración háptica en dispositivos compatibles
+ * @param {number} [duration=50] - Duración en milisegundos
+ */
+export function triggerHapticFeedback(duration = 50) {
+  if (!getDeviceCapabilities().hasVibration) return;
+  
+  try {
+    navigator.vibrate(duration);
+  } catch (error) {
+    console.debug('Vibración no disponible:', error);
+  }
+}
+
+/**
+ * Muestra una notificación temporal en pantalla
+ * @param {string} message - Mensaje a mostrar
+ * @param {string} [type='info'] - Tipo: 'info', 'success', 'error', 'warning'
+ * @param {number} [duration=3000] - Duración en milisegundos
+ */
+export function showNotification(message, type = 'info', duration = 3000) {
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+  
+  // Estilos base
+  Object.assign(notification.style, {
+    position: 'fixed',
+    top: '20px',
+    left: '50%',
+    transform: 'translateX(-50%) translateY(-100%)',
+    padding: '12px 20px',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '500',
+    zIndex: '10000',
+    minWidth: '200px',
+    maxWidth: '90vw',
+    textAlign: 'center',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+    transition: 'all 0.3s ease',
+    opacity: '0'
+  });
+  
+  // Colores según tipo
+  const colors = {
+    info: { bg: '#3498db', text: '#ffffff' },
+    success: { bg: '#2ecc71', text: '#ffffff' },
+    error: { bg: '#e74c3c', text: '#ffffff' },
+    warning: { bg: '#f39c12', text: '#ffffff' }
+  };
+  
+  const colorScheme = colors[type] || colors.info;
+  notification.style.backgroundColor = colorScheme.bg;
+  notification.style.color = colorScheme.text;
+  
+  document.body.appendChild(notification);
+  
+  // Animación de entrada
+  requestAnimationFrame(() => {
+    notification.style.transform = 'translateX(-50%) translateY(0)';
+    notification.style.opacity = '1';
+  });
+  
+  // Animación de salida y limpieza
+  setTimeout(() => {
+    notification.style.transform = 'translateX(-50%) translateY(-100%)';
+    notification.style.opacity = '0';
+    
+    setTimeout(() => {
+      if (notification.parentElement) {
+        document.body.removeChild(notification);
+      }
+    }, 300);
+  }, duration);
+}
+
+export function displayError(message) { showNotification(message, 'error'); }
+export function displayWarning(message) { showNotification(message, 'warning'); }
+export function displaySuccess(message) { showNotification(message, 'success'); }
+export function displayInfo(message) { showNotification(message, 'info'); }
+
+/**
+ * Debounce function para limitar ejecuciones frecuentes
+ * @param {Function} func - Función a ejecutar
+ * @param {number} wait - Tiempo de espera en ms
+ * @returns {Function} Función debounced
+ */
+export function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func.apply(this, args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+/**
+ * Throttle function para limitar ejecuciones por tiempo
+ * @param {Function} func - Función a ejecutar
+ * @param {number} limit - Límite de tiempo en ms
+ * @returns {Function} Función throttled
+ */
+export function throttle(func, limit) {
+  let lastFunc;
+  let lastRan;
+  return function executedFunction(...args) {
+    if (!lastRan) {
+      func.apply(this, args);
+      lastRan = Date.now();
+    } else {
+      clearTimeout(lastFunc);
+      lastFunc = setTimeout(() => {
+        if ((Date.now() - lastRan) >= limit) {
+          func.apply(this, args);
+          lastRan = Date.now();
+        }
+      }, limit - (Date.now() - lastRan));
+    }
+  };
 }

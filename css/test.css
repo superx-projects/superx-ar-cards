@@ -1,11 +1,13 @@
 /* ==========================================
-   card.css - Estilos específicos para card.html
+   test.css - Estilos específicos para test.html
    Proyecto: Super X Immersive Cards
-   Optimizado para experiencia inmersiva móvil
+   
+   Versión de prueba con funcionalidades de compartir integradas.
+   Optimizado para experiencia inmersiva móvil con controles sociales.
 ========================================== */
 
 /* =====================
-   LAYOUT PRINCIPAL CARD
+   LAYOUT PRINCIPAL
 ===================== */
 #card_main {
   padding: 0;
@@ -14,7 +16,7 @@
 }
 
 /* =====================
-   LOGO CARD (Parte superior)
+   LOGO SUPERIOR
 ===================== */
 #card_logo {
   height: 8vh;
@@ -36,7 +38,7 @@
 }
 
 /* =====================
-   MODEL VIEWER (Parte central - prioritaria)
+   MODEL VIEWER (Componente principal)
 ===================== */
 #card_viewer {
   width: 100vw;
@@ -89,7 +91,7 @@
 }
 
 /* =====================
-   ÁREA INDICADOR HOLD (Entre modelo y info)
+   INDICADOR DE PROGRESO HOLD
 ===================== */
 .hold-indicator-area {
   height: 3vh;
@@ -110,7 +112,7 @@
   height: 4px;
   background: linear-gradient(to right, #00ffff, #0080ff, #00ffff);
   border-radius: 2px;
-  transition: none;
+  transition: none; /* Control manual desde JavaScript */
   z-index: 501;
   box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
 }
@@ -121,7 +123,7 @@
 }
 
 /* =====================
-   INFO BOX (Parte inferior)
+   INFORMACIÓN DE LA CARTA
 ===================== */
 .info-box {
   height: 14vh;
@@ -244,6 +246,7 @@
   transform: rotate(15deg);
 }
 
+/* Estado de carga del botón */
 .share-button.loading {
   opacity: 0.7;
   cursor: wait;
@@ -262,12 +265,16 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% { 
+    transform: rotate(0deg); 
+  }
+  100% { 
+    transform: rotate(360deg); 
+  }
 }
 
 /* =====================
-   VIDEO PLAYER 
+   REPRODUCTOR DE VIDEO
 ===================== */
 #card_video {
   position: fixed;
@@ -277,7 +284,7 @@
   height: 100vh;
   background-color: black;
   z-index: 999;
-  object-fit: contain; 
+  object-fit: contain;
   transform: translate(-50%, -50%);
   opacity: 0;
   pointer-events: none;
@@ -358,7 +365,7 @@
 }
 
 /* =====================
-   NOTIFICACIÓN DE ESTADO DE COMPARTIR
+   NOTIFICACIONES DE COMPARTIR
 ===================== */
 .share-notification {
   position: fixed;
@@ -379,6 +386,8 @@
   transform: translateX(-50%) translateY(-20px);
   transition: all 0.3s ease;
   pointer-events: none;
+  max-width: calc(100vw - 40px);
+  text-align: center;
 }
 
 .share-notification.show {
@@ -397,7 +406,7 @@
 }
 
 /* =====================
-   RESPONSIVE MÓVIL
+   RESPONSIVE - TABLETS
 ===================== */
 @media (max-width: 768px) {
   #card_logo {
@@ -436,6 +445,9 @@
   }
 }
 
+/* =====================
+   RESPONSIVE - MÓVILES
+===================== */
 @media (max-width: 480px) {
   #card_logo {
     height: 6vh;
@@ -494,6 +506,9 @@
   }
 }
 
+/* =====================
+   RESPONSIVE - MÓVILES PEQUEÑOS
+===================== */
 @media (max-width: 360px) {
   #card_logo {
     height: 5vh;
@@ -513,7 +528,7 @@
 }
 
 /* =====================
-   ORIENTACIÓN LANDSCAPE (opcional)
+   RESPONSIVE - ORIENTACIÓN LANDSCAPE
 ===================== */
 @media (orientation: landscape) and (max-height: 600px) {
   #card_logo {
@@ -527,5 +542,8 @@
   .info-box {
     height: 25vh;
   }
-
+  
+  .share-button {
+    top: 15vh;
+  }
 }

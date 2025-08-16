@@ -1,241 +1,467 @@
-import { loadLang, applyTranslations } from "./lang.js";
+/**
+ * test.js - Controlador principal para test.html
+ * Proyecto: Super X Immersive Cards
+ * 
+ * Versión de prueba con funcionalidades de compartir integradas.
+ * Maneja la experiencia completa de visualización 3D, interacción hold-to-play,
+ * reproducción de video y funcionalidades sociales de compartir.
+ */
+
+import { loadLang, applyTranslations, detectUserLanguage, getTranslation, switchLanguage } from "./lang.js";
 import * as config from "./config.js";
 import {
   spawnParticles,
   customAutoRotate,
   snapToNearestSide,
   validateResource,
+  isModelViewerReady,
   getCardShareImage,
-  generateShareText,
-  generateInstagramStoriesText,
   detectPlatform,
   tryNativeShare,
   copyImageToClipboard,
-  downloadImage
+  downloadImage,
+  triggerHapticFeedback,
+  debounce,
+  throttle,
+  getEventPosition,
+  calculateDragDistance,
+  displayError,
+  displayWarning,
+  displaySuccess,
+  displayInfo
 } from "./utils.js";
 
-(async function () {
-  // --- Inicialización y carga ---
-
-  // Obtener parámetro "id" desde URL
+/* =====================
+   INICIALIZACIÓN PRINCIPAL
+===================== */
+(async function initializeCardViewer() {
+  // --- Configuración inicial ---
   const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
+  const cardId = params.get("id");
+  
+  // --- Detectar idioma usando lang.js ---
+  const selectedLang = detectUserLanguage();
 
-  // Determinar idioma (por defecto español o inglés)
-  const userLang = navigator.language.startsWith("es") ? "es" : "en";
-  const lang = userLang || config.DEFAULT_LANG;
-
-  // Cargar traducciones y aplicarlas al DOM
+  // --- Cargar traducciones ---
   let translations = {};
   try {
-    translations = await loadLang(lang);
+    translations = await loadLang(selectedLang);
     applyTranslations(translations);
   } catch (error) {
-    console.error("Error al cargar traducciones:", error);
+    console.error("Error cargando traducciones:", error);
+    displayWarning(getTranslation(translations, "warning_translation_load_failed", "No se pudieron cargar las traducciones. Usando valores por defecto."));
   }
 
-  // Validar parámetro id
-  if (!id) {
-    document.body.innerHTML = `<p style='color:white;text-align:center;'>${translations["error_invalid_id"] || "Invalid or missing card ID"}</p>`;
+  // --- Validar ID de carta ---
+  if (!cardId) {
+    displayError(getTranslation(translations, "error_invalid_id", "ID de carta inválido o faltante"));
     return;
   }
 
-  // Cargar datos de las cartas
-  const res = await fetch(config.CARDS_DATA_PATH);
-  if (!res.ok) throw new Error("No se pudo cargar cards.json");
-  const data = await res.json();
-  const cardData = data[id];
-  if (!cardData) {
-    document.body.innerHTML = `<p style='color:white;text-align:center;'>${translations["error_card_not_found"] || "Card not found"}</p>`;
+  // --- Cargar datos de cartas ---
+  let cardData;
+  try {
+    const response = await fetch(config.CARDS_DATA_PATH);
+    if (!response.ok) throw new Error("Error cargando cards.json");
+    
+    const data = await response.json();
+    cardData = data[cardId];
+    
+    if (!cardData) {
+      displayError(getTranslation(translations, "error_card_not_found", "Carta no encontrada"));
+      return;
+    }
+  } catch (error) {
+    console.error("Error cargando datos de cartas:", error);
+    displayError(getTranslation(translations, "error_loading_data", "Error cargando datos de la carta"));
     return;
   }
-  
-  // Construir rutas de recursos
-  const modelPath = `${config.MODEL_PATH}${cardData.model}`;
-  const videoPath = `${config.VIDEO_PATH}${cardData.video}`;
-  const sharePath = `${config.IMAGE_PATH}${cardData.share}`;
 
-  // Validar que los archivos de recursos existan
+  // --- Construir rutas de recursos ---
+  const resourcePaths = {
+    model: `${config.MODEL_PATH}${cardData.model}`,
+    video: `${config.VIDEO_PATH}${cardData.video}`,
+    share: `${config.IMAGE_PATH}${cardData.share}`
+  };
+
+  // --- Validar recursos ---
   const [modelExists, videoExists] = await Promise.all([
-    validateResource(modelPath, 'modelo 3D'),
-    validateResource(videoPath, 'video')
+    validateResource(resourcePaths.model, 
+      getTranslation(translations, "resource_3d_model", 
+        config.DEFAULT_TEXTS?.[selectedLang]?.resourceModel || 
+        config.DEFAULT_TEXTS?.[config.DEFAULT_LANG]?.resourceModel || 
+        'modelo 3D'
+      )
+    ),
+    validateResource(resourcePaths.video, 
+      getTranslation(translations, "resource_video",
+        config.DEFAULT_TEXTS?.[selectedLang]?.resourceVideo || 
+        config.DEFAULT_TEXTS?.[config.DEFAULT_LANG]?.resourceVideo || 
+        'video'
+      )
+    )
   ]);
 
   if (!modelExists) {
-    document.body.innerHTML = `<p style='color:white;text-align:center;'>${translations["error_model_not_found"] || "3D model file not found"}</p>`;
+    displayError(getTranslation(translations, "error_model_not_found", "Archivo del modelo 3D no encontrado"));
     return;
   }
 
   if (!videoExists) {
-    document.body.innerHTML = `<p style='color:white;text-align:center;'>${translations["error_video_not_found"] || "Video file not found"}</p>`;
+    displayError(getTranslation(translations, "error_video_not_found", "Archivo de video no encontrado"));
     return;
   }
 
-  // --- Referencias a elementos DOM ---
-  const viewer = document.getElementById("card_viewer");
-  const video = document.getElementById("card_video");
-  const fade = document.getElementById("card_fade_effect");
-  const indicator = document.getElementById("card_hold_indicator");
-  const particlesContainer = document.getElementById("card_particles_container");
-  const skipButton = document.getElementById("card_skip_button");
-  const shareButton = document.getElementById("card_share_button");
-  const infoBox = document.getElementById("card_info_box");
-  const logo = document.getElementById("card_logo");
-
-  // Mostrar título de la carta
-  const title =
-    (cardData.title && (cardData.title[lang] || cardData.title[config.DEFAULT_LANG])) ||
-    "Unknown Card";
-  document.getElementById("card_title").textContent = title;
-
-  // Asignar rutas a modelo 3D y video (ya validadas)
-  viewer.setAttribute("src", modelPath);
-  video.src = videoPath;
-
-  // --- Validación adicional de carga del video ---
-  video.addEventListener('error', () => {
-    console.error('Error cargando video:', videoPath);
-    const warningDiv = document.createElement('div');
-    warningDiv.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);background:rgba(255,165,0,0.9);color:black;padding:0.5rem 1rem;border-radius:4px;z-index:1002;';
-    warningDiv.textContent = translations["warning_video_unavailable"] || "Video unavailable";
-    document.body.appendChild(warningDiv);
-    
-    setTimeout(() => warningDiv.remove(), 3000);
+  // --- Inicializar aplicación ---
+  const app = new CardViewerApp({
+    cardId,
+    cardData,
+    resourcePaths,
+    translations,
+    lang: selectedLang
   });
 
-  // --- Variables de control ---
-  let isHolding = false;
-  let activePointerId = null;
-  let lastCameraOrbit = null;
-  let modelMoved = false;
-  let isAutoRotateEnabled = true;
-  let currentState = 'model'; // 'model', 'transitioning', 'video'
+  await app.initialize();
+})();
 
-  // --- Variables de control específicas para interacción ---
-  let touchStartPosition = null;
-  let touchCurrentPosition = null;
-  let isDragging = false;
-  let dragThreshold = 10;
-  let interactionLocked = false;
+/* =====================
+   CLASE PRINCIPAL DE LA APLICACIÓN
+===================== */
+class CardViewerApp {
+  constructor(options) {
+    // Configuración
+    this.cardId = options.cardId;
+    this.cardData = options.cardData;
+    this.resourcePaths = options.resourcePaths;
+    this.translations = options.translations;
+    this.lang = options.lang;
 
-  // --- Variables de control de timeouts y progreso ---
-  let holdTimeout = null;
-  let particleInterval = null;
-  let videoTransitionTimeout = null;
-  let modelTransitionTimeout = null;
-  let autoRotateTimeout = null;
-  let snapTimeout = null;
-  let progressInterval = null;
-  let dragCheckTimeout = null;
+    // Referencias DOM
+    this.elements = {
+      viewer: document.getElementById("card_viewer"),
+      video: document.getElementById("card_video"),
+      fade: document.getElementById("card_fade_effect"),
+      indicator: document.getElementById("card_hold_indicator"),
+      particlesContainer: document.getElementById("card_particles_container"),
+      skipButton: document.getElementById("card_skip_button"),
+      shareButton: document.getElementById("card_share_button"),
+      infoBox: document.getElementById("card_info_box"),
+      logo: document.getElementById("card_logo"),
+      title: document.getElementById("card_title")
+    };
 
-  // --- Variables para el progreso del indicador ---
-  let holdStartTime = 0;
-  const TOTAL_HOLD_TIME = config.HOLD_DURATION + config.VIDEO_ACTIVATION_DELAY;
+    // Estado de la aplicación
+    this.state = {
+      current: 'model', // 'model', 'transitioning', 'video'
+      isHolding: false,
+      activePointerId: null,
+      interactionLocked: false,
+      isAutoRotateEnabled: true,
+      modelMoved: false,
+      isDragging: false
+    };
 
-  // --- Función para activar vibración sutil ---
-  function triggerHapticFeedback() {
-    if ('vibrate' in navigator && /Mobi|Android/i.test(navigator.userAgent)) {
-      try {
-        navigator.vibrate(50);
-      } catch (error) {
-        console.debug('Vibración no disponible:', error);
+    // Control de interacciones
+    this.interaction = {
+      touchStartPosition: null,
+      touchCurrentPosition: null,
+      lastCameraOrbit: null,
+      dragThreshold: config.DRAG_THRESHOLD || 10
+    };
+
+    // Control de timeouts y progreso
+    this.timers = {
+      hold: null,
+      particles: null,
+      videoTransition: null,
+      modelTransition: null,
+      autoRotate: null,
+      snap: null,
+      progress: null,
+      dragCheck: null
+    };
+
+    // Variables de progreso
+    this.progress = {
+      startTime: 0,
+      totalTime: config.HOLD_DURATION + config.VIDEO_ACTIVATION_DELAY
+    };
+
+    // Funciones optimizadas con debounce y throttle
+    this.optimizedFunctions = {
+      snapToSide: debounce(() => {
+        if (this.state.current === 'model' && !this.state.interactionLocked) {
+          this.setAutoRotateState(false);
+          snapToNearestSide(this.elements.viewer);
+          this.setAutoRotateState(true, config.CAMERA_SNAP_TRANSITION);
+        }
+      }, config.CAMERA_SNAP_DELAY || 300),
+      
+      updateHoldDetection: throttle((event) => {
+        this._updateHoldDetection(event);
+      }, 16), // ~60fps
+      
+      updateProgress: throttle(() => {
+        this._updateProgress();
+      }, 16) // ~60fps
+    };
+  }
+
+  /* =====================
+     INICIALIZACIÓN
+  ===================== */
+  async initialize() {
+    this.setupCardContent();
+    this.setupVideoErrorHandling();
+    
+    try {
+      await this.initializeModelViewer();
+    } catch (error) {
+      console.error("Error inicializando aplicación:", error);
+      displayError(getTranslation(this.translations, "error_initialization", "Error de inicialización"));
+    }
+  }
+
+  /**
+   * Cambia el idioma de la aplicación dinámicamente
+   * @param {string} newLang - Código del nuevo idioma
+   */
+  async changeLanguage(newLang) {
+    try {
+      // Usar la función de lang.js para cambiar idioma
+      this.translations = await switchLanguage(newLang);
+      this.lang = newLang;
+      
+      // Actualizar textos dinámicos
+      this.updateDynamicTexts();
+      
+      // Actualizar título de la carta
+      const newTitle = this.getLocalizedTitle();
+      this.elements.title.textContent = newTitle;
+      
+      // Actualizar botón de compartir
+      this.setShareButtonState('normal');
+      
+      console.log(`Idioma cambiado a: ${newLang}`);
+      
+    } catch (error) {
+      console.error(`Error cambiando idioma a ${newLang}:`, error);
+      displayError(getTranslation(this.translations, "error_language_change", "Error al cambiar idioma"));
+    }
+  }
+
+  setupCardContent() {
+    // Configurar título de la carta
+    const title = this.getLocalizedTitle();
+    this.elements.title.textContent = title;
+
+    // Asignar recursos
+    this.elements.viewer.setAttribute("src", this.resourcePaths.model);
+    this.elements.video.src = this.resourcePaths.video;
+
+    // Configurar textos dinámicos desde traducciones
+    this.updateDynamicTexts();
+  }
+
+  updateDynamicTexts() {
+    // Actualizar texto del botón de skip
+    if (this.elements.skipButton) {
+      this.elements.skipButton.textContent = this.getText("video_skip", null, "Skip");
+    }
+
+    // Actualizar texto del indicador hold (si existe en DOM)
+    const holdInstruction = document.querySelector('[data-i18n="card_hold_to_play"]');
+    if (holdInstruction) {
+      holdInstruction.textContent = this.getText("card_hold_to_play", null, "Hold the card to play the animation");
+    }
+
+    // Actualizar título de la página
+    document.title = this.getText("page_card_title", null, "Super X Card");
+  }
+
+  getLocalizedTitle() {
+    const { title } = this.cardData;
+    return (title && (title[this.lang] || title[config.DEFAULT_LANG])) || 
+           this.getText("card_title_fallback", "cardTitleFallback", "Unknown Card");
+  }
+
+  /**
+   * Obtiene un texto por defecto desde config.js como fallback final
+   * @param {string} key - Clave del texto en DEFAULT_TEXTS
+   * @returns {string} - Texto por defecto
+   */
+  getDefaultText(key) {
+    return config.DEFAULT_TEXTS?.[this.lang]?.[key] || 
+           config.DEFAULT_TEXTS?.[config.DEFAULT_LANG]?.[key] || 
+           "";
+  }
+
+  /**
+   * Obtiene un texto con sistema de fallbacks completo usando lang.js
+   * @param {string} translationKey - Clave en translations
+   * @param {string} defaultTextKey - Clave en DEFAULT_TEXTS (opcional)
+   * @param {string} hardcodedFallback - Fallback final hardcodeado (opcional)
+   * @returns {string} - Texto obtenido
+   */
+  getText(translationKey, defaultTextKey = null, hardcodedFallback = "") {
+    // 1. Intentar obtener de traducciones usando lang.js
+    const translatedText = getTranslation(this.translations, translationKey);
+    
+    // Si getTranslation devolvió algo diferente a la clave, significa que encontró la traducción
+    if (translatedText !== translationKey) {
+      return translatedText;
+    }
+
+    // 2. Intentar obtener de DEFAULT_TEXTS si se proporcionó la clave
+    if (defaultTextKey) {
+      const defaultText = this.getDefaultText(defaultTextKey);
+      if (defaultText) {
+        return defaultText;
       }
     }
+
+    // 3. Usar fallback hardcodeado
+    return hardcodedFallback;
   }
 
-  // --- Función para actualizar progreso del indicador ---
-  function updateHoldProgress() {
-    if (!isHolding) return;
-    
-    const elapsed = Date.now() - holdStartTime;
-    const progress = Math.min(elapsed / TOTAL_HOLD_TIME, 1);
-    
-    const currentWidth = progress * 90;
-    indicator.style.width = `${currentWidth}vw`;
-    
-    if (progress >= 1) {
-      triggerHapticFeedback();
-      clearInterval(progressInterval);
-      progressInterval = null;
+  setupVideoErrorHandling() {
+    this.elements.video.addEventListener('error', () => {
+      console.error('Error cargando video:', this.resourcePaths.video);
+      displayWarning(
+        getTranslation(this.translations, "warning_video_unavailable", "Video no disponible")
+      );
+    });
+  }
+
+  /* =====================
+     MODEL-VIEWER
+  ===================== */
+  async initializeModelViewer() {
+    await this.waitForModelViewer();
+    this.setupModelViewerEvents();
+    this.setupEventListeners();
+    this.disablePanMovement();
+
+    if (config.AUTO_ROTATE_ENABLED) {
+      customAutoRotate(
+        this.elements.viewer, 
+        () => this.state.isAutoRotateEnabled, 
+        config.AUTO_ROTATE_SPEED
+      );
     }
   }
 
-  // --- Funciones de validación de Model-Viewer ---
-  function isModelViewerReady() {
-    return (
-      typeof window.customElements !== 'undefined' &&
-      window.customElements.get('model-viewer') &&
-      viewer &&
-      typeof viewer.getCameraOrbit === 'function'
-    );
-  }
-
-  function waitForModelViewer(maxAttempts = 50, interval = 100) {
+  waitForModelViewer(maxAttempts = config.RETRY_CONFIG?.modelViewer?.maxAttempts || 50, 
+                    interval = config.RETRY_CONFIG?.modelViewer?.interval || 100) {
     return new Promise((resolve, reject) => {
       let attempts = 0;
-      
+
       const checkReady = () => {
         attempts++;
-        
-        if (isModelViewerReady()) {
+
+        if (this.isModelViewerReady()) {
           resolve(true);
           return;
         }
-        
+
         if (attempts >= maxAttempts) {
-          reject(new Error('Model-viewer no se cargó correctamente'));
+          const errorMsg = this.getText("error_model_viewer_timeout", "errorModelTimeout", 'Model-viewer no se cargó correctamente');
+          reject(new Error(errorMsg));
           return;
         }
-        
+
         setTimeout(checkReady, interval);
       };
-      
+
       checkReady();
     });
   }
 
-  function safeGetCameraOrbit() {
-    if (!isModelViewerReady()) {
-      console.warn('Model-viewer no está listo');
-      return null;
+  isModelViewerReady() {
+    return isModelViewerReady(this.elements.viewer);
+  }
+
+  setupModelViewerEvents() {
+    this.elements.viewer.addEventListener('load', () => {
+      console.log('Modelo 3D cargado exitosamente');
+      displaySuccess(
+        getTranslation(this.translations, "success_model_loaded", "Modelo 3D cargado correctamente")
+      );
+    });
+
+    this.elements.viewer.addEventListener('error', (event) => {
+      console.error('Error en model-viewer:', event);
+      displayError(getTranslation(this.translations, "error_model_load_failed", "Error al cargar el modelo 3D"));
+    });
+  }
+
+  disablePanMovement() {
+    if (!this.isModelViewerReady()) {
+      const warningMsg = this.getText("warning_model_viewer_not_ready", "warningModelNotReady", 'Model-viewer no está listo para configurar controles');
+      console.warn(warningMsg);
+      return;
     }
-    
+
     try {
-      return viewer.getCameraOrbit();
+      this.elements.viewer.disablePan = true;
+
+      // Prevenir menú contextual
+      this.elements.viewer.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        return false;
+      });
+
+      // Prevenir clics con botón medio/derecho
+      this.elements.viewer.addEventListener('mousedown', (e) => {
+        if (e.button === 1 || e.button === 2) {
+          e.preventDefault();
+          return false;
+        }
+      });
+
     } catch (error) {
-      console.error('Error al obtener camera orbit:', error);
+      console.error('Error deshabilitando pan movement:', error);
+    }
+  }
+
+  /* =====================
+     CONTROL DE CÁMARA
+  ===================== */
+  safeGetCameraOrbit() {
+    if (!this.isModelViewerReady()) return null;
+
+    try {
+      return this.elements.viewer.getCameraOrbit();
+    } catch (error) {
+      console.error('Error obteniendo camera orbit:', error);
       return null;
     }
   }
 
-  function safeSetCameraOrbit(orbitString) {
-    if (!isModelViewerReady()) {
-      console.warn('Model-viewer no está listo para cambiar cámara');
-      return false;
-    }
-    
+  safeSetCameraOrbit(orbitString) {
+    if (!this.isModelViewerReady()) return false;
+
     try {
-      viewer.cameraOrbit = orbitString;
+      this.elements.viewer.cameraOrbit = orbitString;
       return true;
     } catch (error) {
-      console.error('Error al establecer camera orbit:', error);
+      console.error('Error estableciendo camera orbit:', error);
       return false;
     }
   }
 
-  // --- Función para controlar los controles de model-viewer ---
-  function setModelViewerInteraction(enabled) {
-    if (!isModelViewerReady()) return;
-    
+  setModelViewerInteraction(enabled) {
+    if (!this.isModelViewerReady()) return;
+
     try {
       if (enabled) {
-        viewer.removeAttribute('interaction-prompt-style');
-        viewer.style.pointerEvents = 'auto';
+        this.elements.viewer.removeAttribute('interaction-prompt-style');
+        this.elements.viewer.style.pointerEvents = 'auto';
       } else {
-        viewer.setAttribute('interaction-prompt-style', 'none');
-        viewer.style.pointerEvents = 'none';
+        this.elements.viewer.setAttribute('interaction-prompt-style', 'none');
+        this.elements.viewer.style.pointerEvents = 'none';
         setTimeout(() => {
-          viewer.style.pointerEvents = 'auto';
+          this.elements.viewer.style.pointerEvents = 'auto';
         }, 50);
       }
     } catch (error) {
@@ -243,424 +469,440 @@ import {
     }
   }
 
-  // --- Función mejorada para detectar si el usuario está intentando hacer drag ---
-  function calculateDragDistance(startPos, currentPos) {
-    if (!startPos || !currentPos) return 0;
-    
-    const deltaX = currentPos.x - startPos.x;
-    const deltaY = currentPos.y - startPos.y;
-    return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-  }
+  /* =====================
+     GESTIÓN DE ESTADOS
+  ===================== */
+  showVideo() {
+    if (this.state.current !== 'model') return;
 
-  function getEventPosition(event) {
-    return {
-      x: event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : 0),
-      y: event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : 0)
-    };
-  }
+    this.state.current = 'transitioning';
+    this.state.interactionLocked = true;
+    this.clearAllTimeouts();
+    this.setAutoRotateState(false);
 
-  function disablePanMovement() {
-    if (!isModelViewerReady()) {
-      console.warn('Model-viewer no está listo para configurar controles');
-      return;
-    }
+    this.elements.fade.classList.add("active");
 
-    try {
-      viewer.disablePan = true;
-    
-      viewer.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        return false;
-      });
-
-      viewer.addEventListener('mousedown', (e) => {
-        if (e.button === 1 || e.button === 2) {
-          e.preventDefault();
-          return false;
-        }
-      });
-
-      if (config.DEBUG_MODE) {
-        console.log('Pan movement disabled successfully');
-      }
-    
-    } catch (error) {
-      console.error('Error deshabilitando pan movement:', error);
-    }
-  }
-
-  function clearAllTimeouts() {
-    clearTimeout(holdTimeout);
-    clearTimeout(videoTransitionTimeout);
-    clearTimeout(modelTransitionTimeout);  
-    clearTimeout(autoRotateTimeout);
-    clearTimeout(snapTimeout);
-    clearTimeout(dragCheckTimeout);
-    clearInterval(particleInterval);
-    clearInterval(progressInterval);
-    
-    holdTimeout = null;
-    videoTransitionTimeout = null;
-    modelTransitionTimeout = null;
-    autoRotateTimeout = null;
-    snapTimeout = null;
-    dragCheckTimeout = null;
-    particleInterval = null;
-    progressInterval = null;
-  }
-
-  function setAutoRotateState(enabled, delay = 0) {
-    clearTimeout(autoRotateTimeout);
-    
-    if (delay > 0) {
-      autoRotateTimeout = setTimeout(() => {
-        isAutoRotateEnabled = enabled;
-        autoRotateTimeout = null;
-      }, delay);
-    } else {
-      isAutoRotateEnabled = enabled;
-    }
-  }
-
-  // --- Funciones auxiliares ---
-
-  function showVideo() {
-    if (currentState !== 'model') return;
-    
-    currentState = 'transitioning';
-    interactionLocked = true;
-    clearAllTimeouts();
-    
-    setAutoRotateState(false);
-    fade.classList.add("active");
-
-    videoTransitionTimeout = setTimeout(() => {
-      // Ocultar todos los elementos del modelo
-      viewer.style.display = "none";
-      infoBox.style.display = "none";
-      logo.classList.add("hidden");
-      shareButton.style.display = "none"; // Ocultar botón de compartir
+    this.timers.videoTransition = setTimeout(() => {
+      // Ocultar elementos del modelo
+      this.elements.viewer.style.display = "none";
+      this.elements.infoBox.style.display = "none";
+      this.elements.logo.classList.add("hidden");
+      this.elements.shareButton.style.display = "none";
 
       // Mostrar elementos del video
-      video.style.display = "block";
-      video.classList.add("showing");
-      skipButton.style.display = "block";
+      this.elements.video.style.display = "block";
+      this.elements.video.classList.add("showing");
+      this.elements.skipButton.style.display = "block";
 
-      fade.classList.remove("active");
-      video.play();
+      this.elements.fade.classList.remove("active");
+      this.elements.video.play();
+      this.elements.particlesContainer.innerHTML = "";
 
-      particlesContainer.innerHTML = "";
-      currentState = 'video';
-      interactionLocked = false;
-      videoTransitionTimeout = null;
+      this.state.current = 'video';
+      this.state.interactionLocked = false;
+      this.timers.videoTransition = null;
     }, config.FADE_DURATION);
   }
 
-  function returnToModel() {
-    if (currentState !== 'video') return;
-    
-    currentState = 'transitioning';
-    interactionLocked = true;
-    clearAllTimeouts();
-    
-    fade.classList.add("active");
+  returnToModel() {
+    if (this.state.current !== 'video') return;
 
-    modelTransitionTimeout = setTimeout(() => {
+    this.state.current = 'transitioning';
+    this.state.interactionLocked = true;
+    this.clearAllTimeouts();
+
+    this.elements.fade.classList.add("active");
+
+    this.timers.modelTransition = setTimeout(() => {
       // Ocultar elementos del video
-      video.classList.remove("showing");
-      video.pause();
-      video.currentTime = 0;
-      video.style.display = "none";
-      skipButton.style.display = "none";
+      this.elements.video.classList.remove("showing");
+      this.elements.video.pause();
+      this.elements.video.currentTime = 0;
+      this.elements.video.style.display = "none";
+      this.elements.skipButton.style.display = "none";
 
       // Mostrar elementos del modelo
-      viewer.style.display = "block";
-      infoBox.style.display = "block";
-      logo.classList.remove("hidden");
-      shareButton.style.display = "block"; // Mostrar botón de compartir otra vez
+      this.elements.viewer.style.display = "block";
+      this.elements.infoBox.style.display = "block";
+      this.elements.logo.classList.remove("hidden");
+      this.elements.shareButton.style.display = "block";
 
-      fade.classList.remove("active");
-      currentState = 'model';
-      interactionLocked = false;
-      modelTransitionTimeout = null;
-      
-      setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
+      this.elements.fade.classList.remove("active");
+
+      this.state.current = 'model';
+      this.state.interactionLocked = false;
+      this.timers.modelTransition = null;
+
+      this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
     }, config.FADE_DURATION);
   }
 
-  function cancelHold() {
-    isHolding = false;
-    activePointerId = null;
-    isDragging = false;
-    touchStartPosition = null;
-    touchCurrentPosition = null;
-    
-    setModelViewerInteraction(true);
-    
-    clearTimeout(holdTimeout);
-    clearTimeout(dragCheckTimeout);
-    clearInterval(particleInterval);
-    clearInterval(progressInterval);
-    holdTimeout = null;
-    dragCheckTimeout = null;
-    particleInterval = null;
-    progressInterval = null;
+  setAutoRotateState(enabled, delay = 0) {
+    clearTimeout(this.timers.autoRotate);
 
-    indicator.classList.remove("active");
-    indicator.style.width = '0';
-    viewer.classList.remove("hold");
+    if (delay > 0) {
+      this.timers.autoRotate = setTimeout(() => {
+        this.state.isAutoRotateEnabled = enabled;
+        this.timers.autoRotate = null;
+      }, delay);
+    } else {
+      this.state.isAutoRotateEnabled = enabled;
+    }
   }
 
-  // --- Sistema de detección inteligente de intención del usuario ---
-  function startHoldDetection(event) {
-    if (activePointerId !== null || currentState !== 'model' || interactionLocked) {
+  clearAllTimeouts() {
+    Object.keys(this.timers).forEach(key => {
+      if (this.timers[key]) {
+        if (key === 'particles' || key === 'progress') {
+          clearInterval(this.timers[key]);
+        } else {
+          clearTimeout(this.timers[key]);
+        }
+        this.timers[key] = null;
+      }
+    });
+  }
+
+  /* =====================
+     SISTEMA DE INTERACCIÓN
+  ===================== */
+  startHoldDetection(event) {
+    if (this.state.activePointerId !== null || 
+        this.state.current !== 'model' || 
+        this.state.interactionLocked) {
       return;
     }
 
-    activePointerId = event.pointerId;
-    touchStartPosition = getEventPosition(event);
-    touchCurrentPosition = touchStartPosition;
-    modelMoved = false;
-    isDragging = false;
-    lastCameraOrbit = safeGetCameraOrbit();
+    // Inicializar detección
+    this.state.activePointerId = event.pointerId;
+    this.interaction.touchStartPosition = getEventPosition(event);
+    this.interaction.touchCurrentPosition = this.interaction.touchStartPosition;
+    this.state.modelMoved = false;
+    this.state.isDragging = false;
+    this.interaction.lastCameraOrbit = this.safeGetCameraOrbit();
 
-    setModelViewerInteraction(false);
+    // Reducir sensibilidad temporalmente
+    this.setModelViewerInteraction(false);
 
-    dragCheckTimeout = setTimeout(() => {
-      const dragDistance = calculateDragDistance(touchStartPosition, touchCurrentPosition);
-      
-      if (dragDistance < dragThreshold && !modelMoved) {
-        initializeHoldState(touchStartPosition);
+    // Timeout para determinar intención
+    this.timers.dragCheck = setTimeout(() => {
+      const dragDistance = calculateDragDistance(
+        this.interaction.touchStartPosition, 
+        this.interaction.touchCurrentPosition
+      );
+
+      if (dragDistance < this.interaction.dragThreshold && !this.state.modelMoved) {
+        this.initializeHoldState(this.interaction.touchStartPosition);
       } else {
-        setModelViewerInteraction(true);
-        activePointerId = null;
+        this.setModelViewerInteraction(true);
+        this.state.activePointerId = null;
       }
-      
-      dragCheckTimeout = null;
-    }, 150);
+
+      this.timers.dragCheck = null;
+    }, config.INTENTION_DETECTION_DELAY || 150);
   }
 
-  function initializeHoldState(position) {
-    holdTimeout = setTimeout(() => {
-      if (!modelMoved && !isDragging && currentState === 'model' && !interactionLocked) {
-        isHolding = true;
-        holdStartTime = Date.now();
-        viewer.classList.add("hold");
-        indicator.classList.add("active");
+  initializeHoldState(position) {
+    this.timers.hold = setTimeout(() => {
+      if (!this.state.modelMoved && 
+          !this.state.isDragging && 
+          this.state.current === 'model' && 
+          !this.state.interactionLocked) {
+        
+        this.state.isHolding = true;
+        this.progress.startTime = Date.now();
+        this.elements.viewer.classList.add("hold");
+        this.elements.indicator.classList.add("active");
 
         triggerHapticFeedback();
+        this.startProgressAnimation();
+        this.startParticleEffect(position);
 
-        progressInterval = setInterval(updateHoldProgress, 16);
-
-        particleInterval = setInterval(() => {
-          spawnParticles(position.x, position.y, particlesContainer);
-        }, config.PARTICLE_SPAWN_INTERVAL);
-
+        // Activar video después del delay configurado
         setTimeout(() => {
-          if (isHolding && currentState === 'model' && !interactionLocked) {
-            showVideo();
+          if (this.state.isHolding && 
+              this.state.current === 'model' && 
+              !this.state.interactionLocked) {
+            this.showVideo();
           }
         }, config.VIDEO_ACTIVATION_DELAY);
       }
     }, config.HOLD_DURATION);
   }
 
-  function updateHoldDetection(event) {
-    if (event.pointerId !== activePointerId) return;
+  updateHoldDetection(event) {
+    this.optimizedFunctions.updateHoldDetection(event);
+  }
 
-    touchCurrentPosition = getEventPosition(event);
-    
-    const dragDistance = calculateDragDistance(touchStartPosition, touchCurrentPosition);
-    
-    if (dragDistance > dragThreshold) {
-      isDragging = true;
-      
-      if (dragCheckTimeout) {
-        clearTimeout(dragCheckTimeout);
-        dragCheckTimeout = null;
-        setModelViewerInteraction(true);
-        activePointerId = null;
+  _updateHoldDetection(event) {
+    if (event.pointerId !== this.state.activePointerId) return;
+
+    this.interaction.touchCurrentPosition = getEventPosition(event);
+
+    const dragDistance = calculateDragDistance(
+      this.interaction.touchStartPosition,
+      this.interaction.touchCurrentPosition
+    );
+
+    if (dragDistance > this.interaction.dragThreshold) {
+      this.state.isDragging = true;
+
+      if (this.timers.dragCheck) {
+        clearTimeout(this.timers.dragCheck);
+        this.timers.dragCheck = null;
+        this.setModelViewerInteraction(true);
+        this.state.activePointerId = null;
         return;
       }
-      
-      if (isHolding) {
-        cancelHold();
+
+      if (this.state.isHolding) {
+        this.cancelHold();
       }
     }
 
-    if (!lastCameraOrbit) return;
+    // Detectar movimiento de cámara
+    if (this.interaction.lastCameraOrbit) {
+      const currentOrbit = this.safeGetCameraOrbit();
+      if (currentOrbit && currentOrbit.theta !== this.interaction.lastCameraOrbit.theta) {
+        this.state.modelMoved = true;
 
-    const currentOrbit = safeGetCameraOrbit();
-    if (currentOrbit && currentOrbit.theta !== lastCameraOrbit.theta) {
-      modelMoved = true;
-      
-      if (isHolding) {
-        cancelHold();
-      }
-      
-      if (dragCheckTimeout) {
-        clearTimeout(dragCheckTimeout);
-        dragCheckTimeout = null;
-        setModelViewerInteraction(true);
-        activePointerId = null;
-      }
-    }
-  }
-
-  function endHoldDetection(event) {
-    if (event.pointerId !== activePointerId) return;
-    
-    if (dragCheckTimeout) {
-      clearTimeout(dragCheckTimeout);
-      dragCheckTimeout = null;
-    }
-    
-    setModelViewerInteraction(true);
-    cancelHold();
-
-    if (currentState === 'model' && !interactionLocked) {
-      snapToNearestSide(viewer);
-      setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
-    }
-  }
-
-  // --- Funcionalidad de compartir ---
-  function showNotification(message, type = 'info', duration = 3000) {
-    const notification = document.createElement('div');
-    notification.className = `share-notification ${type}`;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-
-    // Mostrar notificación
-    setTimeout(() => notification.classList.add('show'), 100);
-
-    // Ocultar y remover notificación
-    setTimeout(() => {
-      notification.classList.remove('show');
-      setTimeout(() => {
-        if (notification.parentElement) {
-          document.body.removeChild(notification);
+        if (this.state.isHolding) {
+          this.cancelHold();
         }
-      }, 300);
-    }, duration);
-  }
 
-  async function handleShareCard() {
-  if (currentState !== 'model' || interactionLocked) return;
-
-  try {
-    // Mostrar estado de carga
-    shareButton.classList.add('loading');
-    shareButton.textContent = translations.share_preparing || 'Preparando captura...';
-    showNotification(translations.share_preparing || 'Preparando captura...');
-
-    // Obtener imagen pre-renderizada para compartir
-    const imageBlob = await getCardShareImage(sharePath, title, config.SHARE_CONFIG);
-
-    // Generar texto para compartir según la plataforma
-    const platform = detectPlatform();
-    const shareText = generateShareText(title, config.SHARE_CONFIG, translations, platform);
-    const shareTitle = translations.share_title || '¡Comparte tu experiencia!';
-
-    // Intentar compartir nativamente
-    const nativeShared = await tryNativeShare(imageBlob, shareText, shareTitle, config.SHARE_CONFIG);
-    
-    if (nativeShared) {
-      showNotification(translations.share_success || '¡Imagen lista para compartir!', 'success');
-    } else {
-      // Fallback: copiar al clipboard
-      const copied = await copyImageToClipboard(imageBlob);
-      
-      if (copied) {
-        showNotification(translations.share_fallback || 'Imagen copiada. Pégala en tus redes sociales', 'success');
-      } else {
-        // Último recurso: descargar imagen
-        downloadImage(imageBlob, `${config.SHARE_CONFIG.filename}-${id}.png`);
-        showNotification(translations.share_success || '¡Imagen lista para compartir!', 'success');
+        if (this.timers.dragCheck) {
+          clearTimeout(this.timers.dragCheck);
+          this.timers.dragCheck = null;
+          this.setModelViewerInteraction(true);
+          this.state.activePointerId = null;
+        }
       }
     }
+  }
 
-    } catch (error) {
-    console.error('Error al compartir:', error);
-    showNotification(translations.share_error || 'Error al preparar la imagen', 'error');
-    } finally {
-    // Restaurar estado del botón
-    shareButton.classList.remove('loading');
-    shareButton.innerHTML = `
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.50-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z" fill="currentColor"/>
-      </svg>
-      <span data-i18n="share_button">${translations.share_button || 'Compartir'}</span>
-    `;
+  endHoldDetection(event) {
+    if (event.pointerId !== this.state.activePointerId) return;
+
+    if (this.timers.dragCheck) {
+      clearTimeout(this.timers.dragCheck);
+      this.timers.dragCheck = null;
+    }
+
+    this.setModelViewerInteraction(true);
+    this.cancelHold();
+
+    if (this.state.current === 'model' && !this.state.interactionLocked) {
+      snapToNearestSide(this.elements.viewer);
+      this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
     }
   }
 
-  // --- Función para configurar event listeners ---
-  function setupEventListeners() {
-    disablePanMovement();
-    
-    skipButton.addEventListener("click", returnToModel);
-    shareButton.addEventListener("click", handleShareCard);
+  cancelHold() {
+    this.state.isHolding = false;
+    this.state.activePointerId = null;
+    this.state.isDragging = false;
+    this.interaction.touchStartPosition = null;
+    this.interaction.touchCurrentPosition = null;
 
-    viewer.addEventListener("pointerdown", startHoldDetection, { passive: false });
-    viewer.addEventListener("pointermove", updateHoldDetection, { passive: false });
-    viewer.addEventListener("pointerup", endHoldDetection, { passive: false });
-    viewer.addEventListener("pointercancel", endHoldDetection, { passive: false });
-    viewer.addEventListener("pointerleave", endHoldDetection, { passive: false });
+    this.setModelViewerInteraction(true);
+    this.clearAllTimeouts();
 
-    viewer.addEventListener("dragstart", (e) => e.preventDefault());
-    viewer.addEventListener("selectstart", (e) => e.preventDefault());
-
-    video.addEventListener("ended", returnToModel);
-
-    viewer.addEventListener("camera-change", () => {
-      if (currentState !== 'model' || interactionLocked) return;
-      
-      clearTimeout(snapTimeout);
-
-      snapTimeout = setTimeout(() => {
-        if (currentState === 'model' && !interactionLocked) {
-          setAutoRotateState(false);
-          snapToNearestSide(viewer);
-          setAutoRotateState(true, config.CAMERA_SNAP_TRANSITION);
-        }
-        snapTimeout = null;
-      }, config.CAMERA_SNAP_DELAY);
-    });
+    this.elements.indicator.classList.remove("active");
+    this.elements.indicator.style.width = '0';
+    this.elements.viewer.classList.remove("hold");
   }
 
-  // --- Inicialización con validación ---
-  async function initializeModelViewer() {
+  /* =====================
+     EFECTOS VISUALES
+  ===================== */
+  startProgressAnimation() {
+    this.timers.progress = setInterval(() => {
+      this.optimizedFunctions.updateProgress();
+    }, 16);
+  }
+
+  _updateProgress() {
+    if (!this.state.isHolding) return;
+
+    const elapsed = Date.now() - this.progress.startTime;
+    const progress = Math.min(elapsed / this.progress.totalTime, 1);
+    const currentWidth = progress * 90; // 90% del viewport width
+
+    this.elements.indicator.style.width = `${currentWidth}vw`;
+
+    if (progress >= 1) {
+      triggerHapticFeedback();
+      clearInterval(this.timers.progress);
+      this.timers.progress = null;
+    }
+  }
+
+  startParticleEffect(position) {
+    const spawnInterval = config.PARTICLE_SPAWN_INTERVAL || 100;
+    this.timers.particles = setInterval(() => {
+      if (this.state.isHolding) {
+        spawnParticles(position.x, position.y, this.elements.particlesContainer);
+      }
+    }, spawnInterval);
+  }
+
+  /* =====================
+     FUNCIONALIDAD DE COMPARTIR
+  ===================== */
+  async handleShareCard() {
+    if (this.state.current !== 'model' || this.state.interactionLocked) return;
+
     try {
-      await waitForModelViewer();
+      this.setShareButtonState('loading');
+      displayInfo(
+        getTranslation(this.translations, "share_preparing", 'Preparando captura...')
+      );
+
+      // Obtener imagen para compartir
+      const imageBlob = await getCardShareImage(this.resourcePaths.share);
       
-      viewer.addEventListener('load', () => {
-        console.log('Modelo 3D cargado exitosamente');
-        if (config.DEBUG_MODE) {
-          console.log('Model-viewer inicializado:', {
-            hasGetCameraOrbit: typeof viewer.getCameraOrbit === 'function',
-            initialOrbit: safeGetCameraOrbit()
-          });
-        }
-      });
-      
-      viewer.addEventListener('error', (event) => {
-        console.error('Error en model-viewer:', event);
-        document.body.innerHTML = `<p style='color:white;text-align:center;'>${translations["error_model_load_failed"] || "Failed to load 3D model"}</p>`;
-      });
-      
-      setupEventListeners();
-      
-      if (config.AUTO_ROTATE_ENABLED) {
-        customAutoRotate(viewer, () => isAutoRotateEnabled, config.AUTO_ROTATE_SPEED);
+      if (!imageBlob) {
+        displayWarning(
+          getTranslation(this.translations, "share_no_image", 'Imagen no disponible para compartir')
+        );
+        return;
       }
-      
+
+      // Generar texto optimizado
+      const platform = detectPlatform();
+      const shareText = this.generateShareText(platform);
+
+      // Intentar compartir
+      const shared = await this.attemptShare(imageBlob, shareText);
+      this.handleShareResult(shared);
+
     } catch (error) {
-      console.error('Error inicializando model-viewer:', error);
-      document.body.innerHTML = `<p style='color:white;text-align:center;'>Error: ${translations["error_model_load_failed"] || "Failed to load 3D model"} - ${error.message}</p>`;
+      console.error('Error al compartir:', error);
+      displayError(
+        getTranslation(this.translations, "share_error", 'Error al preparar la imagen')
+      );
+    } finally {
+      this.setShareButtonState('normal');
     }
   }
 
-  initializeModelViewer();
+  generateShareText(platform) {
+    const cardTitle = this.getLocalizedTitle();
+    
+    // Obtener handles desde config
+    const storeHandle = config.SHARE_CONFIG?.socialHandles?.[platform] || 
+                       config.SHARE_CONFIG?.socialHandles?.default || 
+                       '@superx_coleccionables';
+    
+    // Usar traducciones específicas por plataforma o fallback general
+    let shareText = getTranslation(this.translations, `share_${platform}_text`);
+    
+    if (shareText === `share_${platform}_text`) {
+      // No se encontró traducción específica, usar texto general
+      shareText = getTranslation(this.translations, "share_text", 
+                 `¡Mira esta increíble carta 3D: "${cardTitle}"! 🎮✨\n¡Consigue la tuya en {storeHandle}!`);
+    }
+    
+    // Reemplazar placeholders
+    return shareText
+      .replace('{cardTitle}', cardTitle)
+      .replace('{storeHandle}', storeHandle);
+  }
 
-})();
+  async attemptShare(imageBlob, shareText) {
+    // Intentar share nativo
+    const nativeShared = await tryNativeShare(imageBlob, shareText);
+    if (nativeShared) return { method: 'native', success: true };
+
+    // Fallback: clipboard
+    const copied = await copyImageToClipboard(imageBlob);
+    if (copied) return { method: 'clipboard', success: true };
+
+    // Último recurso: descarga
+    const filename = `${config.SHARE_CONFIG?.filename || 'super-x-card'}-${this.cardId}.png`;
+    downloadImage(imageBlob, filename);
+    return { method: 'download', success: true };
+  }
+
+  handleShareResult(result) {
+    if (result.success) {
+      let message;
+      switch (result.method) {
+        case 'native':
+          message = getTranslation(this.translations, "share_success", '¡Imagen lista para compartir!');
+          break;
+        case 'clipboard':
+          message = getTranslation(this.translations, "share_fallback", 'Imagen copiada. Pégala en tus redes sociales');
+          break;
+        case 'download':
+          message = getTranslation(this.translations, "share_success", '¡Imagen lista para compartir!');
+          break;
+      }
+      displaySuccess(message);
+    }
+  }
+
+  setShareButtonState(state) {
+    const button = this.elements.shareButton;
+    
+    if (state === 'loading') {
+      button.classList.add('loading');
+      button.textContent = getTranslation(this.translations, "share_preparing", 'Preparando...');
+    } else {
+      button.classList.remove('loading');
+      button.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.50-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z" fill="currentColor"/>
+        </svg>
+        <span data-i18n="share_button">${getTranslation(this.translations, "share_button", 'Compartir')}</span>
+      `;
+    }
+  }
+
+  /* =====================
+     EVENT LISTENERS
+  ===================== */
+  setupEventListeners() {
+    // Controles principales
+    this.elements.skipButton.addEventListener("click", () => this.returnToModel());
+    this.elements.shareButton.addEventListener("click", () => this.handleShareCard());
+
+    // Sistema de interacción
+    this.elements.viewer.addEventListener("pointerdown", (e) => this.startHoldDetection(e), { passive: false });
+    this.elements.viewer.addEventListener("pointermove", (e) => this.updateHoldDetection(e), { passive: false });
+    this.elements.viewer.addEventListener("pointerup", (e) => this.endHoldDetection(e), { passive: false });
+    this.elements.viewer.addEventListener("pointercancel", (e) => this.endHoldDetection(e), { passive: false });
+    this.elements.viewer.addEventListener("pointerleave", (e) => this.endHoldDetection(e), { passive: false });
+
+    // Prevenir comportamientos no deseados
+    this.elements.viewer.addEventListener("dragstart", (e) => e.preventDefault());
+    this.elements.viewer.addEventListener("selectstart", (e) => e.preventDefault());
+
+    // Control de video
+    this.elements.video.addEventListener("ended", () => this.returnToModel());
+
+    // Snap automático de cámara
+    this.elements.viewer.addEventListener("camera-change", () => {
+      if (this.state.current !== 'model' || this.state.interactionLocked) return;
+      this.optimizedFunctions.snapToSide();
+    });
+
+    // Escuchar eventos de cambio de idioma globales
+    window.addEventListener('languageChanged', (event) => {
+      console.log('Idioma cambiado globalmente:', event.detail.language);
+      this.lang = event.detail.language;
+      this.translations = event.detail.translations;
+      this.updateDynamicTexts();
+    });
+
+    // Ejemplo: detectar tecla 'L' para cambiar idioma (útil para testing)
+    if (config.DEBUG_MODE) {
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'l' || e.key === 'L') {
+          const newLang = this.lang === 'en' ? 'es' : 'en';
+          this.changeLanguage(newLang);
+        }
+      });
+    }
+  }
+}

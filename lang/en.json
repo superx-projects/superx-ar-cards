@@ -3,28 +3,41 @@
   "index_title": "Super X Inmersive Cards",
   "index_instruction": "Scan each card to view the 3D model.",
   "index_note": "Only available with physical cards.",
-  
+
   "page_card_title": "Super X Card",
   "loading": "Loading...",
   "error_card_not_found": "Card not found",
   "error_invalid_id": "Invalid or missing card ID",
+  "error_loading_data": "Error loading card data",
   "error_model_not_found": "3D model file not found",
   "error_video_not_found": "Video file not found",
-  "error_model_load_failed": "Failed to load 3D model", 
+  "error_model_load_failed": "Failed to load 3D model",
+  "error_model_viewer_timeout": "Model-viewer failed to load properly",
+  "error_initialization": "Initialization error",
+
   "warning_video_unavailable": "Video unavailable",
+  "warning_translation_load_failed": "Could not load translations. Using default values.",
+  "warning_model_viewer_not_ready": "Model-viewer is not ready to configure controls",
+
+  "success_model_loaded": "3D model loaded successfully",
+
+  "card_title_fallback": "Unknown Card",
   "card_hold_to_play": "Hold the card to play the animation",
   "video_skip": "Skip",
-  
+
+  "resource_3d_model": "3D model",
+  "resource_video": "video",
+
   "share_button": "Share",
   "share_preparing": "Preparing capture...",
   "share_success": "Image ready to share!",
   "share_error": "Error preparing image",
   "share_fallback": "Image copied. Paste it on your social media",
-  "share_title": "Share your experience!",
+  "share_no_image": "Image not available for sharing",
+
   "share_text": "Check out my 3D card \"{cardTitle}\"! 🎮✨\nGet yours at {storeHandle}!",
   "share_instagram_text": "My 3D card \"{cardTitle}\"! 🔥\nGet yours at {storeHandle}",
   "share_facebook_text": "Check out my amazing 3D card \"{cardTitle}\"! 🎮✨\nVisit {storeHandle} to get yours and join the AR experience.",
   "share_twitter_text": "My 3D card \"{cardTitle}\" is incredible! 🎮✨\nGet yours at {storeHandle}",
   "share_whatsapp_text": "Look how cool this is! My 3D card \"{cardTitle}\" 🎮✨\nYou can get yours at {storeHandle}"
 }
-
