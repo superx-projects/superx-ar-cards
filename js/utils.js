@@ -130,7 +130,7 @@ export function customAutoRotate(viewer, isEnabledFn, speed = 0.0005) {
 }
 
 // --- Función mejorada para detectar si el usuario está intentando hacer drag ---
-function calculateDragDistance(startPos, currentPos) {
+export function calculateDragDistance(startPos, currentPos) {
   if (!startPos || !currentPos) return 0;
   
   const deltaX = currentPos.x - startPos.x;
@@ -139,7 +139,7 @@ function calculateDragDistance(startPos, currentPos) {
 }
 
 // --- Función para obtener posición del evento (unified touch/mouse) ---
-function getEventPosition(event) {
+export function getEventPosition(event) {
   return {
     x: event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : 0),
     y: event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : 0)
@@ -591,3 +591,4 @@ export function throttle(func, limit) {
   };
 
 }
+
