@@ -54,7 +54,7 @@ import {
 
   // --- Validar ID de carta ---
   if (!cardId) {
-	this.showError();
+	showError();
     //displayError(getTranslation(translations, "error_invalid_id", "ID de carta inválido o faltante"));
     return;
   }
@@ -69,13 +69,13 @@ import {
     cardData = data[cardId];
     
     if (!cardData) {
-	  this.showError();
+	  showError();
       //displayError(getTranslation(translations, "error_card_not_found", "Carta no encontrada"));
       return;
     }
   } catch (error) {
     console.error("Error cargando datos de cartas:", error);
-	this.showError();
+	showError();
     displayError(getTranslation(translations, "error_loading_data", "Error cargando datos de la carta"));
     return;
   }
@@ -497,7 +497,7 @@ class CardViewerApp {
       // Ocultar elementos del modelo
       this.elements.viewer.style.display = "none";
       this.elements.infoBox.style.display = "none";
-      this.elements.logo.classList.add("hidden");
+      this.elements.logo.classList.add("js-hidden");
       this.elements.shareButton.style.display = "none";
 
       // Mostrar elementos del video
@@ -535,7 +535,7 @@ class CardViewerApp {
       // Mostrar elementos del modelo
       this.elements.viewer.style.display = "block";
       this.elements.infoBox.style.display = "block";
-      this.elements.logo.classList.remove("hidden");
+      this.elements.logo.classList.remove("js-hidden");
       this.elements.shareButton.style.display = "block";
 
       this.elements.fade.classList.remove("active");
@@ -916,4 +916,5 @@ class CardViewerApp {
       });
     }
   }
+
 }
