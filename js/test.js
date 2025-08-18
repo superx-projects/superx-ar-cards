@@ -472,17 +472,7 @@ class CardViewerApp {
 
   /* =====================
      GESTIÓN DE ESTADOS
-  ===================== */
-  showError() {
-    // Ocultar elementos principales
-    document.getElementById('card_viewer').style.display = 'none';
-    document.getElementById('card_info_box').style.display = 'none';
-    document.getElementById('card_share_button').style.display = 'none';
-  
-    // Mostrar overlay de error
-    document.getElementById('card_error_overlay').classList.remove('js-hidden');
-  }
-  
+  ===================== */  
   showVideo() {
     if (this.state.current !== 'model') return;
 
@@ -918,3 +908,13 @@ class CardViewerApp {
   }
 
 }
+
+export function showError() {
+    // Ocultar elementos principales
+    document.getElementById('card_viewer').style.display = 'none';
+    document.getElementById('card_info_box').style.display = 'none';
+    document.getElementById('card_share_button').style.display = 'none';
+  
+    // Mostrar overlay de error
+    document.getElementById('card_error_overlay').classList.remove('js-hidden');
+  }
