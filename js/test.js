@@ -54,7 +54,8 @@ import {
 
   // --- Validar ID de carta ---
   if (!cardId) {
-    displayError(getTranslation(translations, "error_invalid_id", "ID de carta inválido o faltante"));
+	this.showError();
+    //displayError(getTranslation(translations, "error_invalid_id", "ID de carta inválido o faltante"));
     return;
   }
 
@@ -68,11 +69,13 @@ import {
     cardData = data[cardId];
     
     if (!cardData) {
-      displayError(getTranslation(translations, "error_card_not_found", "Carta no encontrada"));
+	  this.showError();
+      //displayError(getTranslation(translations, "error_card_not_found", "Carta no encontrada"));
       return;
     }
   } catch (error) {
     console.error("Error cargando datos de cartas:", error);
+	this.showError();
     displayError(getTranslation(translations, "error_loading_data", "Error cargando datos de la carta"));
     return;
   }
@@ -384,9 +387,7 @@ class CardViewerApp {
   setupModelViewerEvents() {
     this.elements.viewer.addEventListener('load', () => {
       console.log('Modelo 3D cargado exitosamente');
-      displaySuccess(
-        getTranslation(this.translations, "success_model_loaded", "Modelo 3D cargado correctamente")
-      );
+      //displaySuccess(getTranslation(this.translations, "success_model_loaded", "Modelo 3D cargado correctamente"));
     });
 
     this.elements.viewer.addEventListener('error', (event) => {
@@ -472,6 +473,16 @@ class CardViewerApp {
   /* =====================
      GESTIÓN DE ESTADOS
   ===================== */
+  showError() {
+    // Ocultar elementos principales
+    document.getElementById('card_viewer').style.display = 'none';
+    document.getElementById('card_info_box').style.display = 'none';
+    document.getElementById('card_share_button').style.display = 'none';
+  
+    // Mostrar overlay de error
+    document.getElementById('card_error_overlay').classList.remove('js-hidden');
+  }
+  
   showVideo() {
     if (this.state.current !== 'model') return;
 
@@ -800,7 +811,7 @@ class CardViewerApp {
     if (shareText === `share_${platform}_text`) {
       // No se encontró traducción específica, usar texto general
       shareText = getTranslation(this.translations, "share_text", 
-                 `¡Mira esta increíble carta 3D: "${cardTitle}"! 🎮✨\n¡Consigue la tuya en {storeHandle}!`);
+                 `¡Mira esta increíble carta 3D: "${cardTitle}"! 🎮✨\n¡Consigue la tuya en ${storeHandle}!`);
     }
     
     // Reemplazar placeholders
