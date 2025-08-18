@@ -9,6 +9,7 @@
   "error_card_not_found": "Card not found",
   "error_invalid_id": "Invalid or missing card ID",
   "error_loading_data": "Error loading card data",
+  "card_error_message": "You must scan the 3D card to access its interactive experience.",
   "error_model_not_found": "3D model file not found",
   "error_video_not_found": "Video file not found",
   "error_model_load_failed": "Failed to load 3D model",
@@ -41,3 +42,4 @@
   "share_twitter_text": "My 3D card \"{cardTitle}\" is incredible! 🎮✨\nGet yours at {storeHandle}",
   "share_whatsapp_text": "Look how cool this is! My 3D card \"{cardTitle}\" 🎮✨\nYou can get yours at {storeHandle}"
 }
+
