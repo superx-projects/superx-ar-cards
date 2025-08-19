@@ -57,10 +57,6 @@ body {
   flex-shrink: 0;
 }
 
-.logo.hidden {
-  display: none;
-}
-
 /* =====================
    COMPONENTES BASE
 ===================== */
@@ -144,10 +140,6 @@ p {
 /* =====================
    UTILITY CLASSES
 ===================== */
-.js-hidden {
-  display: none;
-}
-
 .text-center {
   text-align: center;
 }
@@ -213,4 +205,5 @@ p {
   .fade-effect {
     transition-duration: 0.01ms;
   }
+
 }
