@@ -346,6 +346,7 @@ class CardViewerApp {
     this.setupModelViewerEvents();
     this.setupEventListeners();
     this.disablePanMovement();
+	showViewModel();
 
     if (config.AUTO_ROTATE_ENABLED) {
       customAutoRotate(
@@ -922,3 +923,4 @@ function showViewModel() {
 function showViewVideo() {
     showView("view_video");
 }
+
