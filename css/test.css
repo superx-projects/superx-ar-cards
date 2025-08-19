@@ -10,8 +10,7 @@
    CONTROL DE VISTAS - OCULTAR/MOSTRAR
 ===================== */
 .hidden {
-  opacity: 0 !important;
-  pointer-events: none !important;
+  display: none !important;
 }
 
 /* =====================
@@ -759,4 +758,5 @@
   }
 
 }
+
 
