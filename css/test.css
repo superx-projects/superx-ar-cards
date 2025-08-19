@@ -12,15 +12,6 @@
 .hidden {
   opacity: 0 !important;
   pointer-events: none !important;
-  transform: scale(0.95) !important;
-  transition: opacity 0.3s ease, transform 0.3s ease !important;
-}
-
-.visible {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  transform: scale(1) !important;
-  transition: opacity 0.3s ease, transform 0.3s ease !important;
 }
 
 /* =====================
@@ -768,3 +759,4 @@
   }
 
 }
+
