@@ -53,31 +53,33 @@ import {
   }
 
   // --- Validar ID de carta ---
+  let cardData = null;
+  let errorMsg = null;
+
   if (!cardId) {
-	showError();
-    //displayError(getTranslation(translations, "error_invalid_id", "ID de carta inválido o faltante"));
-    return;
+    errorMsg = getTranslation(translations, "error_invalid_id", "ID de carta inválido o faltante");
+  } else {
+      try {
+        const response = await fetch(config.CARDS_DATA_PATH);
+        if (!response.ok) throw new Error("Error cargando cards.json");
+
+        const data = await response.json();
+        cardData = data[cardId];
+
+        if (!cardData) {
+          errorMsg = getTranslation(translations, "error_card_not_found", "Carta no encontrada");
+        } 
+      } catch (err) {
+        console.error("Error cargando datos de cartas:", err);
+        errorMsg = getTranslation(translations, "error_loading_data", "Error cargando datos de la carta");
+      }
   }
 
-  // --- Cargar datos de cartas ---
-  let cardData;
-  try {
-    const response = await fetch(config.CARDS_DATA_PATH);
-    if (!response.ok) throw new Error("Error cargando cards.json");
-    
-    const data = await response.json();
-    cardData = data[cardId];
-    
-    if (!cardData) {
-	  showError();
-      //displayError(getTranslation(translations, "error_card_not_found", "Carta no encontrada"));
-      return;
-    }
-  } catch (error) {
-    console.error("Error cargando datos de cartas:", error);
-	showError();
-    displayError(getTranslation(translations, "error_loading_data", "Error cargando datos de la carta"));
-    return;
+  // Si hay error, mostrar vista de error y mensaje
+  if (errorMsg) {
+    showViewError();
+    displayError(errorMsg);
+	return;
   }
 
   // --- Construir rutas de recursos ---
@@ -479,25 +481,21 @@ class CardViewerApp {
     this.state.current = 'transitioning';
     this.state.interactionLocked = true;
     this.clearAllTimeouts();
-    this.setAutoRotateState(false);
 
     this.elements.fade.classList.add("active");
 
     this.timers.videoTransition = setTimeout(() => {
-      // Ocultar elementos del modelo
-      this.elements.viewer.style.display = "none";
-      this.elements.infoBox.style.display = "none";
-      this.elements.logo.classList.add("js-hidden");
-      this.elements.shareButton.style.display = "none";
+      // Cambiar a la vista de video
+      showViewVideo();
 
-      // Mostrar elementos del video
-      this.elements.video.style.display = "block";
+      // Ocultar logo
+      this.elements.logo.classList.add("hidden");
+
+      // Acciones específicas del video
       this.elements.video.classList.add("showing");
-      this.elements.skipButton.style.display = "block";
+      this.elements.video.play();
 
       this.elements.fade.classList.remove("active");
-      this.elements.video.play();
-      this.elements.particlesContainer.innerHTML = "";
 
       this.state.current = 'video';
       this.state.interactionLocked = false;
@@ -505,7 +503,7 @@ class CardViewerApp {
     }, config.FADE_DURATION);
   }
 
-  returnToModel() {
+returnToModel() {
     if (this.state.current !== 'video') return;
 
     this.state.current = 'transitioning';
@@ -515,26 +513,24 @@ class CardViewerApp {
     this.elements.fade.classList.add("active");
 
     this.timers.modelTransition = setTimeout(() => {
-      // Ocultar elementos del video
+      // Pausar y resetear el video
       this.elements.video.classList.remove("showing");
       this.elements.video.pause();
       this.elements.video.currentTime = 0;
-      this.elements.video.style.display = "none";
-      this.elements.skipButton.style.display = "none";
 
-      // Mostrar elementos del modelo
-      this.elements.viewer.style.display = "block";
-      this.elements.infoBox.style.display = "block";
-      this.elements.logo.classList.remove("js-hidden");
-      this.elements.shareButton.style.display = "block";
+      // Cambiar a la vista de modelo
+      showViewModel();
+
+      // Mostrar nuevamente el logo
+      this.elements.logo.classList.remove("hidden");
 
       this.elements.fade.classList.remove("active");
 
       this.state.current = 'model';
       this.state.interactionLocked = false;
-      this.timers.modelTransition = null;
 
       this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
+      this.timers.modelTransition = null;
     }, config.FADE_DURATION);
   }
 
@@ -909,12 +905,20 @@ class CardViewerApp {
 
 }
 
-export function showError() {
-    // Ocultar elementos principales
-    document.getElementById('card_viewer').style.display = 'none';
-    document.getElementById('card_info_box').style.display = 'none';
-    document.getElementById('card_share_button').style.display = 'none';
-  
-    // Mostrar overlay de error
-    document.getElementById('card_error_overlay').classList.remove('js-hidden');
-  }
+function showView(id) {
+  const views = ["view_error", "view_model", "view_video"];
+  views.forEach(v => document.getElementById(v).classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+}
+
+function showViewError() {
+    showView("view_error");
+}
+
+function showViewModel() {
+    showView("view_model");
+}
+
+function showViewVideo() {
+    showView("view_video");
+}
