@@ -127,8 +127,7 @@ function displayInfo(message) {
   await app.initialize();
 })();
 
-/* ===================== CLASE PRINCIPAL ===================== */
-/* ===================== CLASE PRINCIPAL (CON SNAP INTEGRADO) ===================== */
+/* ===================== CLASE PRINCIPAL (CON BUG DE HOLD CORREGIDO) ===================== */
 class CardViewerApp {
   constructor(options) {
     Object.assign(this, options);
@@ -352,15 +351,13 @@ class CardViewerApp {
     }
   }
 
-  /* ===================== SISTEMA DE INTERACCIÓN CON SNAP ===================== */
+  /* ===================== SISTEMA DE INTERACCIÓN CORREGIDO ===================== */
 
   startHoldDetection(event) {
     if (this.state.activePointerId !== null || this.state.current !== "model") return;
-
-    // Detenemos cualquier snap o auto-rotación pendiente
+    
     this.clearTimer('snapToSide');
     this.setAutoRotateState(false);
-
     this.state.activePointerId = event.pointerId;
     this.interaction.touchStartPosition = getEventPosition(event);
     this.state.isDragging = false;
@@ -372,7 +369,7 @@ class CardViewerApp {
   }
 
   updateHoldDetection(event) {
-    if (event.pointerId !== this.state.activePointerId || this.state.isDragging) return;
+    if (event.pointerId !== this.state.activePointerId || this.state.isDragging || this.state.isHolding) return;
 
     this.interaction.touchCurrentPosition = getEventPosition(event);
     const dragDistance = calculateDragDistance(
@@ -391,27 +388,37 @@ class CardViewerApp {
     if (event.pointerId !== this.state.activePointerId) return;
     if (config.DEBUG_MODE) console.log("🏁 Finalizando interacción (pointerup/cancel)");
 
+    // 1. Limpiar todos los timers de la interacción activa
     this.clearTimer('holdInitiator');
-    
+    this.clearTimer('videoActivation');
+    this.clearTimer('progress');
+    this.clearTimer('particles');
+
+    // 2. Si estábamos en estado 'holding', limpiar la UI y resetear el estado
     if (this.state.isHolding) {
-      this.cancelHold();
+        if (config.DEBUG_MODE) console.log("🚫 Cancelando estado de hold (UI)");
+        this.state.isHolding = false;
+        this.elements.indicator.classList.remove("active");
+        this.elements.indicator.style.width = "0";
+        this.elements.viewer.classList.remove("hold");
     }
-    
-    // === INICIO DE LA LÓGICA DE SNAP ===
-    // Si la interacción fue un arrastre, programamos el snap para después de un delay.
+
+    // 3. LA CORRECCIÓN CLAVE:
+    // Aseguramos que los controles se reactiven SIEMPRE al final de la interacción.
+    this.setModelViewerInteraction(true);
+
+    // 4. Lógica de Snap o reanudación de Auto-rotación
     if (this.state.isDragging) {
-      this.setTimer('snapToSide', () => {
-          if (config.DEBUG_MODE) console.log("🔄 Ejecutando snap de cámara.");
-          snapToNearestSide(this.elements.viewer, config.ROTATION_CONFIG);
-          // Reactivamos la rotación automática después de que la transición del snap termine.
-          this.setAutoRotateState(true, config.CAMERA_SNAP_TRANSITION);
-      }, config.CAMERA_SNAP_DELAY);
+        this.setTimer('snapToSide', () => {
+            if (config.DEBUG_MODE) console.log("🔄 Ejecutando snap de cámara.");
+            snapToNearestSide(this.elements.viewer, config.ROTATION_CONFIG);
+            this.setAutoRotateState(true, config.CAMERA_SNAP_TRANSITION);
+        }, config.CAMERA_SNAP_DELAY);
     } else {
-        // Si no fue un drag (fue un tap), reactivamos la auto-rotación casi de inmediato.
         this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
     }
-    // === FIN DE LA LÓGICA DE SNAP ===
 
+    // 5. Liberar el puntero para la siguiente interacción
     this.state.activePointerId = null;
   }
 
@@ -430,20 +437,6 @@ class CardViewerApp {
     this.startProgressAnimation();
     this.startParticleEffect(this.interaction.touchStartPosition);
     this.setTimer("videoActivation", this.showVideo.bind(this), config.VIDEO_ACTIVATION_DELAY);
-  }
-
-  cancelHold() {
-    if (config.DEBUG_MODE) console.log("🚫 Cancelando estado de hold (UI)");
-    this.clearTimer("videoActivation");
-    this.clearTimer("progress");
-    this.clearTimer("particles");
-    
-    this.setModelViewerInteraction(true);
-
-    this.state.isHolding = false;
-    this.elements.indicator.classList.remove("active");
-    this.elements.indicator.style.width = "0";
-    this.elements.viewer.classList.remove("hold");
   }
 
   validateModelViewerState() {
