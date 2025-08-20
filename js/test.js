@@ -46,7 +46,6 @@ const showViewModel = () => showView("card_view_model");
 const showViewVideo = () => showView("card_view_video");
 
 /* ===================== FUNCIONES DE NOTIFICACIÓN ADAPTADAS ===================== */
-// Funciones wrapper adaptadas a la nueva configuración
 function displayError(message) {
   showNotification(message, config.NOTIFICATION_ERROR_CONFIG);
 }
@@ -76,7 +75,6 @@ function displayInfo(message) {
     );
   }
 
-  // Validar ID y cargar datos
   let cardData = null;
   let errorMsg = null;
 
@@ -99,11 +97,9 @@ function displayInfo(message) {
 
   if (errorMsg) {
     showViewError();
-    // displayError(errorMsg);
     return;
   }
 
-  // Construir rutas y validar recursos
   const resourcePaths = {
     model: `${config.MODEL_PATH}${cardData.model}`,
     video: `${config.VIDEO_PATH}${cardData.video}`,
@@ -120,7 +116,6 @@ function displayInfo(message) {
     return;
   }
 
-  // Inicializar aplicación
   const app = new CardViewerApp({
     cardId,
     cardData,
@@ -155,14 +150,12 @@ class CardViewerApp {
       activePointerId: null,
       interactionLocked: false,
       isAutoRotateEnabled: true,
-      modelMoved: false, // Se mantiene por si se necesita en el futuro, pero la nueva lógica no lo usa activamente
       isDragging: false
     };
 
     this.interaction = {
       touchStartPosition: null,
       touchCurrentPosition: null,
-      lastCameraOrbit: null,
       dragThreshold: config.DRAG_THRESHOLD
     };
 
@@ -174,7 +167,7 @@ class CardViewerApp {
     };
   }
 
-  /* ===================== GESTIÓN DE TIMERS SIMPLIFICADA ===================== */
+  /* ===================== GESTIÓN DE TIMERS ===================== */
   setTimer(name, callback, delay, isInterval = false) {
     this.clearTimer(name);
     const timer = isInterval ? setInterval(callback, delay) : setTimeout(callback, delay);
@@ -290,37 +283,27 @@ class CardViewerApp {
 
   disablePanMovement() {
     if (!isModelViewerReady(this.elements.viewer)) {
-      if (config.DEBUG_MODE) console.warn("Model-viewer no está listo para configurar controles");
+      if (config.DEBUG_MODE) console.warn("Model-viewer no está listo");
       return;
     }
     try {
       this.elements.viewer.disablePan = true;
       this.elements.viewer.addEventListener("contextmenu", (e) => e.preventDefault());
-      this.elements.viewer.addEventListener("mousedown", (e) => {
-        if (e.button === 1 || e.button === 2) e.preventDefault();
-      });
     } catch (error) {
-      if (config.DEBUG_MODE) console.error("Error deshabilitando pan movement:", error);
+      if (config.DEBUG_MODE) console.error("Error deshabilitando pan:", error);
     }
   }
 
   /* ===================== GESTIÓN DE ESTADOS ===================== */
   showVideo() {
     if (this.state.current !== 'model' || this.state.interactionLocked) {
-      if (config.DEBUG_MODE) console.warn('⚠️ showVideo llamado en estado inválido:', this.state.current);
       return;
     }
-
-    if (!this.state.isHolding) {
-      if (config.DEBUG_MODE) console.warn('⚠️ showVideo llamado sin hold activo - cancelando');
-      return;
-    }
-
     if (config.DEBUG_MODE) console.log('🎬 Iniciando transición a video');
 
     this.state.current = 'transitioning';
     this.state.interactionLocked = true;
-    this.clearAllTimers(); // Limpiar todo antes de la transición
+    this.clearAllTimers();
 
     this.elements.fade.classList.add("active");
 
@@ -330,10 +313,8 @@ class CardViewerApp {
       this.elements.video.classList.add("showing");
       this.elements.video.play();
       this.elements.fade.classList.remove("active");
-
       this.state.current = 'video';
       this.state.interactionLocked = false;
-
       if (config.DEBUG_MODE) console.log('✅ Transición a video completada');
     }, config.FADE_DURATION);
   }
@@ -344,12 +325,9 @@ class CardViewerApp {
     this.state.current = "transitioning";
     this.state.interactionLocked = true;
     this.clearAllTimers();
-
     this.elements.fade.classList.add("active");
 
-    this.setTimer(
-      "modelTransition",
-      () => {
+    this.setTimer("modelTransition", () => {
         this.elements.video.classList.remove("showing");
         this.elements.video.pause();
         this.elements.video.currentTime = 0;
@@ -358,6 +336,7 @@ class CardViewerApp {
         this.elements.fade.classList.remove("active");
         this.state.current = "model";
         this.state.interactionLocked = false;
+        this.setModelViewerInteraction(true); // Re-habilitar controles
         this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
       },
       config.FADE_DURATION
@@ -366,81 +345,82 @@ class CardViewerApp {
 
   setAutoRotateState(enabled, delay = 0) {
     if (delay > 0) {
-      this.setTimer("autoRotate", () => {
-        this.state.isAutoRotateEnabled = enabled;
-      }, delay);
+      this.setTimer("autoRotate", () => { this.state.isAutoRotateEnabled = enabled; }, delay);
     } else {
       this.state.isAutoRotateEnabled = enabled;
     }
   }
 
-  /* ===================== SISTEMA DE INTERACCIÓN REFACTORIZADO ===================== */
-  
+  /* ===================== SISTEMA DE INTERACCIÓN (CORREGIDO) ===================== */
+
   startHoldDetection(event) {
-    if (this.state.activePointerId !== null || this.state.current !== "model" || this.state.interactionLocked) {
-        return;
-    }
-    
-    event.preventDefault();
+    if (this.state.activePointerId !== null || this.state.current !== "model") return;
 
     this.state.activePointerId = event.pointerId;
     this.interaction.touchStartPosition = getEventPosition(event);
     this.state.isDragging = false;
-
     this.setAutoRotateState(false);
-    this.setModelViewerInteraction(false); // Deshabilitamos controles para evitar rotación accidental
 
-    this.setTimer('hold', () => {
-        if (config.DEBUG_MODE) console.log("✅ HOLD confirmado por timer");
-        this.initializeHoldState(this.interaction.touchStartPosition);
+    // Iniciar el temporizador que, si se completa, activará el hold.
+    this.setTimer('holdInitiator', () => {
+      // Si el timer se completa, significa que el usuario mantuvo presionado sin arrastrar.
+      if (config.DEBUG_MODE) console.log("✅ Hold confirmado. Iniciando efectos.");
+      this.initiateHold();
     }, config.HOLD_DURATION);
   }
 
-  updateHoldDetection = throttle((event) => {
-    if (event.pointerId !== this.state.activePointerId || this.state.isDragging) {
-        return;
-    }
+  updateHoldDetection(event) {
+    if (event.pointerId !== this.state.activePointerId) return;
+
+    // Si ya estamos en modo drag, no hacer nada.
+    if (this.state.isDragging) return;
 
     this.interaction.touchCurrentPosition = getEventPosition(event);
-
     const dragDistance = calculateDragDistance(
-        this.interaction.touchStartPosition,
-        this.interaction.touchCurrentPosition
+      this.interaction.touchStartPosition,
+      this.interaction.touchCurrentPosition
     );
 
+    // Si la distancia supera el umbral, es un DRAG.
     if (dragDistance > this.interaction.dragThreshold) {
-        if (config.DEBUG_MODE) console.log("❌ Drag detectado, cancelando hold.");
-        this.state.isDragging = true;
-        this.cancelHold(); 
+      if (config.DEBUG_MODE) console.log("❌ Drag detectado, cancelando timer de hold.");
+      this.state.isDragging = true;
+      // Lo más importante: cancelar el timer del hold.
+      this.clearTimer('holdInitiator');
     }
-  }, 16);
+  }
 
   endHoldDetection(event) {
-    if (event.pointerId !== this.state.activePointerId) {
-        return;
-    }
+    if (event.pointerId !== this.state.activePointerId) return;
 
     if (config.DEBUG_MODE) console.log("🏁 Finalizando interacción (pointerup/cancel)");
 
-    const wasDragging = this.state.isDragging;
+    // Siempre limpiar el timer del hold al levantar el dedo.
+    this.clearTimer('holdInitiator');
     
-    this.cancelHold();
-
-    // Solo hacemos snap si NO fue un arrastre
-    if (!wasDragging && this.state.current === 'model') {
-        snapToNearestSide(this.elements.viewer, config.ROTATION_CONFIG);
+    if (this.state.isHolding) {
+      // Si el hold ya se había iniciado, lo cancelamos.
+      this.cancelHold();
     }
     
-    this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
+    // Si no fue un drag, hacemos snap.
+    if (!this.state.isDragging) {
+      snapToNearestSide(this.elements.viewer, config.ROTATION_CONFIG);
+    }
+
     this.state.activePointerId = null;
+    this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
   }
 
-  initializeHoldState(position) {
+  // Nueva función que se llama cuando el hold es exitoso
+  initiateHold() {
     if (!this.validateModelViewerState()) {
-        if (config.DEBUG_MODE) console.warn("⚠️ Model-viewer no válido - cancelando hold");
-        this.cancelHold();
-        return;
+      if (config.DEBUG_MODE) console.warn("⚠️ Model-viewer no válido - cancelando hold");
+      return;
     }
+    
+    // Ahora es seguro deshabilitar los controles porque sabemos que es un hold
+    this.setModelViewerInteraction(false);
 
     this.state.isHolding = true;
     this.progress.startTime = Date.now();
@@ -448,24 +428,18 @@ class CardViewerApp {
     this.elements.indicator.classList.add("active");
     triggerHapticFeedback(config.DEVICE_CONFIG.hapticFeedback);
     this.startProgressAnimation();
-    this.startParticleEffect(position);
+    this.startParticleEffect(this.interaction.touchStartPosition);
 
-    this.setTimer("videoActivation", () => {
-        if (this.state.isHolding) {
-            this.showVideo();
-        }
-    }, config.VIDEO_ACTIVATION_DELAY);
+    this.setTimer("videoActivation", this.showVideo.bind(this), config.VIDEO_ACTIVATION_DELAY);
   }
 
   cancelHold() {
-    this.clearTimer("hold");
+    if (config.DEBUG_MODE) console.log("🚫 Cancelando estado de hold (UI)");
     this.clearTimer("videoActivation");
     this.clearTimer("progress");
     this.clearTimer("particles");
     
-    if (this.state.current === "model") {
-        this.setModelViewerInteraction(true);
-    }
+    this.setModelViewerInteraction(true); // Siempre restaurar controles
 
     this.state.isHolding = false;
     this.elements.indicator.classList.remove("active");
@@ -484,60 +458,29 @@ class CardViewerApp {
       return false;
     }
   }
-  
-  /* ===================== EFECTOS VISUALES Y RECUPERACIÓN ===================== */
 
-  forceReturnToModel() {
-    if (config.DEBUG_MODE) console.log('🔄 Forzando retorno a vista model');
-  
-    this.clearTimer('videoTransition');
-    this.clearTimer('modelTransition');
-  
-    this.state.current = 'model';
-    this.state.interactionLocked = false;
-  
-    this.elements.fade.classList.remove("active");
-    this.elements.video.classList.remove("showing");
-    this.elements.video.pause();
-    this.elements.video.currentTime = 0;
-  
-    showViewModel();
-    this.elements.logo.classList.remove("hidden");
-  
-    this.setAutoRotateState(true, 0);
-  }
-
+  /* ===================== EFECTOS VISUALES ===================== */
   startProgressAnimation() {
-    this.setTimer(
-      "progress",
-      () => {
+    this.setTimer("progress", () => {
         if (!this.state.isHolding) return;
-
         const elapsed = Date.now() - this.progress.startTime;
         const progress = Math.min(elapsed / this.progress.totalTime, 1);
         const currentWidth = progress * 90;
         this.elements.indicator.style.width = `${currentWidth}vw`;
-
         if (progress >= 1) {
           triggerHapticFeedback(config.DEVICE_CONFIG.hapticFeedback);
           this.clearTimer("progress");
         }
-      },
-      16,
-      true
+      }, 16, true
     );
   }
 
   startParticleEffect(position) {
-    this.setTimer(
-      "particles",
-      () => {
+    this.setTimer("particles", () => {
         if (this.state.isHolding) {
           spawnParticles(position.x, position.y, this.elements.particlesContainer, config.PARTICLE_CONFIG);
         }
-      },
-      config.PARTICLE_SPAWN_INTERVAL,
-      true
+      }, config.PARTICLE_SPAWN_INTERVAL, true
     );
   }
 
@@ -548,13 +491,11 @@ class CardViewerApp {
     try {
       this.setShareButtonState("loading");
       displayInfo(this.getText("share_preparing", "Preparando captura..."));
-
       const imageBlob = await getCardShareImage(this.resourcePaths.share);
       if (!imageBlob) {
         displayWarning(this.getText("share_no_image", "Imagen no disponible"));
         return;
       }
-
       const platform = detectPlatform(config.PLATFORM_DETECTION);
       const shareText = this.generateShareText(platform);
       const shared = await this.attemptShare(imageBlob, shareText);
@@ -575,28 +516,21 @@ class CardViewerApp {
       "@superx_coleccionables";
 
     let shareText = this.getText(`share_${platform}_text`);
-
     if (shareText === `share_${platform}_text`) {
       shareText = this.getText(
         "share_text",
         `¡Mira esta increíble carta 3D: "${cardTitle}"! 🎮✨\n¡Consigue la tuya en ${storeHandle}!`
       );
     }
-
-    return shareText
-      .replace("{cardTitle}", cardTitle)
-      .replace("{storeHandle}", storeHandle);
+    return shareText.replace("{cardTitle}", cardTitle).replace("{storeHandle}", storeHandle);
   }
 
   async attemptShare(imageBlob, shareText) {
     const filename = `${config.SHARE_CONFIG?.filename || "super-x-card"}-${this.cardId}.png`;
-
     const nativeShared = await tryNativeShare(imageBlob, shareText, filename);
     if (nativeShared) return { method: "native", success: true };
-
     const copied = await copyImageToClipboard(imageBlob);
     if (copied) return { method: "clipboard", success: true };
-
     downloadImage(imageBlob, filename, config.PERFORMANCE_CONFIG.cleanup.urlRevokeDelay);
     return { method: "download", success: true };
   }
@@ -614,7 +548,6 @@ class CardViewerApp {
 
   setShareButtonState(state) {
     const button = this.elements.shareButton;
-
     if (state === "loading") {
       button.classList.add("loading");
       button.textContent = this.getText("share_preparing", "Preparando...");
@@ -630,30 +563,18 @@ class CardViewerApp {
   }
 
   /* ===================== UTILIDADES ===================== */
-  safeGetCameraOrbit() {
-    if (!isModelViewerReady(this.elements.viewer)) return null;
-    try {
-      return this.elements.viewer.getCameraOrbit();
-    } catch (error) {
-      if (config.DEBUG_MODE) console.error("Error obteniendo camera orbit:", error);
-      return null;
-    }
-  }
-
   setModelViewerInteraction(enabled) {
     if (!isModelViewerReady(this.elements.viewer)) return;
     try {
-        if (enabled) {
-            if (config.DEBUG_MODE) console.log("🔓 Habilitando controles de model-viewer");
-            this.elements.viewer.setAttribute("camera-controls", "");
-            this.elements.viewer.style.pointerEvents = "auto";
-        } else {
-            if (config.DEBUG_MODE) console.log("🔒 Deshabilitando controles de model-viewer");
-            this.elements.viewer.removeAttribute("camera-controls");
-            this.elements.viewer.style.pointerEvents = "none";
-        }
+      if (enabled) {
+        if (config.DEBUG_MODE) console.log("🔓 Habilitando controles de model-viewer");
+        this.elements.viewer.setAttribute("camera-controls", "");
+      } else {
+        if (config.DEBUG_MODE) console.log("🔒 Deshabilitando controles de model-viewer");
+        this.elements.viewer.removeAttribute("camera-controls");
+      }
     } catch (error) {
-        if (config.DEBUG_MODE) console.error("Error controlando interacciones de model-viewer:", error);
+      if (config.DEBUG_MODE) console.error("Error controlando interacciones de model-viewer:", error);
     }
   }
 
@@ -669,24 +590,10 @@ class CardViewerApp {
     this.elements.viewer.addEventListener("pointercancel", (e) => this.endHoldDetection(e));
     this.elements.viewer.addEventListener("pointerleave", (e) => this.endHoldDetection(e));
 
-    // Prevenir comportamientos no deseados
     this.elements.viewer.addEventListener("dragstart", (e) => e.preventDefault());
-    this.elements.viewer.addEventListener("selectstart", (e) => e.preventDefault());
 
-    // Control de video
     this.elements.video.addEventListener("ended", () => this.returnToModel());
 
-    // Snap automático de cámara
-    this.elements.viewer.addEventListener(
-      "camera-change",
-      debounce(() => {
-        if (this.state.current !== "model" || this.state.interactionLocked || this.state.isDragging) return;
-        this.setAutoRotateState(false);
-        // El snap solo ocurre si el usuario suelta el control, manejado en endHoldDetection
-      }, config.CAMERA_SNAP_DELAY)
-    );
-
-    // Cambio de idioma dinámico
     window.addEventListener("languageChanged", (event) => {
       this.lang = event.detail.language;
       this.translations = event.detail.translations;
@@ -695,14 +602,11 @@ class CardViewerApp {
       this.setShareButtonState("normal");
     });
 
-    // Debug: cambiar idioma con tecla 'L'
     if (config.DEBUG_MODE) {
       document.addEventListener("keydown", (e) => {
         if (e.key === "l" || e.key === "L") {
           const newLang = this.lang === "en" ? "es" : "en";
-          switchLanguage(newLang).catch((err) => {
-            console.error(err);
-          });
+          switchLanguage(newLang).catch(console.error);
         }
       });
     }
