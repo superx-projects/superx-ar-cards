@@ -479,19 +479,30 @@ showVideo() {
   // NUEVO: Confirmar modo drag y restaurar controles
   confirmDragMode() {
     if (config.DEBUG_MODE) console.log('🎯 Confirmando modo DRAG');
-  
+
     // Limpiar hold si estaba activo
     if (this.state.isHolding || this.state.activePointerId !== null) {
       this.cancelHold();
     }
-  
-    // Activar controles del model-viewer
-    this.setModelViewerInteraction(true);
-  
+
+    // MEJORADO: Restaurar controles de forma más segura
+    const capabilities = getDeviceCapabilities();
+    if (capabilities.isMobile) {
+      // En móviles, restaurar camera-controls si había backup
+      if (this.elements.viewer.hasAttribute("data-camera-controls-backup")) {
+        this.elements.viewer.setAttribute("camera-controls", "");
+        this.elements.viewer.removeAttribute("data-camera-controls-backup");
+      }
+      this.elements.viewer.removeAttribute("interaction-prompt-style");
+    } else {
+      // Desktop: usar función normal
+      this.setModelViewerInteraction(true);
+    }
+
     // Limpiar timers de detección
     this.clearTimer('intentionDetection');
     this.clearTimer('stabilityCheck');
-  
+
     // Reset pointer tracking
     this.state.activePointerId = null;
   }
@@ -579,75 +590,76 @@ showVideo() {
     }
   }
 
-  /* ===================== CONTROL INTELIGENTE DE MODEL-VIEWER ===================== */
-  setModelViewerInteraction(enabled) {
-    if (!isModelViewerReady(this.elements.viewer)) return;
-    try {
-      const capabilities = getDeviceCapabilities();
-      if (enabled) {
-        if (config.DEBUG_MODE) console.log("🔓 Habilitando controles de model-viewer");
-        this.elements.viewer.removeAttribute("interaction-prompt-style");
-        this.elements.viewer.style.pointerEvents = "auto";
-        // Restaurar camera-controls
-        this.elements.viewer.setAttribute("camera-controls", "");
-      } else {
-        if (config.DEBUG_MODE) console.log("🔒 Deshabilitando controles de model-viewer temporalmente");
-        this.elements.viewer.setAttribute("interaction-prompt-style", "none");
-        // En móviles, ser más cuidadoso con pointer-events
-        if (capabilities.isMobile) {
-          // Solo deshabilitar interaction-prompt, mantener pointer-events
-          this.elements.viewer.style.pointerEvents = "auto";
-          this.elements.viewer.removeAttribute("camera-controls");
-        } else {
-          this.elements.viewer.style.pointerEvents = "none";
-          this.elements.viewer.removeAttribute("camera-controls");
-          setTimeout(() => {
-            if (this.elements.viewer.style.pointerEvents === "none") {
-              this.elements.viewer.style.pointerEvents = "auto";
-            }
-          }, 50);
-        }
-      }
-    } catch (error) {
-      if (config.DEBUG_MODE) console.error("Error controlando interacciones de model-viewer:", error);
+  validateModelViewerState() {
+  try {
+    if (!this.elements.viewer) {
+      throw new Error("Element viewer no encontrado");
     }
+    
+    if (!isModelViewerReady(this.elements.viewer)) {
+      throw new Error("Model-viewer no está listo");
+    }
+    
+    // Verificar que el modelo esté cargado
+    if (!this.elements.viewer.src || this.elements.viewer.src === "") {
+      throw new Error("Modelo no tiene src definido");
+    }
+    
+    return true;
+  } catch (error) {
+    if (config.DEBUG_MODE) console.error("Validación model-viewer falló:", error);
+    return false;
   }
+}
 
   /* ===================== INICIALIZACIÓN DE HOLD SIN CAMBIOS ===================== */
   initializeHoldState(position) {
-    this.setTimer(
-      "hold",
-      () => {
-        if (
-          !this.state.modelMoved &&
-          !this.state.isDragging &&
-          this.state.current === "model" &&
-          !this.state.interactionLocked
-        ) {
-          if (config.DEBUG_MODE) console.log("🎯 Iniciando HOLD definitivo");
-          this.state.isHolding = true;
-          this.progress.startTime = Date.now();
-          this.elements.viewer.classList.add("hold");
-          this.elements.indicator.classList.add("active");
-          triggerHapticFeedback(config.DEVICE_CONFIG.hapticFeedback);
-          this.startProgressAnimation();
-          this.startParticleEffect(position);
-
-          this.setTimer(
-            "videoActivation",
-            () => {
-              if (this.state.isHolding && this.state.current === "model" && !this.state.interactionLocked) {
-                if (config.DEBUG_MODE) console.log("🎬 Activando video por hold completado");
-                this.showVideo();
-              }
-            },
-            config.VIDEO_ACTIVATION_DELAY
-          );
-        }
-      },
-      config.HOLD_DURATION
-    );
+  // NUEVO: Validar estado del model-viewer antes de iniciar hold
+  if (!this.validateModelViewerState()) {
+    if (config.DEBUG_MODE) console.warn("⚠️ Model-viewer no válido - cancelando hold");
+    this.cancelHold();
+    return;
   }
+
+  this.setTimer(
+    "hold",
+    () => {
+      if (
+        !this.state.modelMoved &&
+        !this.state.isDragging &&
+        this.state.current === "model" &&
+        !this.state.interactionLocked &&
+        this.validateModelViewerState() // NUEVO: Validación adicional
+      ) {
+        if (config.DEBUG_MODE) console.log("🎯 Iniciando HOLD definitivo");
+        this.state.isHolding = true;
+        this.progress.startTime = Date.now();
+        this.elements.viewer.classList.add("hold");
+        this.elements.indicator.classList.add("active");
+        triggerHapticFeedback(config.DEVICE_CONFIG.hapticFeedback);
+        this.startProgressAnimation();
+        this.startParticleEffect(position);
+
+        this.setTimer(
+          "videoActivation",
+          () => {
+            if (this.state.isHolding && this.state.current === "model" && 
+                !this.state.interactionLocked && this.validateModelViewerState()) {
+              if (config.DEBUG_MODE) console.log("🎬 Activando video por hold completado");
+              this.showVideo();
+            }
+          },
+          config.VIDEO_ACTIVATION_DELAY
+        );
+      } else {
+        // Si la validación falla, cancelar hold
+        if (config.DEBUG_MODE) console.warn("⚠️ Hold cancelado por validación fallida");
+        this.cancelHold();
+      }
+    },
+    config.HOLD_DURATION
+  );
+}
 
   /* ===================== CANCELACIÓN MEJORADA ===================== */
   cancelHold() {
@@ -671,26 +683,47 @@ showVideo() {
     this.clearTimer("progress");
     this.clearTimer("particles");
 
-    // Restaurar controles
-    this.setModelViewerInteraction(true);
-
-    // Limpiar UI
-    this.elements.indicator.classList.remove("active");
-    this.elements.indicator.style.width = "0";
-    this.elements.viewer.classList.remove("hold");
-
-    // NUEVO: Limpiar fade si quedó activo por race condition
-    if (this.elements.fade.classList.contains("active")) {
-      if (config.DEBUG_MODE) console.warn('⚠️ Fade quedó activo después de cancelar hold - limpiando');
-      this.elements.fade.classList.remove("active");
+    // MEJORADO: Restaurar controles de forma más segura
+    try {
+      const capabilities = getDeviceCapabilities();
+      if (capabilities.isMobile && this.elements.viewer.hasAttribute("data-camera-controls-backup")) {
+        // Restaurar camera-controls en móviles
+        this.elements.viewer.setAttribute("camera-controls", "");
+        this.elements.viewer.removeAttribute("data-camera-controls-backup");
+        this.elements.viewer.removeAttribute("interaction-prompt-style");
+      } else {
+        // Usar función normal para desktop
+        this.setModelViewerInteraction(true);
+      }
+    } catch (error) {
+      if (config.DEBUG_MODE) console.error("Error restaurando controles:", error);
+      // Intento de recuperación: restaurar atributos básicos
+      try {
+        this.elements.viewer.setAttribute("camera-controls", "");
+        this.elements.viewer.removeAttribute("interaction-prompt-style");
+        this.elements.viewer.style.pointerEvents = "auto";
+      } catch (fallbackError) {
+        if (config.DEBUG_MODE) console.error("Error en recuperación de controles:", fallbackError);
+      }
     }
 
-    // NUEVO: Asegurar que estamos en el estado correcto
-    if (this.state.current === 'transitioning') {
-      if (config.DEBUG_MODE) console.warn('⚠️ Estado inconsistente detectado - restaurando a model');
-      this.forceReturnToModel();
-    }
+  // Limpiar UI
+  this.elements.indicator.classList.remove("active");
+  this.elements.indicator.style.width = "0";
+  this.elements.viewer.classList.remove("hold");
+
+  // NUEVO: Limpiar fade si quedó activo por race condition
+  if (this.elements.fade.classList.contains("active")) {
+    if (config.DEBUG_MODE) console.warn('⚠️ Fade quedó activo después de cancelar hold - limpiando');
+    this.elements.fade.classList.remove("active");
   }
+
+  // NUEVO: Asegurar que estamos en el estado correcto
+  if (this.state.current === 'transitioning') {
+    if (config.DEBUG_MODE) console.warn('⚠️ Estado inconsistente detectado - restaurando a model');
+    this.forceReturnToModel();
+  }
+}
 
   /* ===================== FUNCIÓN DE RECUPERACIÓN FORZADA ===================== */
   forceReturnToModel() {
@@ -852,17 +885,44 @@ showVideo() {
     }
   }
 
-  // (Duplicado intencional según el código original)
   setModelViewerInteraction(enabled) {
     if (!isModelViewerReady(this.elements.viewer)) return;
+  
     try {
+      const capabilities = getDeviceCapabilities();
+    
       if (enabled) {
+        if (config.DEBUG_MODE) console.log("🔓 Habilitando controles de model-viewer");
         this.elements.viewer.removeAttribute("interaction-prompt-style");
         this.elements.viewer.style.pointerEvents = "auto";
+        // CRÍTICO: Solo restaurar camera-controls si no estamos en hold activo
+        if (!this.state.isHolding) {
+          this.elements.viewer.setAttribute("camera-controls", "");
+        }
       } else {
+        if (config.DEBUG_MODE) console.log("🔒 Deshabilitando controles de model-viewer temporalmente");
         this.elements.viewer.setAttribute("interaction-prompt-style", "none");
-        this.elements.viewer.style.pointerEvents = "none";
-        setTimeout(() => (this.elements.viewer.style.pointerEvents = "auto"), 50);
+      
+        // MEJORADO: En móviles, ser más conservador
+        if (capabilities.isMobile) {
+          // NO tocar pointer-events en móviles, solo deshabilitar interaction-prompt
+          // NO remover camera-controls completamente, solo pausar temporalmente
+          if (this.elements.viewer.hasAttribute("camera-controls")) {
+            this.elements.viewer.setAttribute("data-camera-controls-backup", "true");
+            this.elements.viewer.removeAttribute("camera-controls");
+          }
+        } else {
+          // Desktop: comportamiento original pero más seguro
+          this.elements.viewer.removeAttribute("camera-controls");
+          this.elements.viewer.style.pointerEvents = "none";
+        
+          // Restaurar pointer-events rápidamente para evitar problemas
+          setTimeout(() => {
+            if (this.elements.viewer && this.elements.viewer.style.pointerEvents === "none") {
+              this.elements.viewer.style.pointerEvents = "auto";
+            }
+          }, 50);
+        }
       }
     } catch (error) {
       if (config.DEBUG_MODE) console.error("Error controlando interacciones de model-viewer:", error);
@@ -921,5 +981,6 @@ showVideo() {
     }
   }
 }
+
 
 
