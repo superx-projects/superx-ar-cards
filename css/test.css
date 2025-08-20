@@ -723,13 +723,6 @@
     justify-content: center;
   }
   
-  .card-error-content {
-    display: flex;
-    flex-direction: column;
-    margin-left: 1.5rem;
-    text-align: left;
-  }
-  
   .card-error-icon svg {
     width: 50px;
     height: 50px;
@@ -758,5 +751,4 @@
   }
 
 }
-
 

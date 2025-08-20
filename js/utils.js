@@ -1,12 +1,10 @@
 /**
- * utils.js - Funciones utilitarias
+ * utils.js - Funciones utilitarias puras
  * Proyecto: Super X Immersive Cards
  * 
- * Contiene funciones auxiliares para efectos visuales, geometría,
- * validación de recursos y funcionalidades de compartir.
+ * Biblioteca de funciones auxiliares sin dependencias externas.
+ * Todas las configuraciones se pasan como parámetros.
  */
-
-import { PARTICLE_SPAWN_DURATION } from "./config.js";
 
 /* =====================
    SISTEMA DE PARTÍCULAS
@@ -17,36 +15,41 @@ import { PARTICLE_SPAWN_DURATION } from "./config.js";
  * @param {number} x - Posición X en píxeles
  * @param {number} y - Posición Y en píxeles
  * @param {HTMLElement} container - Contenedor donde crear las partículas
- * @param {Object} [options={}] - Opciones de personalización
+ * @param {Object} config - Configuración completa de partículas
+ * @param {number} [config.count=5] - Número de partículas
+ * @param {number} [config.minDistance=20] - Distancia mínima
+ * @param {number} [config.maxDistance=80] - Distancia máxima
+ * @param {number} [config.duration=2000] - Duración antes de limpiar
  */
-export function spawnParticles(x, y, container, options = {}) {
-  if (!container || !container.appendChild) {
+export function spawnParticles(x, y, container, config = {}) {
+  if (!container?.appendChild) {
     console.warn('Contenedor de partículas inválido');
     return;
   }
   
-  const config = {
+  const settings = {
     count: 5,
     minDistance: 20,
     maxDistance: 80,
-    ...options
+    duration: 2000,
+    ...config
   };
   
   const fragment = document.createDocumentFragment();
+  const particles = [];
   
-  for (let i = 0; i < config.count; i++) {
-    const particle = createParticle(x, y, config);
+  for (let i = 0; i < settings.count; i++) {
+    const particle = createParticle(x, y, settings);
     fragment.appendChild(particle);
-    
-    // Limpieza automática
-    setTimeout(() => {
-      if (particle.parentElement) {
-        particle.parentElement.removeChild(particle);
-      }
-    }, PARTICLE_SPAWN_DURATION);
+    particles.push(particle);
   }
   
   container.appendChild(fragment);
+  
+  // Limpieza automática
+  setTimeout(() => {
+    particles.forEach(particle => particle.remove());
+  }, settings.duration);
 }
 
 /**
@@ -79,19 +82,26 @@ function createParticle(x, y, config) {
  * Controla la rotación automática del modelo 3D
  * @param {HTMLElement} viewer - Elemento model-viewer
  * @param {Function} isEnabledFn - Función que retorna true para activar rotación
- * @param {number} [speed=0.0005] - Velocidad de rotación en radianes por milisegundo
+ * @param {Object} config - Configuración de rotación
+ * @param {number} [config.speed=0.0005] - Velocidad de rotación
+ * @param {boolean} [config.normalizeAngle=true] - Si normalizar ángulos
  */
-export function customAutoRotate(viewer, isEnabledFn, speed = 0.0005) {
+export function customAutoRotate(viewer, isEnabledFn, config = {}) {
   if (!viewer || typeof isEnabledFn !== 'function') {
     console.error('customAutoRotate: parámetros inválidos');
     return;
   }
   
+  const settings = {
+    speed: 0.0005,
+    normalizeAngle: true,
+    ...config
+  };
+  
   let lastTimestamp = null;
   let animationId = null;
   
   function rotate(timestamp) {
-    // Verificar que model-viewer esté listo
     if (!isModelViewerReady(viewer)) {
       animationId = requestAnimationFrame(rotate);
       return;
@@ -104,10 +114,11 @@ export function customAutoRotate(viewer, isEnabledFn, speed = 0.0005) {
     if (isEnabledFn()) {
       try {
         const orbit = viewer.getCameraOrbit();
-        let newTheta = orbit.theta + delta * speed;
+        let newTheta = orbit.theta + delta * settings.speed;
         
-        // Normalizar ángulo para evitar overflow
-        newTheta = normalizeRadians(newTheta);
+        if (settings.normalizeAngle) {
+          newTheta = normalizeRadians(newTheta);
+        }
         
         viewer.cameraOrbit = `${newTheta}rad ${orbit.phi}rad ${orbit.radius}m`;
       } catch (error) {
@@ -120,7 +131,6 @@ export function customAutoRotate(viewer, isEnabledFn, speed = 0.0005) {
   
   animationId = requestAnimationFrame(rotate);
   
-  // Retornar función para detener la animación
   return () => {
     if (animationId) {
       cancelAnimationFrame(animationId);
@@ -129,7 +139,9 @@ export function customAutoRotate(viewer, isEnabledFn, speed = 0.0005) {
   };
 }
 
-// --- Función mejorada para detectar si el usuario está intentando hacer drag ---
+/**
+ * Calcula la distancia de arrastre entre dos puntos
+ */
 export function calculateDragDistance(startPos, currentPos) {
   if (!startPos || !currentPos) return 0;
   
@@ -138,11 +150,13 @@ export function calculateDragDistance(startPos, currentPos) {
   return Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 }
 
-// --- Función para obtener posición del evento (unified touch/mouse) ---
+/**
+ * Obtiene posición unificada de evento (touch/mouse)
+ */
 export function getEventPosition(event) {
   return {
-    x: event.clientX || (event.touches && event.touches[0] ? event.touches[0].clientX : 0),
-    y: event.clientY || (event.touches && event.touches[0] ? event.touches[0].clientY : 0)
+    x: event.clientX ?? event.touches?.[0]?.clientX ?? 0,
+    y: event.clientY ?? event.touches?.[0]?.clientY ?? 0
   };
 }
 
@@ -150,58 +164,50 @@ export function getEventPosition(event) {
    FUNCIONES GEOMÉTRICAS
 ===================== */
 
-/**
- * Convierte grados a radianes
- * @param {number} degrees - Ángulo en grados
- * @returns {number} Ángulo en radianes
- */
 export function degToRad(degrees) {
   return (degrees * Math.PI) / 180;
 }
 
-/**
- * Convierte radianes a grados
- * @param {number} radians - Ángulo en radianes
- * @returns {number} Ángulo en grados
- */
 export function radToDeg(radians) {
   return (radians * 180) / Math.PI;
 }
 
 /**
- * Normaliza un ángulo en grados al rango [0, 360)
- * @param {number} degrees - Ángulo en grados
- * @returns {number} Ángulo normalizado
+ * Normaliza un ángulo al rango especificado
+ * @param {number} angle - Ángulo a normalizar
+ * @param {number} [min=0] - Valor mínimo
+ * @param {number} [max=360] - Valor máximo
  */
-export function normalizeAngle(degrees) {
-  return ((degrees % 360) + 360) % 360;
+export function normalizeAngle(angle, min = 0, max = 360) {
+  return ((angle % max) + max) % max;
 }
 
 /**
- * Normaliza un ángulo en radianes al rango [0, 2π)
+ * Normaliza un ángulo en radianes al rango especificado
  * @param {number} radians - Ángulo en radianes
- * @returns {number} Ángulo normalizado
+ * @param {number} [min=0] - Valor mínimo
+ * @param {number} [max=2π] - Valor máximo
  */
-export function normalizeRadians(radians) {
-  return ((radians % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+export function normalizeRadians(radians, min = 0, max = 2 * Math.PI) {
+  return ((radians % max) + max) % max;
 }
 
 /**
  * Encuentra el ángulo de snap más cercano
- * @param {number} currentAngle - Ángulo actual en grados
- * @param {number[]} [snapAngles=[0, 180]] - Ángulos permitidos para snap
- * @returns {number} Ángulo de snap más cercano
+ * @param {number} currentAngle - Ángulo actual
+ * @param {number[]} snapAngles - Ángulos permitidos para snap
+ * @param {number} [maxRange=360] - Rango máximo para cálculos
  */
-export function getClosestSnapAngle(currentAngle, snapAngles = [0, 180]) {
-  const normalized = normalizeAngle(currentAngle);
+export function getClosestSnapAngle(currentAngle, snapAngles, maxRange = 360) {
+  const normalized = normalizeAngle(currentAngle, 0, maxRange);
   
   return snapAngles.reduce((closest, angle) => {
     const distance = Math.abs(normalized - angle);
-    const wrappedDistance = Math.abs(normalized - (angle + 360));
+    const wrappedDistance = Math.abs(normalized - (angle + maxRange));
     const minDistance = Math.min(distance, wrappedDistance);
     
     const closestDistance = Math.abs(normalized - closest);
-    const closestWrappedDistance = Math.abs(normalized - (closest + 360));
+    const closestWrappedDistance = Math.abs(normalized - (closest + maxRange));
     const minClosestDistance = Math.min(closestDistance, closestWrappedDistance);
     
     return minDistance < minClosestDistance ? angle : closest;
@@ -212,11 +218,6 @@ export function getClosestSnapAngle(currentAngle, snapAngles = [0, 180]) {
    CONTROL DEL MODEL-VIEWER
 ===================== */
 
-/**
- * Verifica si model-viewer está listo para usar
- * @param {HTMLElement} viewer - Elemento model-viewer
- * @returns {boolean} True si está listo
- */
 export function isModelViewerReady(viewer) {
   return (
     viewer &&
@@ -229,9 +230,17 @@ export function isModelViewerReady(viewer) {
 /**
  * Realiza snap de la cámara al lado más cercano
  * @param {HTMLElement} viewer - Elemento model-viewer
- * @param {number[]} [snapAngles] - Ángulos permitidos para snap
+ * @param {Object} config - Configuración de snap
+ * @param {number[]} [config.snapAngles=[0, 180]] - Ángulos de snap
+ * @param {number} [config.defaultPhi=90] - Ángulo phi por defecto
  */
-export function snapToNearestSide(viewer, snapAngles) {
+export function snapToNearestSide(viewer, config = {}) {
+  const settings = {
+    snapAngles: [0, 180],
+    defaultPhi: 90,
+    ...config
+  };
+  
   if (!isModelViewerReady(viewer)) {
     console.warn('Model-viewer no está listo para snap');
     return;
@@ -242,10 +251,9 @@ export function snapToNearestSide(viewer, snapAngles) {
     if (!orbit) return;
     
     const currentDegrees = radToDeg(orbit.theta);
-    const targetDegrees = getClosestSnapAngle(currentDegrees, snapAngles);
+    const targetDegrees = getClosestSnapAngle(currentDegrees, settings.snapAngles);
     
-    // Mantener phi en 90° (horizontal) y el radio actual
-    viewer.cameraOrbit = `${targetDegrees}deg 90deg ${orbit.radius}m`;
+    viewer.cameraOrbit = `${targetDegrees}deg ${settings.defaultPhi}deg ${orbit.radius}m`;
     
   } catch (error) {
     console.error('Error en snapToNearestSide:', error);
@@ -259,40 +267,48 @@ export function snapToNearestSide(viewer, snapAngles) {
 /**
  * Valida que un recurso esté disponible
  * @param {string} url - URL del recurso
- * @param {string} [resourceType='resource'] - Tipo de recurso para logging
- * @param {number} [timeout=5000] - Timeout en milisegundos
- * @returns {Promise<boolean>} True si el recurso está disponible
+ * @param {Object} config - Configuración de validación
+ * @param {string} [config.resourceType='resource'] - Tipo de recurso
+ * @param {number} [config.timeout=5000] - Timeout en ms
+ * @param {string} [config.method='HEAD'] - Método HTTP
  */
-export async function validateResource(url, resourceType = 'resource', timeout = 5000) {
+export async function validateResource(url, config = {}) {
+  const settings = {
+    resourceType: 'resource',
+    timeout: 5000,
+    method: 'HEAD',
+    ...config
+  };
+  
   if (!url || typeof url !== 'string') {
-    console.error(`URL inválida para ${resourceType}:`, url);
+    console.error(`URL inválida para ${settings.resourceType}:`, url);
     return false;
   }
   
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    const timeoutId = setTimeout(() => controller.abort(), settings.timeout);
     
     const response = await fetch(url, { 
-      method: 'HEAD',
+      method: settings.method,
       signal: controller.signal
     });
     
     clearTimeout(timeoutId);
     
     if (response.ok) {
-      console.log(`✓ ${resourceType} validado: ${url}`);
+      console.log(`✓ ${settings.resourceType} validado: ${url}`);
       return true;
     } else {
-      console.warn(`✗ ${resourceType} no disponible (${response.status}): ${url}`);
+      console.warn(`✗ ${settings.resourceType} no disponible (${response.status}): ${url}`);
       return false;
     }
     
   } catch (error) {
     if (error.name === 'AbortError') {
-      console.error(`Timeout validando ${resourceType}: ${url}`);
+      console.error(`Timeout validando ${settings.resourceType}: ${url}`);
     } else {
-      console.error(`Error validando ${resourceType}: ${url}`, error);
+      console.error(`Error validando ${settings.resourceType}: ${url}`, error);
     }
     return false;
   }
@@ -302,49 +318,26 @@ export async function validateResource(url, resourceType = 'resource', timeout =
    SISTEMA DE COMPARTIR
 ===================== */
 
-/**
- * Obtiene la imagen para compartir
- * @param {string} sharePath - Path de la imagen de share
- * @returns {Promise<Blob|null>} Blob de la imagen o null si no existe
- */
 export async function getCardShareImage(sharePath) {
   try {
     const response = await fetch(sharePath);
-    
-    if (response.ok) {
-      return await response.blob();
-    }
-    
-    return null;
-    
+    return response.ok ? await response.blob() : null;
   } catch (error) {
     console.warn('Imagen no disponible:', error.message);
     return null;
   }
 }
 
-/**
- * Intenta compartir usando la Web Share API nativa
- * @param {Blob} imageBlob - Imagen a compartir
- * @param {string} text - Texto genérico para compartir
- * @returns {Promise<boolean>} True si se compartió exitosamente
- */
-export async function tryNativeShare(imageBlob, text) {
+export async function tryNativeShare(imageBlob, text, filename = 'image.png') {
   if (!navigator.share) {
     console.log('Web Share API no disponible');
     return false;
   }
   
   try {
-    const file = new File([imageBlob], 'super-x-card.png', { type: 'image/png' });
-    
-    await navigator.share({
-      text: text,
-      files: [file]
-    });
-    
+    const file = new File([imageBlob], filename, { type: 'image/png' });
+    await navigator.share({ text, files: [file] });
     return true;
-    
   } catch (error) {
     if (error.name === 'AbortError') {
       console.log('Share cancelado por el usuario');
@@ -355,11 +348,6 @@ export async function tryNativeShare(imageBlob, text) {
   }
 }
 
-/**
- * Intenta copiar imagen al clipboard
- * @param {Blob} imageBlob - Imagen a copiar
- * @returns {Promise<boolean>} True si se copió exitosamente
- */
 export async function copyImageToClipboard(imageBlob) {
   if (!navigator.clipboard?.write) {
     console.log('Clipboard API no disponible');
@@ -367,14 +355,10 @@ export async function copyImageToClipboard(imageBlob) {
   }
   
   try {
-    const clipboardItem = new ClipboardItem({
-      [imageBlob.type]: imageBlob
-    });
-    
+    const clipboardItem = new ClipboardItem({ [imageBlob.type]: imageBlob });
     await navigator.clipboard.write([clipboardItem]);
     console.log('Imagen copiada al clipboard');
     return true;
-    
   } catch (error) {
     console.log('Error copiando al clipboard:', error.message);
     return false;
@@ -382,11 +366,12 @@ export async function copyImageToClipboard(imageBlob) {
 }
 
 /**
- * Descarga imagen como último recurso
+ * Descarga imagen con configuración de limpieza
  * @param {Blob} imageBlob - Imagen a descargar
  * @param {string} filename - Nombre del archivo
+ * @param {number} [cleanupDelay=1000] - Delay antes de limpiar URL
  */
-export function downloadImage(imageBlob, filename) {
+export function downloadImage(imageBlob, filename, cleanupDelay = 1000) {
   try {
     const url = URL.createObjectURL(imageBlob);
     const link = document.createElement('a');
@@ -399,9 +384,7 @@ export function downloadImage(imageBlob, filename) {
     link.click();
     document.body.removeChild(link);
     
-    // Limpiar URL después de un tiempo
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    
+    setTimeout(() => URL.revokeObjectURL(url), cleanupDelay);
     console.log(`Imagen descargada: ${filename}`);
     
   } catch (error) {
@@ -414,36 +397,51 @@ export function downloadImage(imageBlob, filename) {
 ===================== */
 
 /**
- * Detecta la plataforma o aplicación desde la que se accede
- * @returns {string} Plataforma detectada
+ * Detecta la plataforma usando mapas de detección personalizables
+ * @param {Object} config - Configuración de detección
+ * @param {Array} [config.apps] - Array de [keyword, platform] para apps
+ * @param {Array} [config.os] - Array de [regex, os] para sistemas
+ * @param {string} [config.fallback='web'] - Valor por defecto
  */
-export function detectPlatform() {
+export function detectPlatform(config = {}) {
+  const settings = {
+    apps: [
+      ['instagram', 'instagram'],
+      ['tiktok', 'tiktok'],
+      ['twitter', 'twitter'],
+      ['x.com', 'twitter'],
+      ['facebook', 'facebook'],
+      ['whatsapp', 'whatsapp'],
+      ['linkedin', 'linkedin'],
+      ['telegram', 'telegram']
+    ],
+    os: [
+      [/iphone|ipad|ios/i, 'ios'],
+      [/android/i, 'android'],
+      [/mac/i, 'macos'],
+      [/win/i, 'windows'],
+      [/linux/i, 'linux']
+    ],
+    fallback: 'web',
+    ...config
+  };
+  
   const userAgent = navigator.userAgent.toLowerCase();
   const platform = navigator.platform.toLowerCase();
   
-  // Detección de aplicaciones específicas
-  if (userAgent.includes('instagram')) return 'instagram';
-  if (userAgent.includes('tiktok')) return 'tiktok';
-  if (userAgent.includes('twitter') || userAgent.includes('x.com')) return 'twitter';
-  if (userAgent.includes('facebook')) return 'facebook';
-  if (userAgent.includes('whatsapp')) return 'whatsapp';
-  if (userAgent.includes('linkedin')) return 'linkedin';
-  if (userAgent.includes('telegram')) return 'telegram';
+  // Detección de aplicaciones
+  for (const [keyword, platformName] of settings.apps) {
+    if (userAgent.includes(keyword)) return platformName;
+  }
   
   // Detección de sistemas operativos
-  if (platform.includes('iphone') || platform.includes('ipad') || userAgent.includes('ios')) return 'ios';
-  if (platform.includes('android') || userAgent.includes('android')) return 'android';
-  if (platform.includes('mac')) return 'macos';
-  if (platform.includes('win')) return 'windows';
-  if (platform.includes('linux')) return 'linux';
+  for (const [regex, osName] of settings.os) {
+    if (regex.test(userAgent + platform)) return osName;
+  }
   
-  return 'web';
+  return settings.fallback;
 }
 
-/**
- * Verifica si el dispositivo soporta funcionalidades específicas
- * @returns {Object} Objeto con capacidades del dispositivo
- */
 export function getDeviceCapabilities() {
   return {
     hasTouch: 'ontouchstart' in window,
@@ -467,92 +465,110 @@ export function getDeviceCapabilities() {
 ===================== */
 
 /**
- * Activa vibración háptica en dispositivos compatibles
- * @param {number} [duration=50] - Duración en milisegundos
+ * Activa vibración háptica configurable
+ * @param {Object} config - Configuración de vibración
+ * @param {number|Array} [config.pattern=50] - Patrón de vibración
+ * @param {boolean} [config.enabled=true] - Si está habilitada
  */
-export function triggerHapticFeedback(duration = 50) {
-  if (!getDeviceCapabilities().hasVibration) return;
+export function triggerHapticFeedback(config = {}) {
+  const settings = {
+    pattern: 50,
+    enabled: true,
+    ...config
+  };
+  
+  const capabilities = getDeviceCapabilities();
+  if (!capabilities.hasVibration || !settings.enabled) return;
   
   try {
-    navigator.vibrate(duration);
+    navigator.vibrate(settings.pattern);
   } catch (error) {
     console.debug('Vibración no disponible:', error);
   }
 }
 
 /**
- * Muestra una notificación temporal en pantalla
+ * Sistema de notificaciones completamente configurable
  * @param {string} message - Mensaje a mostrar
- * @param {string} [type='info'] - Tipo: 'info', 'success', 'error', 'warning'
- * @param {number} [duration=3000] - Duración en milisegundos
+ * @param {Object} config - Configuración completa de la notificación
  */
-export function showNotification(message, type = 'info', duration = 3000) {
-  const notification = document.createElement('div');
-  notification.className = `notification ${type}`;
-  notification.textContent = message;
-  
-  // Estilos base
-  Object.assign(notification.style, {
-    position: 'fixed',
-    top: '20px',
-    left: '50%',
-    transform: 'translateX(-50%) translateY(-100%)',
-    padding: '12px 20px',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '500',
-    zIndex: '10000',
-    minWidth: '200px',
-    maxWidth: '90vw',
-    textAlign: 'center',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-    transition: 'all 0.3s ease',
-    opacity: '0'
-  });
-  
-  // Colores según tipo
-  const colors = {
-    info: { bg: '#3498db', text: '#ffffff' },
-    success: { bg: '#2ecc71', text: '#ffffff' },
-    error: { bg: '#e74c3c', text: '#ffffff' },
-    warning: { bg: '#f39c12', text: '#ffffff' }
+export function showNotification(message, config = {}) {
+  const settings = {
+    type: 'info',
+    duration: 3000,
+    position: { top: '20px', left: '50%' },
+    styles: {
+      padding: '12px 20px',
+      borderRadius: '8px',
+      fontSize: '14px',
+      fontWeight: '500',
+      zIndex: 10000,
+      minWidth: '200px',
+      maxWidth: '90vw',
+      boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+      transition: 'all 0.3s ease'
+    },
+    colors: {
+      info: { bg: '#3498db', text: '#ffffff' },
+      success: { bg: '#2ecc71', text: '#ffffff' },
+      error: { bg: '#e74c3c', text: '#ffffff' },
+      warning: { bg: '#f39c12', text: '#ffffff' }
+    },
+    animation: { duration: 300 },
+    removeExisting: true,
+    ...config
   };
   
-  const colorScheme = colors[type] || colors.info;
+  // Remover notificación existente si se especifica
+  if (settings.removeExisting) {
+    const existing = document.querySelector('.notification');
+    if (existing) existing.remove();
+  }
+  
+  const notification = document.createElement('div');
+  notification.className = `notification ${settings.type}`;
+  notification.textContent = message;
+  
+  // Aplicar estilos
+  const baseStyles = {
+    position: 'fixed',
+    ...settings.styles,
+    ...settings.position,
+    transform: 'translateX(-50%) translateY(-100%)',
+    opacity: '0'
+  };
+  
+  Object.assign(notification.style, baseStyles);
+  
+  // Colores
+  const colorScheme = settings.colors[settings.type] || settings.colors.info;
   notification.style.backgroundColor = colorScheme.bg;
   notification.style.color = colorScheme.text;
   
   document.body.appendChild(notification);
   
-  // Animación de entrada
+  // Animaciones
   requestAnimationFrame(() => {
     notification.style.transform = 'translateX(-50%) translateY(0)';
     notification.style.opacity = '1';
   });
   
-  // Animación de salida y limpieza
   setTimeout(() => {
     notification.style.transform = 'translateX(-50%) translateY(-100%)';
     notification.style.opacity = '0';
     
     setTimeout(() => {
       if (notification.parentElement) {
-        document.body.removeChild(notification);
+        notification.remove();
       }
-    }, 300);
-  }, duration);
+    }, settings.animation.duration);
+  }, settings.duration);
 }
 
-export function displayError(message) { showNotification(message, 'error'); }
-export function displayWarning(message) { showNotification(message, 'warning'); }
-export function displaySuccess(message) { showNotification(message, 'success'); }
-export function displayInfo(message) { showNotification(message, 'info'); }
-
 /**
- * Debounce function para limitar ejecuciones frecuentes
+ * Debounce genérico
  * @param {Function} func - Función a ejecutar
  * @param {number} wait - Tiempo de espera en ms
- * @returns {Function} Función debounced
  */
 export function debounce(func, wait) {
   let timeout;
@@ -567,28 +583,17 @@ export function debounce(func, wait) {
 }
 
 /**
- * Throttle function para limitar ejecuciones por tiempo
+ * Throttle genérico
  * @param {Function} func - Función a ejecutar
  * @param {number} limit - Límite de tiempo en ms
- * @returns {Function} Función throttled
  */
 export function throttle(func, limit) {
-  let lastFunc;
-  let lastRan;
-  return function executedFunction(...args) {
-    if (!lastRan) {
+  let inThrottle;
+  return function(...args) {
+    if (!inThrottle) {
       func.apply(this, args);
-      lastRan = Date.now();
-    } else {
-      clearTimeout(lastFunc);
-      lastFunc = setTimeout(() => {
-        if ((Date.now() - lastRan) >= limit) {
-          func.apply(this, args);
-          lastRan = Date.now();
-        }
-      }, limit - (Date.now() - lastRan));
+      inThrottle = true;
+      setTimeout(() => inThrottle = false, limit);
     }
   };
-
 }
-

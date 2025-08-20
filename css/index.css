@@ -164,26 +164,6 @@
 }
 
 /* =====================
-   ESTADOS INTERACTIVOS
-===================== */
-
-/* Hover effects para elementos interactivos futuros */
-.interactive-element {
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.interactive-element:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.1);
-}
-
-.interactive-element:active {
-  transform: translateY(0);
-  filter: brightness(0.9);
-}
-
-/* =====================
    RESPONSIVE DESIGN
 ===================== */
 
