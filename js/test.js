@@ -29,7 +29,8 @@ import {
   throttle,
   getEventPosition,
   calculateDragDistance,
-  showNotification
+  showNotification,
+  getDeviceCapabilities
 } from "./utils.js";
 
 /* ===================== FUNCIONES DE VISTA ===================== */
@@ -392,7 +393,7 @@ class CardViewerApp {
 
     // Configuración específica por dispositivo (evitar colisión con `config`)
     const deviceCfg = isMobile
-      ? MOBILE_INTERACTION_CONFIG
+      ? config.MOBILE_INTERACTION_CONFIG
       : {
           dragThresholdMobile: this.interaction.dragThreshold,
           holdDetectionDelay: config.INTENTION_DETECTION_DELAY,
@@ -442,7 +443,7 @@ class CardViewerApp {
           this.interaction.touchCurrentPosition
         );
         const threshold = isMobile
-          ? MOBILE_INTERACTION_CONFIG.dragThresholdMobile
+          ? config.MOBILE_INTERACTION_CONFIG.dragThresholdMobile
           : this.interaction.dragThreshold;
 
         if (finalDragDistance < threshold && !this.state.modelMoved && !this.state.isDragging) {
@@ -453,7 +454,7 @@ class CardViewerApp {
           this.confirmDragMode();
         }
       },
-      MOBILE_INTERACTION_CONFIG.stabilityWindow
+      config.MOBILE_INTERACTION_CONFIG.stabilityWindow
     );
   }
 
@@ -479,7 +480,7 @@ class CardViewerApp {
       this.interaction.touchCurrentPosition
     );
     const threshold = isMobile
-      ? MOBILE_INTERACTION_CONFIG.dragThresholdMobile
+      ? config.MOBILE_INTERACTION_CONFIG.dragThresholdMobile
       : this.interaction.dragThreshold;
 
     // Si hay movimiento significativo
@@ -506,7 +507,7 @@ class CardViewerApp {
       if (currentOrbit) {
         const deltaTheta = Math.abs(currentOrbit.theta - this.interaction.lastCameraOrbit.theta);
         const deltaPhi = Math.abs(currentOrbit.phi - this.interaction.lastCameraOrbit.phi);
-        const thresholdCam = MOBILE_INTERACTION_CONFIG.cameraMovementThreshold;
+        const thresholdCam = config.MOBILE_INTERACTION_CONFIG.cameraMovementThreshold;
 
         // Solo considerar como "movimiento" si es significativo
         if (deltaTheta > thresholdCam || deltaPhi > thresholdCam) {
@@ -850,3 +851,4 @@ class CardViewerApp {
     }
   }
 }
+
