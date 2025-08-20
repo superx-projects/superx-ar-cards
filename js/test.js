@@ -155,7 +155,7 @@ class CardViewerApp {
       activePointerId: null,
       interactionLocked: false,
       isAutoRotateEnabled: true,
-      modelMoved: false,
+      modelMoved: false, // Se mantiene por si se necesita en el futuro, pero la nueva lógica no lo usa activamente
       isDragging: false
     };
 
@@ -305,21 +305,19 @@ class CardViewerApp {
   }
 
   /* ===================== GESTIÓN DE ESTADOS ===================== */
-showVideo() {
-    // NUEVO: Validación adicional antes de mostrar video
+  showVideo() {
     if (this.state.current !== 'model' || this.state.interactionLocked) {
       if (config.DEBUG_MODE) console.warn('⚠️ showVideo llamado en estado inválido:', this.state.current);
       return;
     }
 
-    // NUEVO: Verificar que realmente estamos en hold válido
     if (!this.state.isHolding) {
-      console.warn('⚠️ showVideo llamado sin hold activo - cancelando');
+      if (config.DEBUG_MODE) console.warn('⚠️ showVideo llamado sin hold activo - cancelando');
       return;
     }
 
     if (config.DEBUG_MODE) console.log('🎬 Iniciando transición a video');
-  
+
     this.state.current = 'transitioning';
     this.state.interactionLocked = true;
     this.clearAllTimers(); // Limpiar todo antes de la transición
@@ -327,13 +325,6 @@ showVideo() {
     this.elements.fade.classList.add("active");
 
     this.setTimer('videoTransition', () => {
-      // NUEVO: Verificación de estado antes de continuar
-      if (this.state.current !== 'transitioning') {
-        console.warn('⚠️ Estado cambió durante transición - abortando');
-        this.elements.fade.classList.remove("active");
-        return;
-      }
-    
       showViewVideo();
       this.elements.logo.classList.add("hidden");
       this.elements.video.classList.add("showing");
@@ -342,7 +333,7 @@ showVideo() {
 
       this.state.current = 'video';
       this.state.interactionLocked = false;
-    
+
       if (config.DEBUG_MODE) console.log('✅ Transición a video completada');
     }, config.FADE_DURATION);
   }
@@ -383,375 +374,139 @@ showVideo() {
     }
   }
 
-  /* ===================== SISTEMA DE INTERACCIÓN ===================== */
+  /* ===================== SISTEMA DE INTERACCIÓN REFACTORIZADO ===================== */
+  
   startHoldDetection(event) {
-    if (this.state.activePointerId !== null || this.state.current !== "model" || this.state.interactionLocked) return;
-
-    // Detectar si es móvil
-    const capabilities = getDeviceCapabilities();
-    const isMobile = capabilities.isMobile;
-
-    // Prevenir comportamientos no deseados solo en casos específicos
-    if (isMobile && event.type === "pointerdown") {
-      event.preventDefault();
+    if (this.state.activePointerId !== null || this.state.current !== "model" || this.state.interactionLocked) {
+        return;
     }
+    
+    event.preventDefault();
 
     this.state.activePointerId = event.pointerId;
     this.interaction.touchStartPosition = getEventPosition(event);
-    this.interaction.touchCurrentPosition = this.interaction.touchStartPosition;
-    this.state.modelMoved = false;
     this.state.isDragging = false;
-    this.interaction.lastCameraOrbit = this.safeGetCameraOrbit();
 
-    // CLAVE: En móviles, NO deshabilitar camera-controls inmediatamente
-    // Permitir que funcionen normalmente hasta determinar intención
-    if (!isMobile) {
-      this.setModelViewerInteraction(false);
-    }
+    this.setAutoRotateState(false);
+    this.setModelViewerInteraction(false); // Deshabilitamos controles para evitar rotación accidental
 
-    // Configuración específica por dispositivo (evitar colisión con `config`)
-    const deviceCfg = isMobile
-      ? config.MOBILE_INTERACTION_CONFIG
-      : {
-          dragThresholdMobile: this.interaction.dragThreshold,
-          holdDetectionDelay: config.INTENTION_DETECTION_DELAY,
-          stabilityWindow: 50
-        };
-
-    // NUEVO: Timer para detectar intención de hold vs drag
-    this.setTimer(
-      "intentionDetection",
-      () => {
-        const dragDistance = calculateDragDistance(
-          this.interaction.touchStartPosition,
-          this.interaction.touchCurrentPosition
-        );
-        const threshold = deviceCfg.dragThresholdMobile;
-
-        // Si NO se ha movido significativamente = POSIBLE HOLD
-        if (dragDistance < threshold && !this.state.modelMoved && !this.state.isDragging) {
-          if (isMobile) {
-            if (config.DEBUG_MODE) console.log("📱 Posible intención de HOLD detectada en móvil");
-            // AHORA sí deshabilitar controles temporalmente para hold
-            this.setModelViewerInteraction(false);
-          }
-          // Iniciar verificación de estabilidad para hold
-          this.startStabilityCheck();
-        } else {
-          // Se detectó movimiento = DRAG CONFIRMADO
-          if (config.DEBUG_MODE) console.log("🖱️ Intención de DRAG confirmada");
-          this.confirmDragMode();
-        }
-      },
-      deviceCfg.holdDetectionDelay
-    );
-  }
-
-  // NUEVO: Verificación de estabilidad para hold
-  startStabilityCheck() {
-    const capabilities = getDeviceCapabilities();
-    const isMobile = capabilities.isMobile;
-
-    this.setTimer(
-      "stabilityCheck",
-      () => {
-        // Verificar que el dedo sigue quieto después del período de detección
-        const finalDragDistance = calculateDragDistance(
-          this.interaction.touchStartPosition,
-          this.interaction.touchCurrentPosition
-        );
-        const threshold = isMobile
-          ? config.MOBILE_INTERACTION_CONFIG.dragThresholdMobile
-          : this.interaction.dragThreshold;
-
-        if (finalDragDistance < threshold && !this.state.modelMoved && !this.state.isDragging) {
-          if (config.DEBUG_MODE) console.log("✅ HOLD confirmado - iniciando");
-          this.initializeHoldState(this.interaction.touchStartPosition);
-        } else {
-          if (config.DEBUG_MODE) console.log("❌ HOLD cancelado - movimiento detectado");
-          this.confirmDragMode();
-        }
-      },
-      config.MOBILE_INTERACTION_CONFIG.stabilityWindow
-    );
-  }
-
-  // NUEVO: Confirmar modo drag y restaurar controles
-  confirmDragMode() {
-    if (config.DEBUG_MODE) console.log('🎯 Confirmando modo DRAG');
-
-    // Limpiar hold si estaba activo
-    if (this.state.isHolding || this.state.activePointerId !== null) {
-      this.cancelHold();
-    }
-
-    // MEJORADO: Restaurar controles de forma más segura
-    const capabilities = getDeviceCapabilities();
-    if (capabilities.isMobile) {
-      // En móviles, restaurar camera-controls si había backup
-      if (this.elements.viewer.hasAttribute("data-camera-controls-backup")) {
-        this.elements.viewer.setAttribute("camera-controls", "");
-        this.elements.viewer.removeAttribute("data-camera-controls-backup");
-      }
-      this.elements.viewer.removeAttribute("interaction-prompt-style");
-    } else {
-      // Desktop: usar función normal
-      this.setModelViewerInteraction(true);
-    }
-
-    // Limpiar timers de detección
-    this.clearTimer('intentionDetection');
-    this.clearTimer('stabilityCheck');
-
-    // Reset pointer tracking
-    this.state.activePointerId = null;
+    this.setTimer('hold', () => {
+        if (config.DEBUG_MODE) console.log("✅ HOLD confirmado por timer");
+        this.initializeHoldState(this.interaction.touchStartPosition);
+    }, config.HOLD_DURATION);
   }
 
   updateHoldDetection = throttle((event) => {
-    if (event.pointerId !== this.state.activePointerId) return;
+    if (event.pointerId !== this.state.activePointerId || this.state.isDragging) {
+        return;
+    }
 
     this.interaction.touchCurrentPosition = getEventPosition(event);
 
-    const capabilities = getDeviceCapabilities();
-    const isMobile = capabilities.isMobile;
-
     const dragDistance = calculateDragDistance(
-      this.interaction.touchStartPosition,
-      this.interaction.touchCurrentPosition
+        this.interaction.touchStartPosition,
+        this.interaction.touchCurrentPosition
     );
-    const threshold = isMobile
-      ? config.MOBILE_INTERACTION_CONFIG.dragThresholdMobile
-      : this.interaction.dragThreshold;
 
-    // Si hay movimiento significativo
-    if (dragDistance > threshold) {
-      this.state.isDragging = true;
-
-      // MEJORADO: Cancel más agresivo durante detección
-      if (this.timers.has('intentionDetection') || this.timers.has('stabilityCheck')) {
-        if (config.DEBUG_MODE) console.log('🔄 Drag detectado durante detección - cancelando inmediatamente');
-        this.confirmDragMode();
-        return;
-      }
-
-      // MEJORADO: Cancel inmediato si estamos en hold
-      if (this.state.isHolding) {
-        if (config.DEBUG_MODE) console.log('❌ Hold cancelado por drag - limpieza inmediata');
-        this.cancelHold();
-        return; // Return inmediato para evitar procesamiento adicional
-      }
-    }
-
-    // Detección de movimiento de cámara (solo si no hemos cancelado ya)
-    if (this.interaction.lastCameraOrbit && !this.state.isDragging && this.state.activePointerId !== null) {
-      const currentOrbit = this.safeGetCameraOrbit();
-      if (currentOrbit) {
-        const deltaTheta = Math.abs(currentOrbit.theta - this.interaction.lastCameraOrbit.theta);
-        const deltaPhi = Math.abs(currentOrbit.phi - this.interaction.lastCameraOrbit.phi);
-      
-        const threshold = config.MOBILE_INTERACTION_CONFIG?.cameraMovementThreshold || 0.05;
-      
-        if (deltaTheta > threshold || deltaPhi > threshold) {
-          this.state.modelMoved = true;
-        
-          if (this.timers.has('intentionDetection') || this.timers.has('stabilityCheck')) {
-            console.log('📹 Movimiento de cámara - activando drag');
-            this.confirmDragMode();
-          }
-        
-          if (this.state.isHolding) {
-            console.log('❌ Hold cancelado por movimiento de cámara');
-            this.cancelHold();
-          }
-        }
-      }
+    if (dragDistance > this.interaction.dragThreshold) {
+        if (config.DEBUG_MODE) console.log("❌ Drag detectado, cancelando hold.");
+        this.state.isDragging = true;
+        this.cancelHold(); 
     }
   }, 16);
 
   endHoldDetection(event) {
-    if (event.pointerId !== this.state.activePointerId) return;
+    if (event.pointerId !== this.state.activePointerId) {
+        return;
+    }
 
-    if (config.DEBUG_MODE) console.log("🏁 Finalizando detección de hold");
+    if (config.DEBUG_MODE) console.log("🏁 Finalizando interacción (pointerup/cancel)");
 
-    // Limpiar todos los timers de detección
-    this.clearTimer("intentionDetection");
-    this.clearTimer("stabilityCheck");
-
-    // Restaurar controles del model-viewer
-    this.setModelViewerInteraction(true);
-
-    // Cancelar hold si estaba activo
+    const wasDragging = this.state.isDragging;
+    
     this.cancelHold();
 
-    // Snap de cámara solo si no estamos en transición
-    if (this.state.current === "model" && !this.state.interactionLocked) {
-      snapToNearestSide(this.elements.viewer, config.ROTATION_CONFIG);
-      this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
-    }
-  }
-
-  validateModelViewerState() {
-  try {
-    if (!this.elements.viewer) {
-      throw new Error("Element viewer no encontrado");
+    // Solo hacemos snap si NO fue un arrastre
+    if (!wasDragging && this.state.current === 'model') {
+        snapToNearestSide(this.elements.viewer, config.ROTATION_CONFIG);
     }
     
-    if (!isModelViewerReady(this.elements.viewer)) {
-      throw new Error("Model-viewer no está listo");
-    }
-    
-    // Verificar que el modelo esté cargado
-    if (!this.elements.viewer.src || this.elements.viewer.src === "") {
-      throw new Error("Modelo no tiene src definido");
-    }
-    
-    return true;
-  } catch (error) {
-    if (config.DEBUG_MODE) console.error("Validación model-viewer falló:", error);
-    return false;
-  }
-}
-
-  /* ===================== INICIALIZACIÓN DE HOLD SIN CAMBIOS ===================== */
-  initializeHoldState(position) {
-  // NUEVO: Validar estado del model-viewer antes de iniciar hold
-  if (!this.validateModelViewerState()) {
-    if (config.DEBUG_MODE) console.warn("⚠️ Model-viewer no válido - cancelando hold");
-    this.cancelHold();
-    return;
-  }
-
-  this.setTimer(
-    "hold",
-    () => {
-      if (
-        !this.state.modelMoved &&
-        !this.state.isDragging &&
-        this.state.current === "model" &&
-        !this.state.interactionLocked &&
-        this.validateModelViewerState() // NUEVO: Validación adicional
-      ) {
-        if (config.DEBUG_MODE) console.log("🎯 Iniciando HOLD definitivo");
-        this.state.isHolding = true;
-        this.progress.startTime = Date.now();
-        this.elements.viewer.classList.add("hold");
-        this.elements.indicator.classList.add("active");
-        triggerHapticFeedback(config.DEVICE_CONFIG.hapticFeedback);
-        this.startProgressAnimation();
-        this.startParticleEffect(position);
-
-        this.setTimer(
-          "videoActivation",
-          () => {
-            if (this.state.isHolding && this.state.current === "model" && 
-                !this.state.interactionLocked && this.validateModelViewerState()) {
-              if (config.DEBUG_MODE) console.log("🎬 Activando video por hold completado");
-              this.showVideo();
-            }
-          },
-          config.VIDEO_ACTIVATION_DELAY
-        );
-      } else {
-        // Si la validación falla, cancelar hold
-        if (config.DEBUG_MODE) console.warn("⚠️ Hold cancelado por validación fallida");
-        this.cancelHold();
-      }
-    },
-    config.HOLD_DURATION
-  );
-}
-
-  /* ===================== CANCELACIÓN MEJORADA ===================== */
-  cancelHold() {
-    if (config.DEBUG_MODE) console.log("🚫 Cancelando hold");
-
-    // Guardar estados previos para verificación
-    const wasHolding = this.state.isHolding;
-    const hadActivePointer = this.state.activePointerId !== null;
-
-    this.state.isHolding = false;
+    this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
     this.state.activePointerId = null;
-    this.state.isDragging = false;
-    this.interaction.touchStartPosition = null;
-    this.interaction.touchCurrentPosition = null;
+  }
 
-    // Limpiar TODOS los timers
-    this.clearTimer("intentionDetection");
-    this.clearTimer("stabilityCheck");
+  initializeHoldState(position) {
+    if (!this.validateModelViewerState()) {
+        if (config.DEBUG_MODE) console.warn("⚠️ Model-viewer no válido - cancelando hold");
+        this.cancelHold();
+        return;
+    }
+
+    this.state.isHolding = true;
+    this.progress.startTime = Date.now();
+    this.elements.viewer.classList.add("hold");
+    this.elements.indicator.classList.add("active");
+    triggerHapticFeedback(config.DEVICE_CONFIG.hapticFeedback);
+    this.startProgressAnimation();
+    this.startParticleEffect(position);
+
+    this.setTimer("videoActivation", () => {
+        if (this.state.isHolding) {
+            this.showVideo();
+        }
+    }, config.VIDEO_ACTIVATION_DELAY);
+  }
+
+  cancelHold() {
     this.clearTimer("hold");
     this.clearTimer("videoActivation");
     this.clearTimer("progress");
     this.clearTimer("particles");
-
-    // MEJORADO: Restaurar controles de forma más segura
-    try {
-      const capabilities = getDeviceCapabilities();
-      if (capabilities.isMobile && this.elements.viewer.hasAttribute("data-camera-controls-backup")) {
-        // Restaurar camera-controls en móviles
-        this.elements.viewer.setAttribute("camera-controls", "");
-        this.elements.viewer.removeAttribute("data-camera-controls-backup");
-        this.elements.viewer.removeAttribute("interaction-prompt-style");
-      } else {
-        // Usar función normal para desktop
+    
+    if (this.state.current === "model") {
         this.setModelViewerInteraction(true);
-      }
-    } catch (error) {
-      if (config.DEBUG_MODE) console.error("Error restaurando controles:", error);
-      // Intento de recuperación: restaurar atributos básicos
-      try {
-        this.elements.viewer.setAttribute("camera-controls", "");
-        this.elements.viewer.removeAttribute("interaction-prompt-style");
-        this.elements.viewer.style.pointerEvents = "auto";
-      } catch (fallbackError) {
-        if (config.DEBUG_MODE) console.error("Error en recuperación de controles:", fallbackError);
-      }
     }
 
-  // Limpiar UI
-  this.elements.indicator.classList.remove("active");
-  this.elements.indicator.style.width = "0";
-  this.elements.viewer.classList.remove("hold");
-
-  // NUEVO: Limpiar fade si quedó activo por race condition
-  if (this.elements.fade.classList.contains("active")) {
-    if (config.DEBUG_MODE) console.warn('⚠️ Fade quedó activo después de cancelar hold - limpiando');
-    this.elements.fade.classList.remove("active");
+    this.state.isHolding = false;
+    this.elements.indicator.classList.remove("active");
+    this.elements.indicator.style.width = "0";
+    this.elements.viewer.classList.remove("hold");
   }
 
-  // NUEVO: Asegurar que estamos en el estado correcto
-  if (this.state.current === 'transitioning') {
-    if (config.DEBUG_MODE) console.warn('⚠️ Estado inconsistente detectado - restaurando a model');
-    this.forceReturnToModel();
+  validateModelViewerState() {
+    try {
+      if (!this.elements.viewer || !isModelViewerReady(this.elements.viewer) || !this.elements.viewer.src) {
+        throw new Error("Model-viewer no está listo o no tiene un modelo cargado.");
+      }
+      return true;
+    } catch (error) {
+      if (config.DEBUG_MODE) console.error("Validación model-viewer falló:", error);
+      return false;
+    }
   }
-}
-
-  /* ===================== FUNCIÓN DE RECUPERACIÓN FORZADA ===================== */
-  forceReturnToModel() {
-    console.log('🔄 Forzando retorno a vista model');
   
-    // Limpiar cualquier timer de transición pendiente
+  /* ===================== EFECTOS VISUALES Y RECUPERACIÓN ===================== */
+
+  forceReturnToModel() {
+    if (config.DEBUG_MODE) console.log('🔄 Forzando retorno a vista model');
+  
     this.clearTimer('videoTransition');
     this.clearTimer('modelTransition');
   
-    // Restaurar estado
     this.state.current = 'model';
     this.state.interactionLocked = false;
   
-    // Limpiar efectos visuales
     this.elements.fade.classList.remove("active");
     this.elements.video.classList.remove("showing");
     this.elements.video.pause();
     this.elements.video.currentTime = 0;
   
-    // Mostrar vista correcta
     showViewModel();
     this.elements.logo.classList.remove("hidden");
   
-    // Restaurar auto-rotación
     this.setAutoRotateState(true, 0);
   }
 
-  /* ===================== EFECTOS VISUALES ===================== */
   startProgressAnimation() {
     this.setTimer(
       "progress",
@@ -887,45 +642,18 @@ showVideo() {
 
   setModelViewerInteraction(enabled) {
     if (!isModelViewerReady(this.elements.viewer)) return;
-  
     try {
-      const capabilities = getDeviceCapabilities();
-    
-      if (enabled) {
-        if (config.DEBUG_MODE) console.log("🔓 Habilitando controles de model-viewer");
-        this.elements.viewer.removeAttribute("interaction-prompt-style");
-        this.elements.viewer.style.pointerEvents = "auto";
-        // CRÍTICO: Solo restaurar camera-controls si no estamos en hold activo
-        if (!this.state.isHolding) {
-          this.elements.viewer.setAttribute("camera-controls", "");
-        }
-      } else {
-        if (config.DEBUG_MODE) console.log("🔒 Deshabilitando controles de model-viewer temporalmente");
-        this.elements.viewer.setAttribute("interaction-prompt-style", "none");
-      
-        // MEJORADO: En móviles, ser más conservador
-        if (capabilities.isMobile) {
-          // NO tocar pointer-events en móviles, solo deshabilitar interaction-prompt
-          // NO remover camera-controls completamente, solo pausar temporalmente
-          if (this.elements.viewer.hasAttribute("camera-controls")) {
-            this.elements.viewer.setAttribute("data-camera-controls-backup", "true");
-            this.elements.viewer.removeAttribute("camera-controls");
-          }
+        if (enabled) {
+            if (config.DEBUG_MODE) console.log("🔓 Habilitando controles de model-viewer");
+            this.elements.viewer.setAttribute("camera-controls", "");
+            this.elements.viewer.style.pointerEvents = "auto";
         } else {
-          // Desktop: comportamiento original pero más seguro
-          this.elements.viewer.removeAttribute("camera-controls");
-          this.elements.viewer.style.pointerEvents = "none";
-        
-          // Restaurar pointer-events rápidamente para evitar problemas
-          setTimeout(() => {
-            if (this.elements.viewer && this.elements.viewer.style.pointerEvents === "none") {
-              this.elements.viewer.style.pointerEvents = "auto";
-            }
-          }, 50);
+            if (config.DEBUG_MODE) console.log("🔒 Deshabilitando controles de model-viewer");
+            this.elements.viewer.removeAttribute("camera-controls");
+            this.elements.viewer.style.pointerEvents = "none";
         }
-      }
     } catch (error) {
-      if (config.DEBUG_MODE) console.error("Error controlando interacciones de model-viewer:", error);
+        if (config.DEBUG_MODE) console.error("Error controlando interacciones de model-viewer:", error);
     }
   }
 
@@ -935,11 +663,11 @@ showVideo() {
     this.elements.shareButton.addEventListener("click", () => this.handleShareCard());
 
     // Sistema de interacción
-    this.elements.viewer.addEventListener("pointerdown", (e) => this.startHoldDetection(e), { passive: false });
-    this.elements.viewer.addEventListener("pointermove", (e) => this.updateHoldDetection(e), { passive: true });
-    this.elements.viewer.addEventListener("pointerup", (e) => this.endHoldDetection(e), { passive: false });
-    this.elements.viewer.addEventListener("pointercancel", (e) => this.endHoldDetection(e), { passive: false });
-    this.elements.viewer.addEventListener("pointerleave", (e) => this.endHoldDetection(e), { passive: false });
+    this.elements.viewer.addEventListener("pointerdown", (e) => this.startHoldDetection(e));
+    this.elements.viewer.addEventListener("pointermove", (e) => this.updateHoldDetection(e));
+    this.elements.viewer.addEventListener("pointerup", (e) => this.endHoldDetection(e));
+    this.elements.viewer.addEventListener("pointercancel", (e) => this.endHoldDetection(e));
+    this.elements.viewer.addEventListener("pointerleave", (e) => this.endHoldDetection(e));
 
     // Prevenir comportamientos no deseados
     this.elements.viewer.addEventListener("dragstart", (e) => e.preventDefault());
@@ -952,10 +680,9 @@ showVideo() {
     this.elements.viewer.addEventListener(
       "camera-change",
       debounce(() => {
-        if (this.state.current !== "model" || this.state.interactionLocked) return;
+        if (this.state.current !== "model" || this.state.interactionLocked || this.state.isDragging) return;
         this.setAutoRotateState(false);
-        snapToNearestSide(this.elements.viewer, config.ROTATION_CONFIG);
-        this.setAutoRotateState(true, config.CAMERA_SNAP_TRANSITION);
+        // El snap solo ocurre si el usuario suelta el control, manejado en endHoldDetection
       }, config.CAMERA_SNAP_DELAY)
     );
 
@@ -981,6 +708,3 @@ showVideo() {
     }
   }
 }
-
-
-
