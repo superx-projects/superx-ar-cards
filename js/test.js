@@ -305,28 +305,46 @@ class CardViewerApp {
   }
 
   /* ===================== GESTIÓN DE ESTADOS ===================== */
-  showVideo() {
-    if (this.state.current !== "model") return;
+showVideo() {
+    // NUEVO: Validación adicional antes de mostrar video
+    if (this.state.current !== 'model' || this.state.interactionLocked) {
+      if (config.DEBUG_MODE) console.warn('⚠️ showVideo llamado en estado inválido:', this.state.current);
+      return;
+    }
 
-    this.state.current = "transitioning";
+    // NUEVO: Verificar que realmente estamos en hold válido
+    if (!this.state.isHolding) {
+      console.warn('⚠️ showVideo llamado sin hold activo - cancelando');
+      return;
+    }
+
+    if (config.DEBUG_MODE) console.log('🎬 Iniciando transición a video');
+  
+    this.state.current = 'transitioning';
     this.state.interactionLocked = true;
-    this.clearAllTimers();
+    this.clearAllTimers(); // Limpiar todo antes de la transición
 
     this.elements.fade.classList.add("active");
 
-    this.setTimer(
-      "videoTransition",
-      () => {
-        showViewVideo();
-        this.elements.logo.classList.add("hidden");
-        this.elements.video.classList.add("showing");
-        this.elements.video.play();
+    this.setTimer('videoTransition', () => {
+      // NUEVO: Verificación de estado antes de continuar
+      if (this.state.current !== 'transitioning') {
+        console.warn('⚠️ Estado cambió durante transición - abortando');
         this.elements.fade.classList.remove("active");
-        this.state.current = "video";
-        this.state.interactionLocked = false;
-      },
-      config.FADE_DURATION
-    );
+        return;
+      }
+    
+      showViewVideo();
+      this.elements.logo.classList.add("hidden");
+      this.elements.video.classList.add("showing");
+      this.elements.video.play();
+      this.elements.fade.classList.remove("active");
+
+      this.state.current = 'video';
+      this.state.interactionLocked = false;
+    
+      if (config.DEBUG_MODE) console.log('✅ Transición a video completada');
+    }, config.FADE_DURATION);
   }
 
   returnToModel() {
@@ -460,11 +478,22 @@ class CardViewerApp {
 
   // NUEVO: Confirmar modo drag y restaurar controles
   confirmDragMode() {
-    if (config.DEBUG_MODE) console.log("🎯 Activando modo DRAG");
+    if (config.DEBUG_MODE) console.log('🎯 Confirmando modo DRAG');
+  
+    // Limpiar hold si estaba activo
+    if (this.state.isHolding || this.state.activePointerId !== null) {
+      this.cancelHold();
+    }
+  
+    // Activar controles del model-viewer
     this.setModelViewerInteraction(true);
+  
+    // Limpiar timers de detección
+    this.clearTimer('intentionDetection');
+    this.clearTimer('stabilityCheck');
+  
+    // Reset pointer tracking
     this.state.activePointerId = null;
-    this.clearTimer("intentionDetection");
-    this.clearTimer("stabilityCheck");
   }
 
   updateHoldDetection = throttle((event) => {
@@ -487,41 +516,40 @@ class CardViewerApp {
     if (dragDistance > threshold) {
       this.state.isDragging = true;
 
-      // Si aún estamos en fase de detección de intención
-      if (this.timers.has("intentionDetection")) {
-        if (config.DEBUG_MODE) console.log("🔄 Drag detectado durante detección de intención");
+      // MEJORADO: Cancel más agresivo durante detección
+      if (this.timers.has('intentionDetection') || this.timers.has('stabilityCheck')) {
+        if (config.DEBUG_MODE) console.log('🔄 Drag detectado durante detección - cancelando inmediatamente');
         this.confirmDragMode();
         return;
       }
 
-      // Si ya estamos en hold, cancelarlo
+      // MEJORADO: Cancel inmediato si estamos en hold
       if (this.state.isHolding) {
-        if (config.DEBUG_MODE) console.log("❌ Hold cancelado por drag");
+        if (config.DEBUG_MODE) console.log('❌ Hold cancelado por drag - limpieza inmediata');
         this.cancelHold();
+        return; // Return inmediato para evitar procesamiento adicional
       }
     }
 
-    // MEJORADO: Detección de movimiento de cámara más inteligente
-    if (this.interaction.lastCameraOrbit && !this.state.isHolding) {
+    // Detección de movimiento de cámara (solo si no hemos cancelado ya)
+    if (this.interaction.lastCameraOrbit && !this.state.isDragging && this.state.activePointerId !== null) {
       const currentOrbit = this.safeGetCameraOrbit();
       if (currentOrbit) {
         const deltaTheta = Math.abs(currentOrbit.theta - this.interaction.lastCameraOrbit.theta);
         const deltaPhi = Math.abs(currentOrbit.phi - this.interaction.lastCameraOrbit.phi);
-        const thresholdCam = config.MOBILE_INTERACTION_CONFIG.cameraMovementThreshold;
-
-        // Solo considerar como "movimiento" si es significativo
-        if (deltaTheta > thresholdCam || deltaPhi > thresholdCam) {
+      
+        const threshold = config.MOBILE_INTERACTION_CONFIG?.cameraMovementThreshold || 0.05;
+      
+        if (deltaTheta > threshold || deltaPhi > threshold) {
           this.state.modelMoved = true;
-
-          // Si estamos en detección de intención, cambiar a drag
-          if (this.timers.has("intentionDetection") || this.timers.has("stabilityCheck")) {
-            if (config.DEBUG_MODE) console.log("📹 Movimiento de cámara detectado - activando drag");
+        
+          if (this.timers.has('intentionDetection') || this.timers.has('stabilityCheck')) {
+            console.log('📹 Movimiento de cámara - activando drag');
             this.confirmDragMode();
           }
-
-          // Si estamos en hold, cancelarlo
+        
           if (this.state.isHolding) {
-            if (config.DEBUG_MODE) console.log("❌ Hold cancelado por movimiento de cámara");
+            console.log('❌ Hold cancelado por movimiento de cámara');
             this.cancelHold();
           }
         }
@@ -625,6 +653,10 @@ class CardViewerApp {
   cancelHold() {
     if (config.DEBUG_MODE) console.log("🚫 Cancelando hold");
 
+    // Guardar estados previos para verificación
+    const wasHolding = this.state.isHolding;
+    const hadActivePointer = this.state.activePointerId !== null;
+
     this.state.isHolding = false;
     this.state.activePointerId = null;
     this.state.isDragging = false;
@@ -646,6 +678,44 @@ class CardViewerApp {
     this.elements.indicator.classList.remove("active");
     this.elements.indicator.style.width = "0";
     this.elements.viewer.classList.remove("hold");
+
+    // NUEVO: Limpiar fade si quedó activo por race condition
+    if (this.elements.fade.classList.contains("active")) {
+      if (config.DEBUG_MODE) console.warn('⚠️ Fade quedó activo después de cancelar hold - limpiando');
+      this.elements.fade.classList.remove("active");
+    }
+
+    // NUEVO: Asegurar que estamos en el estado correcto
+    if (this.state.current === 'transitioning') {
+      if (config.DEBUG_MODE) console.warn('⚠️ Estado inconsistente detectado - restaurando a model');
+      this.forceReturnToModel();
+    }
+  }
+
+  /* ===================== FUNCIÓN DE RECUPERACIÓN FORZADA ===================== */
+  forceReturnToModel() {
+    console.log('🔄 Forzando retorno a vista model');
+  
+    // Limpiar cualquier timer de transición pendiente
+    this.clearTimer('videoTransition');
+    this.clearTimer('modelTransition');
+  
+    // Restaurar estado
+    this.state.current = 'model';
+    this.state.interactionLocked = false;
+  
+    // Limpiar efectos visuales
+    this.elements.fade.classList.remove("active");
+    this.elements.video.classList.remove("showing");
+    this.elements.video.pause();
+    this.elements.video.currentTime = 0;
+  
+    // Mostrar vista correcta
+    showViewModel();
+    this.elements.logo.classList.remove("hidden");
+  
+    // Restaurar auto-rotación
+    this.setAutoRotateState(true, 0);
   }
 
   /* ===================== EFECTOS VISUALES ===================== */
@@ -851,4 +921,5 @@ class CardViewerApp {
     }
   }
 }
+
 
