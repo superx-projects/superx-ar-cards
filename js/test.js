@@ -332,13 +332,13 @@ class CardViewerApp {
     }
     if (config.DEBUG_MODE) console.log("🎬 Iniciando transición a video");
 
-    this.state.isHolding = false;
     this.state.current = "transitioning";
     this.state.interactionLocked = true;
-    this.clearAllTimers();
-
-    this.state.activePointerId = null;
-    this.state.isDragging = false;
+    
+    // --> CORRECCIÓN CLAVE #1:
+    // Forzamos la cancelación de la interacción de 'hold' que nos trajo aquí.
+    // Esto limpia todos los estados y libera el puntero, evitando el bloqueo.
+    this.cancelHold();
 
     this.elements.fade.classList.add("active");
 
@@ -379,10 +379,7 @@ class CardViewerApp {
         this.state.current = "model";
         this.state.interactionLocked = false;
 
-        setTimeout(() => {
-          this.setModelViewerInteraction(true);
-        }, 50);
-
+        this.setModelViewerInteraction(true);
         this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
       },
       config.FADE_DURATION
@@ -406,7 +403,7 @@ class CardViewerApp {
   /* ===================== SISTEMA DE INTERACCIÓN ===================== */
 
   startHoldDetection(event) {
-    if (this.state.activePointerId !== null || this.state.current !== "model")
+    if (this.state.activePointerId !== null || this.state.current !== "model" || this.state.interactionLocked)
       return;
 
     this.clearTimer("snapToSide");
@@ -428,9 +425,7 @@ class CardViewerApp {
 
   updateHoldDetection(event) {
     if (
-      event.pointerId !== this.state.activePointerId ||
-      this.state.isDragging ||
-      this.state.isHolding
+      event.pointerId !== this.state.activePointerId || this.state.isHolding
     )
       return;
 
@@ -442,9 +437,9 @@ class CardViewerApp {
 
     if (dragDistance > this.interaction.dragThreshold) {
       if (config.DEBUG_MODE)
-        console.log("❌ Drag detectado, cancelando timer de hold.");
-      this.state.isDragging = true;
-      this.clearTimer("holdInitiator");
+        console.log("❌ Drag detectado, cancelando hold.");
+      // Si se detecta drag, se cancela la interacción de hold inmediatamente.
+      this.cancelHold();
     }
   }
 
@@ -452,46 +447,59 @@ class CardViewerApp {
     if (event.pointerId !== this.state.activePointerId) return;
     if (config.DEBUG_MODE)
       console.log("🏁 Finalizando interacción (pointerup/cancel)");
-  
-    this.clearTimer("holdInitiator");
-    this.clearTimer("videoActivation");
-    this.clearTimer("progress");
-    this.clearTimer("particles");
 
-    if (this.state.isHolding) {
-      if (config.DEBUG_MODE) console.log("🚫 Cancelando estado de hold (UI)");
-      this.state.isHolding = false;
-      this.elements.indicator.classList.remove("active");
-      this.elements.indicator.style.width = "0";
-      this.elements.viewer.classList.remove("hold");
-    }
+    // --> CORRECCIÓN CLAVE #2:
+    // Siempre llamamos a cancelHold() al levantar el dedo.
+    // Esto asegura que cualquier estado de 'hold' o 'drag' pendiente se limpie.
+    this.cancelHold();
 
-    this.setModelViewerInteraction(true);
-
-    if (this.state.isDragging) {
-      this.setTimer(
-        "snapToSide",
-        () => {
-          if (config.DEBUG_MODE) console.log("🔄 Ejecutando snap de cámara.");
-          snapToNearestSide(this.elements.viewer, config.ROTATION_CONFIG);
-          this.setAutoRotateState(true, config.CAMERA_SNAP_TRANSITION);
-        },
-        config.CAMERA_SNAP_DELAY
-      );
-    } else {
-      this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
-    }
-
-    this.state.activePointerId = null;
+    // Lógica de Snap o reanudación de Auto-rotación
+    this.setTimer(
+      "snapToSide",
+      () => {
+        if (config.DEBUG_MODE) console.log("🔄 Ejecutando snap de cámara.");
+        snapToNearestSide(this.elements.viewer, config.ROTATION_CONFIG);
+        this.setAutoRotateState(true, config.CAMERA_SNAP_TRANSITION);
+      },
+      config.CAMERA_SNAP_DELAY
+    );
   }
+  
+  // --> CORRECCIÓN CLAVE #3:
+  // Función centralizada para limpiar el estado de la interacción, inspirada en card.js.
+  cancelHold() {
+    if (config.DEBUG_MODE && this.state.activePointerId) console.log("🧹 Limpiando estado de interacción.");
+
+    this.state.isHolding = false;
+    this.state.isDragging = false;
+    this.state.activePointerId = null;
+    this.interaction.touchStartPosition = null;
+    this.interaction.touchCurrentPosition = null;
+
+    // Limpiar todos los timers relacionados con la interacción
+    this.clearTimer('holdInitiator');
+    this.clearTimer('videoActivation');
+    this.clearTimer('progress');
+    this.clearTimer('particles');
+
+    // Restaurar la UI
+    this.elements.indicator.classList.remove("active");
+    this.elements.indicator.style.width = "0";
+    this.elements.viewer.classList.remove("hold");
+
+    // Asegurar que la interacción con el modelo esté habilitada
+    this.setModelViewerInteraction(true);
+  }
+
 
   initiateHold() {
     if (!this.validateModelViewerState()) {
       if (config.DEBUG_MODE)
         console.warn("⚠️ Model-viewer no válido - cancelando hold");
+      this.cancelHold();
       return;
     }
-
+    
     this.setModelViewerInteraction(false);
     this.state.isHolding = true;
     this.progress.startTime = Date.now();
