@@ -301,6 +301,7 @@ class CardViewerApp {
     }
     if (config.DEBUG_MODE) console.log('🎬 Iniciando transición a video');
 
+    this.state.isHolding = false;
     this.state.current = 'transitioning';
     this.state.interactionLocked = true;
     this.clearAllTimers();
@@ -336,7 +337,11 @@ class CardViewerApp {
         this.elements.fade.classList.remove("active");
         this.state.current = "model";
         this.state.interactionLocked = false;
-        this.setModelViewerInteraction(true);
+      
+        setTimeout(() => {
+          this.setModelViewerInteraction(true);
+        }, 50);
+      
         this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
       },
       config.FADE_DURATION
@@ -603,3 +608,4 @@ class CardViewerApp {
     }
   }
 }
+
