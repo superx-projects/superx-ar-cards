@@ -339,10 +339,7 @@ class CardViewerApp {
     }
     if (config.DEBUG_MODE) console.log("🎬 Iniciando transición a video");
     
-    // Limpiamos el estado de la interacción que nos trajo aquí.
-    this.state.isHolding = false;
-    this.state.activePointerId = null;
-    this.state.isDragging = false;
+    this.cleanupAllHoldEffects();
 
     this.state.current = "transitioning";
     this.state.interactionLocked = true;
@@ -355,7 +352,13 @@ class CardViewerApp {
         showViewVideo();
         this.elements.logo.classList.add("hidden");
         this.elements.video.classList.add("showing");
-        this.elements.video.play();
+        const playPromise = this.elements.video.play();
+        if (playPromise) {
+          playPromise.catch(error => {
+            if (config.DEBUG_MODE) console.error("Error reproduciendo video:", error);
+            displayWarning(this.getText("warning_video_playback", "Error de reproducción"));
+          });
+        }
         this.elements.fade.classList.add("hidden");
         this.state.current = "video";
         this.state.interactionLocked = false;
@@ -385,6 +388,8 @@ class CardViewerApp {
         
         showViewModel();        
         this.elements.logo.classList.remove("hidden");
+
+        this.cleanupAllHoldEffects();
         
         this.elements.fade.classList.add("hidden");
         this.state.current = "model";
@@ -478,16 +483,7 @@ class CardViewerApp {
     if (!this.state.isHolding) return;
     if (config.DEBUG_MODE) console.log("🧹 Cancelando y limpiando estado de HOLD activo.");
 
-    this.state.isHolding = false;
-    
-    this.clearTimer('videoActivation');
-    this.clearTimer('progress');
-    this.clearTimer('particles');
-
-    this.elements.indicator.classList.remove("active");
-    this.elements.indicator.style.width = "0";
-    this.elements.viewer.classList.remove("hold");
-
+    this.cleanupAllHoldEffects();
     this.setModelViewerInteraction(true);
   }
 
@@ -536,6 +532,45 @@ class CardViewerApp {
   }
 
   /* ===================== EFECTOS VISUALES ===================== */
+ cleanupAllHoldEffects() {
+   if (config.DEBUG_MODE) console.log("🧹 Limpiando todos los efectos de hold");
+  
+   // Limpiar estado de interacción
+   this.state.isHolding = false;
+   this.state.activePointerId = null;
+   this.state.isDragging = false;
+   this.state.holdStartTimestamp = null;
+  
+   // Limpiar efectos visuales del model-viewer
+   if (this.elements.viewer) {
+     this.elements.viewer.classList.remove("hold");
+   }
+  
+   // Limpiar indicador de progreso
+   if (this.elements.indicator) {
+     this.elements.indicator.classList.remove("active");
+     this.elements.indicator.style.width = "0";
+   }
+  
+   // Limpiar contenedor de partículas
+   if (this.elements.particlesContainer) {
+     // Remover todas las partículas existentes
+    const particles = this.elements.particlesContainer.querySelectorAll('.particle');
+    particles.forEach(particle => {
+      try {
+        particle.remove();
+      } catch (error) {
+        if (config.DEBUG_MODE) console.warn("Error removiendo partícula:", error);
+        }
+      });
+    }
+  
+    // Limpiar todos los timers relacionados con hold
+    ['holdInitiator', 'videoActivation', 'progress', 'particles'].forEach(timerName => {
+      this.clearTimer(timerName);
+    });
+  }
+  
   startProgressAnimation() {
     this.setTimer(
       "progress",
@@ -738,6 +773,7 @@ class CardViewerApp {
     }
   }
 }
+
 
 
 
