@@ -359,7 +359,7 @@ class CardViewerApp {
         this.elements.fade.classList.add("hidden");
         this.state.current = "video";
         this.state.interactionLocked = false;
-        if (config.DEBUG_MODE) console.log("✅ Transición a video completada");
+        if (config.DEBUG_MODE) console.log("✅ Transición a video realizada");
       },
       config.FADE_DURATION
     );
@@ -738,6 +738,7 @@ class CardViewerApp {
     }
   }
 }
+
 
 
 
