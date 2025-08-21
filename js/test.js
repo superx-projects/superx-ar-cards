@@ -382,6 +382,7 @@ class CardViewerApp {
 
         this.setModelViewerInteraction(true);
         this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
+        if (config.DEBUG_MODE) console.log("⏱ Ejecutando transición de regreso");
       },
       config.FADE_DURATION
     );
@@ -727,3 +728,4 @@ class CardViewerApp {
     }
   }
 }
+
