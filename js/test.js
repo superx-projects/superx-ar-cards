@@ -92,9 +92,11 @@ function displayInfo(message) {
   } else {
     try {
       const response = await fetch(config.CARDS_DATA_PATH);
-      if (!response.ok) throw new Error("Error cargando cards.json");
+      if (!response.ok) throw new Error(`HTTP ${response.status}: Error cargando cards.json`);
+      
       const data = await response.json();
       cardData = data[cardId];
+      
       if (!cardData) {
         errorMsg = getTranslation(
           translations,
@@ -103,18 +105,22 @@ function displayInfo(message) {
         );
       }
     } catch (err) {
-      if (config.DEBUG_MODE)
-        console.error("Error cargando datos de cartas:", err);
+      if (config.DEBUG_MODE) console.error("Error cargando datos de cartas:", err);
       errorMsg = getTranslation(
         translations,
         "error_loading_data",
-        "Error cargando datos"
+        `Error cargando datos: ${err.message}`
       );
     }
   }
 
   if (errorMsg) {
     showViewError();
+    // Mostrar el error específico en la interfaz
+    const errorElement = document.getElementById("card_error_message");
+    if (errorElement) {
+      errorElement.textContent = errorMsg;
+    }
     return;
   }
 
@@ -124,32 +130,52 @@ function displayInfo(message) {
     share: `${config.IMAGE_PATH}${cardData.share}`,
   };
 
-  const [modelExists, videoExists] = await Promise.all([
-    validateResource(resourcePaths.model, config.RESOURCE_VALIDATION),
-    validateResource(resourcePaths.video, config.RESOURCE_VALIDATION),
-  ]);
+  try {
+    const [modelExists, videoExists] = await Promise.all([
+      validateResource(resourcePaths.model, config.RESOURCE_VALIDATION),
+      validateResource(resourcePaths.video, config.RESOURCE_VALIDATION),
+    ]);
 
-  if (!modelExists || !videoExists) {
-    displayError("Recursos de la carta no encontrados");
-    return;
+    if (!modelExists || !videoExists) {
+      displayError("Recursos de la carta no encontrados");
+      showViewError();
+      return;
+    }
+
+    const app = new CardViewerApp({
+      cardId,
+      cardData,
+      resourcePaths,
+      translations,
+      lang: selectedLang,
+    });
+
+    await app.initialize();
+    
+    // Exponer la instancia globalmente para debugging si es necesario
+    if (config.DEBUG_MODE) {
+      window.cardViewerApp = app;
+    }
+
+  } catch (error) {
+    if (config.DEBUG_MODE) console.error("Error fatal inicializando la aplicación:", error);
+    displayError(
+      getTranslation(
+        translations || {},
+        "error_fatal_init",
+        "Error fatal de inicialización"
+      )
+    );
+    showViewError();
   }
-
-  const app = new CardViewerApp({
-    cardId,
-    cardData,
-    resourcePaths,
-    translations,
-    lang: selectedLang,
-  });
-
-  await app.initialize();
 })();
 
-/* ===================== CLASE PRINCIPAL (CON BUG DE HOLD CORREGIDO) ===================== */
+/* ===================== CLASE PRINCIPAL ===================== */
 class CardViewerApp {
   constructor(options) {
     Object.assign(this, options);
 
+    // Validar elementos DOM críticos
     this.elements = {
       viewer: document.getElementById("card_viewer"),
       video: document.getElementById("card_video"),
@@ -161,6 +187,14 @@ class CardViewerApp {
       logo: document.getElementById("card_logo"),
       title: document.getElementById("card_title"),
     };
+
+    // Validar elementos críticos
+    const requiredElements = ['viewer', 'video', 'fade', 'indicator'];
+    const missingElements = requiredElements.filter(key => !this.elements[key]);
+    
+    if (missingElements.length > 0) {
+      throw new Error(`Elementos DOM requeridos no encontrados: ${missingElements.join(', ')}`);
+    }
 
     this.state = {
       current: "model",
@@ -174,13 +208,14 @@ class CardViewerApp {
     this.interaction = {
       touchStartPosition: null,
       dragThreshold: config.DRAG_THRESHOLD,
+      lastInteractionTime: 0, // Para snap por inactividad
     };
 
     this.timers = new Map();
 
     this.progress = {
       startTime: 0,
-      totalTime: config.VIDEO_ACTIVATION_DELAY, // El tiempo de progreso es solo el delay de activación
+      totalTime: config.VIDEO_ACTIVATION_DELAY,
     };
   }
 
@@ -196,8 +231,10 @@ class CardViewerApp {
 
   clearTimer(name) {
     if (this.timers.has(name)) {
-      clearTimeout(this.timers.get(name));
-      clearInterval(this.timers.get(name));
+      const timer = this.timers.get(name);
+      clearTimeout(timer);
+      clearInterval(timer);
+      cancelAnimationFrame(timer); // Para requestAnimationFrame
       this.timers.delete(name);
     }
   }
@@ -229,14 +266,26 @@ class CardViewerApp {
 
   setupCardContent() {
     const title = this.getLocalizedTitle();
-    this.elements.title.textContent = title;
-    this.elements.viewer.setAttribute("src", this.resourcePaths.model);
-    this.elements.video.src = this.resourcePaths.video;
+    
+    if (this.elements.title) {
+      this.elements.title.textContent = title;
+    }
+    
+    if (this.elements.viewer) {
+      this.elements.viewer.setAttribute("src", this.resourcePaths.model);
+    }
+    
+    if (this.elements.video) {
+      this.elements.video.src = this.resourcePaths.video;
+    }
+    
     this.updateDynamicTexts();
   }
 
   updateDynamicTexts() {
-    this.elements.skipButton.textContent = this.getText("video_skip", "Skip");
+    if (this.elements.skipButton) {
+      this.elements.skipButton.textContent = this.getText("video_skip", "Skip");
+    }
     document.title = this.getText("page_card_title", "Super X Card");
   }
 
@@ -280,23 +329,45 @@ class CardViewerApp {
   }
 
   waitForModelViewer(
-    maxAttempts = config.RETRY_CONFIG.modelViewer.maxAttempts,
-    interval = config.RETRY_CONFIG.modelViewer.interval
+    maxAttempts = config.RETRY_CONFIG?.modelViewer?.maxAttempts || 30,
+    interval = config.RETRY_CONFIG?.modelViewer?.interval || 200
   ) {
     return new Promise((resolve, reject) => {
       let attempts = 0;
+      
       const checkReady = () => {
         attempts++;
-        if (isModelViewerReady(this.elements.viewer)) {
-          resolve(true);
-          return;
+        
+        if (config.DEBUG_MODE && attempts % 5 === 0) {
+          console.log(`Esperando model-viewer... intento ${attempts}/${maxAttempts}`);
         }
+        
+        try {
+          if (isModelViewerReady(this.elements.viewer)) {
+            if (config.DEBUG_MODE) {
+              console.log(`Model-viewer listo después de ${attempts} intentos`);
+            }
+            resolve(true);
+            return;
+          }
+        } catch (error) {
+          if (config.DEBUG_MODE) {
+            console.warn(`Error verificando model-viewer (intento ${attempts}):`, error);
+          }
+        }
+        
         if (attempts >= maxAttempts) {
-          reject(new Error("Model-viewer no se cargó correctamente"));
+          const errorMsg = `Model-viewer no se cargó después de ${attempts} intentos`;
+          if (config.DEBUG_MODE) {
+            console.error(errorMsg);
+          }
+          reject(new Error(errorMsg));
           return;
         }
+        
         setTimeout(checkReady, interval);
       };
+      
       checkReady();
     });
   }
@@ -339,6 +410,7 @@ class CardViewerApp {
     }
     if (config.DEBUG_MODE) console.log("🎬 Iniciando transición a video");
     
+    // Limpieza consolidada antes de cambiar de vista
     this.cleanupAllHoldEffects();
 
     this.state.current = "transitioning";
@@ -352,6 +424,7 @@ class CardViewerApp {
         showViewVideo();
         this.elements.logo.classList.add("hidden");
         this.elements.video.classList.add("showing");
+        
         const playPromise = this.elements.video.play();
         if (playPromise) {
           playPromise.catch(error => {
@@ -359,10 +432,11 @@ class CardViewerApp {
             displayWarning(this.getText("warning_video_playback", "Error de reproducción"));
           });
         }
+        
         this.elements.fade.classList.add("hidden");
         this.state.current = "video";
         this.state.interactionLocked = false;
-        if (config.DEBUG_MODE) console.log("✅ Transición a video realizada");
+        if (config.DEBUG_MODE) console.log("✅ Transición a video completada");
       },
       config.FADE_DURATION
     );
@@ -388,7 +462,8 @@ class CardViewerApp {
         
         showViewModel();        
         this.elements.logo.classList.remove("hidden");
-
+        
+        // Limpieza completa de efectos visuales
         this.cleanupAllHoldEffects();
         
         this.elements.fade.classList.add("hidden");
@@ -396,7 +471,10 @@ class CardViewerApp {
         this.state.interactionLocked = false;
 
         this.setModelViewerInteraction(true);
-        this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
+        
+        // Programar snap automático tras volver del video
+        this.scheduleAutoSnap();
+        
         if (config.DEBUG_MODE) console.log("✅ Transición de regreso completada");
       },
       config.FADE_DURATION
@@ -404,47 +482,77 @@ class CardViewerApp {
   }
 
   setAutoRotateState(enabled, delay = 0) {
-    this.clearTimer("autoRotate");
+    const timerKey = "autoRotate";
+    this.clearTimer(timerKey);
+    
     if (delay > 0) {
-      this.setTimer(
-        "autoRotate",
-        () => {
-          this.state.isAutoRotateEnabled = enabled;
-        },
-        delay
-      );
+      const timestamp = Date.now();
+      this.setTimer(timerKey, () => {
+        // Validar que este timer sigue siendo el más reciente
+        if (this.state.lastAutoRotateTimestamp && 
+            timestamp < this.state.lastAutoRotateTimestamp) {
+          if (config.DEBUG_MODE) console.log("Timer de auto-rotate obsoleto ignorado");
+          return;
+        }
+        this.state.isAutoRotateEnabled = enabled;
+      }, delay);
+      this.state.lastAutoRotateTimestamp = timestamp;
     } else {
       this.state.isAutoRotateEnabled = enabled;
+      this.state.lastAutoRotateTimestamp = Date.now();
     }
   }
 
-  /* ===================== SISTEMA DE INTERACCIÓN (LÓGICA FINAL) ===================== */
+  /* ===================== SISTEMA DE INTERACCIÓN SIMPLIFICADO ===================== */
 
   startHoldDetection(event) {
-    if (this.state.activePointerId !== null || this.state.current !== 'model' || this.state.interactionLocked) return;
+    if (this.state.activePointerId !== null || 
+        this.state.current !== 'model' || 
+        this.state.interactionLocked) {
+      return;
+    }
 
     if (config.DEBUG_MODE) console.log("👇 pointerdown: Iniciando detección.");
+    
     this.state.activePointerId = event.pointerId;
+    this.state.holdStartTimestamp = Date.now();
     this.interaction.touchStartPosition = getEventPosition(event);
     this.state.isDragging = false;
+    this.updateLastInteraction();
+    
+    // Cancelar snap automático pendiente
+    this.clearTimer('autoSnap');
     this.setAutoRotateState(false);
 
     this.setTimer('holdInitiator', () => {
+      if (this.state.activePointerId === event.pointerId && 
+          !this.state.isDragging &&
+          this.state.current === 'model') {
         if (config.DEBUG_MODE) console.log("⏳ Timer 'holdInitiator' disparado. Es un HOLD.");
         this.initiateHold();
+      } else {
+        if (config.DEBUG_MODE) console.log("⚠️ Hold cancelado: estado cambió durante el timer");
+      }
     }, config.HOLD_DURATION);
   }
 
   updateHoldDetection(event) {
-    if (event.pointerId !== this.state.activePointerId || this.state.isHolding) return;
+    if (event.pointerId !== this.state.activePointerId || this.state.isHolding) {
+      return;
+    }
+
+    // Actualizar interacción en cada movimiento
+    this.updateLastInteraction();
 
     const currentPosition = getEventPosition(event);
     const dragDistance = calculateDragDistance(this.interaction.touchStartPosition, currentPosition);
 
     if (dragDistance > this.interaction.dragThreshold) {
-        if (config.DEBUG_MODE && !this.state.isDragging) console.log("↔️ Drag detectado. Cancelando timer de hold.");
-        this.state.isDragging = true;
-        this.clearTimer('holdInitiator');
+      if (config.DEBUG_MODE && !this.state.isDragging) {
+        console.log(`↔️ Drag detectado (${dragDistance.toFixed(1)}px). Cancelando timer de hold.`);
+      }
+      this.state.isDragging = true;
+      this.clearTimer('holdInitiator');
     }
   }
 
@@ -455,157 +563,244 @@ class CardViewerApp {
     this.clearTimer('holdInitiator');
 
     if (this.state.isHolding) {
-        if (config.DEBUG_MODE) console.log("🚫 Hold interrumpido por pointerup.");
-        this.cancelHold();
-        this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
+      if (config.DEBUG_MODE) console.log("🚫 Hold interrumpido por pointerup.");
+      this.cancelHold();
     }
     else if (this.state.isDragging) {
-        if (config.DEBUG_MODE) console.log("🔄 Ejecutando snap post-drag.");
-        this.setTimer(
-            "snapToSide",
-            () => {
-                snapToNearestSide(this.elements.viewer, config.ROTATION_CONFIG);
-                this.setAutoRotateState(true, config.CAMERA_SNAP_TRANSITION);
-            },
-            config.CAMERA_SNAP_DELAY
-        );
+      if (config.DEBUG_MODE) console.log("✅ Drag completado.");
     }
     else {
-        if (config.DEBUG_MODE) console.log("🖱️ Clic corto detectado.");
-        this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
+      if (config.DEBUG_MODE) console.log("🖱️ Clic corto detectado.");
     }
 
+    // Limpiar estado
     this.state.activePointerId = null;
     this.state.isDragging = false;
+    this.updateLastInteraction();
+    
+    // Programar snap por inactividad en todos los casos
+    this.scheduleAutoSnap();
+  }
+
+  // Actualizar timestamp de última interacción
+  updateLastInteraction() {
+    this.interaction.lastInteractionTime = Date.now();
+  }
+
+  // Programar snap automático por inactividad
+  scheduleAutoSnap() {
+    // Limpiar snap anterior si existe
+    this.clearTimer('autoSnap');
+    
+    this.setTimer(
+      'autoSnap',
+      () => {
+        // Solo hacer snap si realmente no ha habido interacciones
+        const timeSinceLastInteraction = Date.now() - this.interaction.lastInteractionTime;
+        
+        if (timeSinceLastInteraction >= config.CAMERA_SNAP_DELAY && 
+            this.state.current === 'model' && 
+            !this.state.interactionLocked &&
+            !this.state.isHolding) {
+          
+          if (config.DEBUG_MODE) console.log("📐 Snap automático por inactividad");
+          
+          try {
+            snapToNearestSide(this.elements.viewer, config.ROTATION_CONFIG);
+            this.setAutoRotateState(true, config.CAMERA_SNAP_TRANSITION);
+          } catch (error) {
+            if (config.DEBUG_MODE) console.error("Error en snap automático:", error);
+            this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
+          }
+        } else {
+          if (config.DEBUG_MODE) console.log("⏭️ Snap cancelado: hubo interacción reciente");
+        }
+      },
+      config.CAMERA_SNAP_DELAY
+    );
+    
+    // Programar auto-rotate también
+    this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
   }
   
   cancelHold() {
     if (!this.state.isHolding) return;
     if (config.DEBUG_MODE) console.log("🧹 Cancelando y limpiando estado de HOLD activo.");
 
+    // Usar limpieza consolidada
     this.cleanupAllHoldEffects();
+    
+    // Reactivar interacciones del model-viewer
     this.setModelViewerInteraction(true);
   }
 
   initiateHold() {
-    if (!this.validateModelViewerState() || this.state.activePointerId === null) {
+    if (!this.validateHoldConditions()) {
       if (config.DEBUG_MODE) console.warn("⚠️ Condiciones no válidas para iniciar hold. Abortando.");
       return;
     }
     
-    if (config.DEBUG_MODE) console.log("🚀 Iniciando efectos de HOLD.");
+    if (config.DEBUG_MODE) console.log("🚀 Iniciando efectos de HOLD con snap preventivo.");
+
+    // Snap preventivo para posición limpia
+    try {
+      snapToNearestSide(this.elements.viewer, config.ROTATION_CONFIG);
+      if (config.DEBUG_MODE) console.log("📐 Snap preventivo ejecutado para hold");
+    } catch (error) {
+      if (config.DEBUG_MODE) console.error("Error en snap preventivo:", error);
+    }
+
     this.state.isHolding = true;
+    this.updateLastInteraction();
 
     this.setModelViewerInteraction(false); 
     
     this.progress.startTime = Date.now();
     this.elements.viewer.classList.add("hold");
     this.elements.indicator.classList.add("active");
-    triggerHapticFeedback(config.DEVICE_CONFIG.hapticFeedback);
+    triggerHapticFeedback(config.DEVICE_CONFIG?.hapticFeedback);
     this.startProgressAnimation();
     this.startParticleEffect(this.interaction.touchStartPosition);
     
     this.setTimer(
       "videoActivation",
-      this.showVideo.bind(this),
+      () => {
+        if (this.state.isHolding && this.state.current === 'model') {
+          this.showVideo();
+        }
+      },
       config.VIDEO_ACTIVATION_DELAY
     );
   }
 
-  validateModelViewerState() {
+  // Validación consolidada para hold
+  validateHoldConditions() {
     try {
-      if (
-        !this.elements.viewer ||
-        !isModelViewerReady(this.elements.viewer) ||
-        !this.elements.viewer.src
-      ) {
-        throw new Error(
-          "Model-viewer no está listo o no tiene un modelo cargado."
-        );
+      // Validar model-viewer
+      if (!this.elements.viewer || 
+          !isModelViewerReady(this.elements.viewer) || 
+          !this.elements.viewer.src) {
+        throw new Error("Model-viewer no está listo");
       }
+
+      // Validar estado de la aplicación
+      if (this.state.current !== 'model' || 
+          this.state.interactionLocked ||
+          this.state.activePointerId === null) {
+        throw new Error("Estado de aplicación no válido para hold");
+      }
+
+      // Validar que no ha pasado demasiado tiempo
+      if (this.state.holdStartTimestamp && 
+          (Date.now() - this.state.holdStartTimestamp) > config.HOLD_DURATION * 2) {
+        throw new Error("Hold iniciado demasiado tarde");
+      }
+
       return true;
     } catch (error) {
-      if (config.DEBUG_MODE)
-        console.error("Validación model-viewer falló:", error);
+      if (config.DEBUG_MODE) console.error("Validación hold falló:", error);
       return false;
     }
   }
 
   /* ===================== EFECTOS VISUALES ===================== */
- cleanupAllHoldEffects() {
-   if (config.DEBUG_MODE) console.log("🧹 Limpiando todos los efectos de hold");
-  
-   // Limpiar estado de interacción
-   this.state.isHolding = false;
-   this.state.activePointerId = null;
-   this.state.isDragging = false;
-   this.state.holdStartTimestamp = null;
-  
-   // Limpiar efectos visuales del model-viewer
-   if (this.elements.viewer) {
-     this.elements.viewer.classList.remove("hold");
-   }
-  
-   // Limpiar indicador de progreso
-   if (this.elements.indicator) {
-     this.elements.indicator.classList.remove("active");
-     this.elements.indicator.style.width = "0";
-   }
-  
-   // Limpiar contenedor de partículas
-   if (this.elements.particlesContainer) {
-     // Remover todas las partículas existentes
-    const particles = this.elements.particlesContainer.querySelectorAll('.particle');
-    particles.forEach(particle => {
-      try {
-        particle.remove();
-      } catch (error) {
-        if (config.DEBUG_MODE) console.warn("Error removiendo partícula:", error);
-        }
-      });
-    }
-  
-    // Limpiar todos los timers relacionados con hold
-    ['holdInitiator', 'videoActivation', 'progress', 'particles'].forEach(timerName => {
-      this.clearTimer(timerName);
-    });
-  }
-  
   startProgressAnimation() {
-    this.setTimer(
-      "progress",
-      () => {
-        if (!this.state.isHolding) return;
-        const elapsed = Date.now() - this.progress.startTime;
-        const progress = Math.min(elapsed / this.progress.totalTime, 1);
-        const currentWidth = progress * 90;
+    const animate = () => {
+      if (!this.state.isHolding) {
+        this.clearTimer("progress");
+        return;
+      }
+      
+      const elapsed = Date.now() - this.progress.startTime;
+      const progress = Math.min(elapsed / this.progress.totalTime, 1);
+      const currentWidth = progress * 90;
+      
+      if (this.elements.indicator) {
         this.elements.indicator.style.width = `${currentWidth}vw`;
-        if (progress >= 1) {
-          triggerHapticFeedback(config.DEVICE_CONFIG.hapticFeedback);
-          this.clearTimer("progress");
-        }
-      },
-      16,
-      true
-    );
+      }
+      
+      if (progress >= 1) {
+        triggerHapticFeedback(config.DEVICE_CONFIG?.hapticFeedback);
+        this.clearTimer("progress");
+        return;
+      }
+      
+      this.timers.set("progress", requestAnimationFrame(animate));
+    };
+    
+    this.clearTimer("progress");
+    this.timers.set("progress", requestAnimationFrame(animate));
   }
 
   startParticleEffect(position) {
+    if (!position || typeof position.x !== 'number' || typeof position.y !== 'number') {
+      if (config.DEBUG_MODE) {
+        console.warn("Posición inválida para partículas:", position);
+      }
+      return;
+    }
+    
     this.setTimer(
       "particles",
       () => {
-        if (this.state.isHolding) {
-          spawnParticles(
-            position.x,
-            position.y,
-            this.elements.particlesContainer,
-            config.PARTICLE_CONFIG
-          );
+        if (this.state.isHolding && this.elements.particlesContainer) {
+          try {
+            spawnParticles(
+              position.x,
+              position.y,
+              this.elements.particlesContainer,
+              config.PARTICLE_CONFIG
+            );
+          } catch (error) {
+            if (config.DEBUG_MODE) {
+              console.warn("Error generando partículas:", error);
+            }
+          }
         }
       },
       config.PARTICLE_SPAWN_INTERVAL,
       true
     );
+  }
+
+  /* ===================== LIMPIEZA CONSOLIDADA ===================== */
+  cleanupAllHoldEffects() {
+    if (config.DEBUG_MODE) console.log("🧹 Limpiando todos los efectos de hold");
+    
+    // Limpiar estado de interacción
+    this.state.isHolding = false;
+    this.state.activePointerId = null;
+    this.state.isDragging = false;
+    this.state.holdStartTimestamp = null;
+    this.updateLastInteraction();
+    
+    // Limpiar efectos visuales del model-viewer
+    if (this.elements.viewer) {
+      this.elements.viewer.classList.remove("hold");
+    }
+    
+    // Limpiar indicador de progreso
+    if (this.elements.indicator) {
+      this.elements.indicator.classList.remove("active");
+      this.elements.indicator.style.width = "0";
+    }
+    
+    // Limpiar contenedor de partículas
+    if (this.elements.particlesContainer) {
+      const particles = this.elements.particlesContainer.querySelectorAll('.particle');
+      particles.forEach(particle => {
+        try {
+          particle.remove();
+        } catch (error) {
+          if (config.DEBUG_MODE) console.warn("Error removiendo partícula:", error);
+        }
+      });
+    }
+    
+    // Limpiar todos los timers relacionados
+    ['holdInitiator', 'videoActivation', 'progress', 'particles', 'autoSnap'].forEach(timerName => {
+      this.clearTimer(timerName);
+    });
   }
 
   /* ===================== FUNCIONALIDAD DE COMPARTIR ===================== */
@@ -664,7 +859,7 @@ class CardViewerApp {
     downloadImage(
       imageBlob,
       filename,
-      config.PERFORMANCE_CONFIG.cleanup.urlRevokeDelay
+      config.PERFORMANCE_CONFIG?.cleanup?.urlRevokeDelay
     );
     return { method: "download", success: true };
   }
@@ -688,6 +883,8 @@ class CardViewerApp {
 
   setShareButtonState(state) {
     const button = this.elements.shareButton;
+    if (!button) return;
+    
     if (state === "loading") {
       button.classList.add("loading");
       button.textContent = this.getText("share_preparing", "Preparando...");
@@ -724,16 +921,40 @@ class CardViewerApp {
     }
   }
 
+  /* ===================== MÉTODO DE CLEANUP ===================== */
+  destroy() {
+    if (config.DEBUG_MODE) console.log("🧹 Destruyendo CardViewerApp");
+    
+    this.clearAllTimers();
+    this.cleanupAllHoldEffects();
+    
+    // Limpiar referencias DOM
+    Object.keys(this.elements).forEach(key => {
+      this.elements[key] = null;
+    });
+    
+    // Limpiar estado
+    this.state = null;
+    this.interaction = null;
+    this.progress = null;
+  }
+
   /* ===================== EVENT LISTENERS ===================== */
   setupEventListeners() {
-    this.elements.skipButton.addEventListener("click", () =>
-      this.returnToModel()
-    );
-    this.elements.shareButton.addEventListener("click", () =>
-      this.handleShareCard()
-    );
+    // Botones de interfaz
+    if (this.elements.skipButton) {
+      this.elements.skipButton.addEventListener("click", () =>
+        this.returnToModel()
+      );
+    }
+    
+    if (this.elements.shareButton) {
+      this.elements.shareButton.addEventListener("click", () =>
+        this.handleShareCard()
+      );
+    }
 
-    // Sistema de interacción
+    // Sistema de interacción principal
     this.elements.viewer.addEventListener("pointerdown", (e) =>
       this.startHoldDetection(e)
     );
@@ -750,19 +971,26 @@ class CardViewerApp {
       this.endHoldDetection(e)
     );
 
+    // Prevenir drag de imágenes
     this.elements.viewer.addEventListener("dragstart", (e) =>
       e.preventDefault()
     );
+    
+    // Video events
     this.elements.video.addEventListener("ended", () => this.returnToModel());
 
+    // Language switching
     window.addEventListener("languageChanged", (event) => {
       this.lang = event.detail.language;
       this.translations = event.detail.translations;
       this.updateDynamicTexts();
-      this.elements.title.textContent = this.getLocalizedTitle();
+      if (this.elements.title) {
+        this.elements.title.textContent = this.getLocalizedTitle();
+      }
       this.setShareButtonState("normal");
     });
 
+    // Debug: Language switching con tecla L
     if (config.DEBUG_MODE) {
       document.addEventListener("keydown", (e) => {
         if (e.key === "l" || e.key === "L") {
@@ -773,9 +1001,3 @@ class CardViewerApp {
     }
   }
 }
-
-
-
-
-
-
