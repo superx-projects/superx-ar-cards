@@ -470,7 +470,10 @@ class CardViewerApp {
         this.state.current = "model";
         this.state.interactionLocked = false;
 
-        this.setModelViewerInteraction(true);
+        setTimeout(() => {
+          this.setModelViewerInteraction(true);
+          if (config.DEBUG_MODE) console.log("🔓 Controles del model-viewer reactivados");
+        }, 50); // Delay mínimo para asegurar que el DOM esté actualizado
         
         // Programar snap automático tras volver del video
         this.scheduleAutoSnap();
@@ -901,23 +904,41 @@ class CardViewerApp {
 
   /* ===================== UTILIDADES ===================== */
   setModelViewerInteraction(enabled) {
-    if (!isModelViewerReady(this.elements.viewer)) return;
+    if (!this.elements.viewer) {
+      if (config.DEBUG_MODE) console.warn("Model-viewer element not found");
+      return;
+    }
+  
+    // Verificar si el model-viewer está realmente listo
+    if (!isModelViewerReady(this.elements.viewer)) {
+      if (config.DEBUG_MODE) console.warn("Model-viewer not ready, scheduling retry");
+      // Reintentar después de un momento
+      setTimeout(() => this.setModelViewerInteraction(enabled), 100);
+      return;
+    }
+  
     try {
       if (enabled) {
-        if (config.DEBUG_MODE)
-          console.log("🔓 Habilitando controles de model-viewer");
+        if (config.DEBUG_MODE) console.log("🔓 Habilitando controles de model-viewer");
         this.elements.viewer.setAttribute("camera-controls", "");
+        // ✅ Forzar que el model-viewer procese el cambio
+        this.elements.viewer.dispatchEvent(new Event('camera-controls-enabled'));
       } else {
-        if (config.DEBUG_MODE)
-          console.log("🔒 Deshabilitando controles de model-viewer");
+        if (config.DEBUG_MODE) console.log("🔒 Deshabilitando controles de model-viewer");
         this.elements.viewer.removeAttribute("camera-controls");
       }
     } catch (error) {
-      if (config.DEBUG_MODE)
-        console.error(
-          "Error controlando interacciones de model-viewer:",
-          error
-        );
+      if (config.DEBUG_MODE) console.error("Error controlando interacciones de model-viewer:", error);
+      // Reintentar una vez más si hay error
+      if (enabled) {
+        setTimeout(() => {
+          try {
+            this.elements.viewer.setAttribute("camera-controls", "");
+          } catch (retryError) {
+            console.error("Failed to re-enable camera controls:", retryError);
+          }
+        }, 200);
+      }
     }
   }
 
@@ -1001,3 +1022,4 @@ class CardViewerApp {
     }
   }
 }
+
