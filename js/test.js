@@ -726,7 +726,7 @@ class CardViewerApp {
     );
   }
 
-  /* ✅ ===================== LIMPIEZA SIMPLIFICADA ===================== */
+  /*  ===================== LIMPIEZA SIMPLIFICADA ===================== */
   resetHoldState() {
     if (config.DEBUG_MODE) console.log("🧹 Reseteando estado de hold");
     
@@ -863,44 +863,44 @@ class CardViewerApp {
 
   /* ===================== UTILIDADES ===================== */
   setModelViewerInteraction(enabled) {
-    if (!this.elements.viewer) {
-      if (config.DEBUG_MODE) console.warn("Model-viewer element not found");
-      return;
-    }
-  
-    // Verificar si el model-viewer está realmente listo
-    if (!isModelViewerReady(this.elements.viewer)) {
-      if (config.DEBUG_MODE) console.warn("Model-viewer not ready, scheduling retry");
-      // Reintentar después de un momento
-      setTimeout(() => this.setModelViewerInteraction(enabled), 100);
-      return;
-    }
-  
-    try {
-      if (enabled) {
-        if (config.DEBUG_MODE) console.log("🔓 Habilitando controles de model-viewer");
-        this.elements.viewer.setAttribute("camera-controls", "");
-        // ✅ Forzar que el model-viewer procese el cambio
-        this.elements.viewer.dispatchEvent(new Event('camera-controls-enabled'));
-      } else {
-        if (config.DEBUG_MODE) console.log("🔒 Deshabilitando controles de model-viewer");
-        this.elements.viewer.removeAttribute("camera-controls");
-      }
-    } catch (error) {
-      if (config.DEBUG_MODE) console.error("Error controlando interacciones de model-viewer:", error);
-      // Reintentar una vez más si hay error
-      if (enabled) {
+    if (!this.elements.viewer) {
+      if (config.DEBUG_MODE) console.warn("Model-viewer element not found");
+      return;
+    }
+ 
+    if (!isModelViewerReady(this.elements.viewer)) {
+      if (config.DEBUG_MODE) console.warn("Model-viewer not ready, scheduling retry");
+      setTimeout(() => this.setModelViewerInteraction(enabled), 100);
+      return;
+    }
+ 
+    try {
+      if (enabled) {
+        if (config.DEBUG_MODE) console.log("🔓 Habilitando controles de model-viewer");
+        this.elements.viewer.setAttribute("camera-controls", "");
+        
         setTimeout(() => {
-          try {
-            this.elements.viewer.setAttribute("camera-controls", "");
-          } catch (retryError) {
-            console.error("Failed to re-enable camera controls:", retryError);
-          }
-        }, 200);
-      }
-    }
-  }
+          try {
+          // Verificamos de nuevo por si el elemento ya no es válido
+            if (this.elements.viewer && isModelViewerReady(this.elements.viewer)) {
+              const currentOrbit = this.elements.viewer.cameraOrbit;
+              this.elements.viewer.cameraOrbit = currentOrbit;
+              if (config.DEBUG_MODE) console.log("🔄 Forzando actualización de model-viewer.");
+            }
+          } catch (e) {
+            if (config.DEBUG_MODE) console.error("Error al forzar actualización de model-viewer:", e);
+          }
+        }, 50); // Un pequeño delay de 50ms es suficiente
 
+      } else {
+        if (config.DEBUG_MODE) console.log("🔒 Deshabilitando controles de model-viewer");
+        this.elements.viewer.removeAttribute("camera-controls");
+      }
+    } catch (error) {
+      if (config.DEBUG_MODE) console.error("Error controlando interacciones de model-viewer:", error);
+    }
+  }
+  
   /* ===================== MÉTODO DE CLEANUP ===================== */
   destroy() {
     if (config.DEBUG_MODE) console.log("🧹 Destruyendo CardViewerApp");
@@ -981,6 +981,7 @@ class CardViewerApp {
     }
   }
 }
+
 
 
 
