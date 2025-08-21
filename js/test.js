@@ -346,9 +346,9 @@ class CardViewerApp {
 
     this.state.current = "transitioning";
     this.state.interactionLocked = true;
-    this.clearTimer("modelTransition");
+    this.clearAllTimers();
 
-    this.elements.fade.classList.add("active");
+    this.elements.fade.classList.remove("hidden");
     this.setTimer(
       "videoTransition",
       () => {
@@ -356,7 +356,7 @@ class CardViewerApp {
         this.elements.logo.classList.add("hidden");
         this.elements.video.classList.add("showing");
         this.elements.video.play();
-        this.elements.fade.classList.remove("active");
+        this.elements.fade.classList.add("hidden");
         this.state.current = "video";
         this.state.interactionLocked = false;
         if (config.DEBUG_MODE) console.log("✅ Transición a video completada");
@@ -371,9 +371,9 @@ class CardViewerApp {
 
     this.state.current = "transitioning";
     this.state.interactionLocked = true;
-    this.clearTimer("videoTransition");
+    this.clearAllTimers();
     
-    this.elements.fade.classList.add("active");
+    this.elements.fade.classList.remove("hidden");
     this.setTimer(
       "modelTransition",
       () => {
@@ -386,7 +386,7 @@ class CardViewerApp {
         showViewModel();        
         this.elements.logo.classList.remove("hidden");
         
-        this.elements.fade.classList.remove("active");
+        this.elements.fade.classList.add("hidden");
         this.state.current = "model";
         this.state.interactionLocked = false;
 
@@ -738,6 +738,7 @@ class CardViewerApp {
     }
   }
 }
+
 
 
 
