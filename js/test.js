@@ -600,6 +600,7 @@ class CardViewerApp {
 
     this.resetHoldState();
     this.setModelViewerInteraction(true);
+  }
 
   initiateHold() {
     if (!this.validateHoldConditions()) {
@@ -980,5 +981,6 @@ class CardViewerApp {
     }
   }
 }
+
 
 
