@@ -346,11 +346,9 @@ class CardViewerApp {
 
     this.state.current = "transitioning";
     this.state.interactionLocked = true;
-    
-    this.clearAllTimersExcept("videoTransition");
+    this.clearTimer("modelTransition");
 
     this.elements.fade.classList.add("active");
-
     this.setTimer(
       "videoTransition",
       () => {
@@ -373,10 +371,9 @@ class CardViewerApp {
 
     this.state.current = "transitioning";
     this.state.interactionLocked = true;
+    this.clearTimer("videoTransition");
     
-    this.clearAllTimersExcept("modelTransition");
     this.elements.fade.classList.add("active");
-
     this.setTimer(
       "modelTransition",
       () => {
@@ -741,5 +738,6 @@ class CardViewerApp {
     }
   }
 }
+
 
 
