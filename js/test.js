@@ -206,6 +206,14 @@ class CardViewerApp {
     this.timers.forEach((timer, name) => this.clearTimer(name));
   }
 
+  clearAllTimersExcept(exceptName) {
+    this.timers.forEach((timer, name) => {
+      if (name !== exceptName) {
+        this.clearTimer(name);
+      }
+    });
+  }
+
   /* ===================== INICIALIZACIÓN ===================== */
   async initialize() {
     this.setupCardContent();
@@ -339,7 +347,7 @@ class CardViewerApp {
     this.state.current = "transitioning";
     this.state.interactionLocked = true;
     
-    this.clearAllTimers();
+    this.clearAllTimersExcept("videoTransition");
 
     this.elements.fade.classList.add("active");
 
@@ -365,24 +373,29 @@ class CardViewerApp {
 
     this.state.current = "transitioning";
     this.state.interactionLocked = true;
-    this.clearAllTimers();
+    
+    this.clearAllTimersExcept("modelTransition");
     this.elements.fade.classList.add("active");
 
     this.setTimer(
       "modelTransition",
       () => {
+        if (config.DEBUG_MODE) console.log("⏱ Ejecutando transición de regreso");
+        
         this.elements.video.classList.remove("showing");
         this.elements.video.pause();
         this.elements.video.currentTime = 0;
-        showViewModel();
+        
+        showViewModel();        
         this.elements.logo.classList.remove("hidden");
+        
         this.elements.fade.classList.remove("active");
         this.state.current = "model";
         this.state.interactionLocked = false;
 
         this.setModelViewerInteraction(true);
         this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
-        if (config.DEBUG_MODE) console.log("⏱ Ejecutando transición de regreso");
+        if (config.DEBUG_MODE) console.log("✅ Transición de regreso completada");
       },
       config.FADE_DURATION
     );
@@ -728,4 +741,5 @@ class CardViewerApp {
     }
   }
 }
+
 
