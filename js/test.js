@@ -176,6 +176,7 @@ class CardViewerApp {
 
     this.elements = {
       viewer: document.getElementById("card_viewer"),
+	  blocker: document.getElementById("interaction_blocker"),
       video: document.getElementById("card_video"),
       fade: document.getElementById("card_fade_effect"),
       indicator: document.getElementById("card_hold_indicator"),
@@ -446,12 +447,14 @@ class CardViewerApp {
         // Quitar fade
         this.elements.fade.classList.add("hidden");
         
-        // ✅ REACTIVAR ESTADO Y CONTROLES EN EL ORDEN CORRECTO
+        // REACTIVAR ESTADO Y CONTROLES EN EL ORDEN CORRECTO
         this.state.current = "model";
         this.state.interactionLocked = false;
         
-        // ✅ REACTIVAR CONTROLES INMEDIATAMENTE - SIN DELAYS
-        this.setModelViewerInteraction(true);
+        // Ocultar el bloqueador para poder interactuar con el modelo
+        //this.setModelViewerInteraction(true);
+		this.elements.blocker.classList.add("hidden"); // ✅ OCULTAR EL BLOQUEADOR
+        if (config.DEBUG_MODE) console.log("🔓 Interacción desbloqueada post-video.");
         
         // Programar auto-rotate y snap
         this.scheduleAutoSnap();
@@ -599,7 +602,9 @@ class CardViewerApp {
     if (config.DEBUG_MODE) console.log("🧹 Cancelando HOLD activo.");
 
     this.resetHoldState();
-    this.setModelViewerInteraction(true);
+    //this.setModelViewerInteraction(true);
+	this.elements.blocker.classList.add("hidden");
+	if (config.DEBUG_MODE) console.log("🔓 Interacción desbloqueada.");
   }
 
   initiateHold() {
@@ -620,8 +625,9 @@ class CardViewerApp {
     this.state.isHolding = true;
     this.updateLastInteraction();
 
-    this.setModelViewerInteraction(false);
-    
+    //this.setModelViewerInteraction(false);
+    this.elements.blocker.classList.remove("hidden");
+	
     this.progress.startTime = Date.now();
     this.elements.viewer.classList.add("hold");
     this.elements.indicator.classList.add("active");
@@ -981,7 +987,3 @@ class CardViewerApp {
     }
   }
 }
-
-
-
-

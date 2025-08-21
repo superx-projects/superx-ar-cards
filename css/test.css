@@ -205,6 +205,25 @@
 /* =====================
    INDICADOR DE PROGRESO HOLD
 ===================== */
+
+#interaction_blocker {
+    position: fixed; /* O absolute, dependiendo de tu layout */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: transparent; /* Invisible */
+    z-index: 450; /* Debe estar por encima del model-viewer */
+    /* Por defecto no está visible */
+}
+
+#interaction_blocker.hidden {
+    display: none;
+}
+
+/* =====================
+   INDICADOR DE PROGRESO HOLD
+===================== */
 .hold-indicator-area {
   height: 3vh;
   width: 100vw;
@@ -751,4 +770,3 @@
   }
 
 }
-
