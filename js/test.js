@@ -173,7 +173,6 @@ class CardViewerApp {
 
     this.interaction = {
       touchStartPosition: null,
-      touchCurrentPosition: null,
       dragThreshold: config.DRAG_THRESHOLD,
     };
 
@@ -181,7 +180,7 @@ class CardViewerApp {
 
     this.progress = {
       startTime: 0,
-      totalTime: config.HOLD_DURATION + config.VIDEO_ACTIVATION_DELAY,
+      totalTime: config.VIDEO_ACTIVATION_DELAY, // El tiempo de progreso es solo el delay de activación
     };
   }
 
@@ -331,10 +330,17 @@ class CardViewerApp {
       return;
     }
     if (config.DEBUG_MODE) console.log("🎬 Iniciando transición a video");
+    
+    // Limpiamos el estado de la interacción que nos trajo aquí.
+    this.state.isHolding = false;
+    this.state.activePointerId = null;
+    this.state.isDragging = false;
 
     this.state.current = "transitioning";
-    this.state.interactionLocked = true;    
-    this.cancelHold();
+    this.state.interactionLocked = true;
+    
+    this.clearAllTimers();
+
     this.elements.fade.classList.add("active");
 
     this.setTimer(
@@ -396,96 +402,73 @@ class CardViewerApp {
     }
   }
 
-  /* ===================== SISTEMA DE INTERACCIÓN (LÓGICA CORREGIDA) ===================== */
+  /* ===================== SISTEMA DE INTERACCIÓN (LÓGICA FINAL) ===================== */
 
   startHoldDetection(event) {
-    if (this.state.activePointerId !== null || this.state.current !== "model" || this.state.interactionLocked)
-      return;
+    if (this.state.activePointerId !== null || this.state.current !== 'model' || this.state.interactionLocked) return;
 
+    if (config.DEBUG_MODE) console.log("👇 pointerdown: Iniciando detección.");
     this.state.activePointerId = event.pointerId;
     this.interaction.touchStartPosition = getEventPosition(event);
-    this.interaction.touchCurrentPosition = this.interaction.touchStartPosition;
     this.state.isDragging = false;
+    this.setAutoRotateState(false);
 
-    this.setTimer('intentionChecker', () => {
-        const dragDistance = calculateDragDistance(
-            this.interaction.touchStartPosition,
-            this.interaction.touchCurrentPosition
-        );
-
-        if (dragDistance < this.interaction.dragThreshold) {
-            // Intención es HOLD
-            if (config.DEBUG_MODE) console.log("🤔 Intención detectada: HOLD. Iniciando proceso.");
-            this.setAutoRotateState(false);
-            this.initiateHold();
-        } else {
-            // Intención es DRAG
-            if (config.DEBUG_MODE) console.log("🤔 Intención detectada: DRAG. Dejando control al visor.");
-            this.state.activePointerId = null; // Liberamos para que el visor tome el control.
-        }
-    }, 150); // 150ms de espera para decidir
+    this.setTimer('holdInitiator', () => {
+        if (config.DEBUG_MODE) console.log("⏳ Timer 'holdInitiator' disparado. Es un HOLD.");
+        this.initiateHold();
+    }, config.HOLD_DURATION);
   }
 
   updateHoldDetection(event) {
-    if (event.pointerId !== this.state.activePointerId) return;
+    if (event.pointerId !== this.state.activePointerId || this.state.isHolding) return;
 
-    this.interaction.touchCurrentPosition = getEventPosition(event);
-    
-    // Si ya estamos en modo 'holding', un movimiento brusco debe cancelarlo.
-    if (this.state.isHolding) {
-        const dragDistance = calculateDragDistance(
-            this.interaction.touchStartPosition,
-            this.interaction.touchCurrentPosition
-        );
+    const currentPosition = getEventPosition(event);
+    const dragDistance = calculateDragDistance(this.interaction.touchStartPosition, currentPosition);
 
-        if (dragDistance > this.interaction.dragThreshold) {
-            if (config.DEBUG_MODE) console.log("❌ Drag detectado durante el hold. Cancelando.");
-            this.cancelHold();
-            // Hacemos el snap para que la carta no quede en una posición extraña.
-            this.setTimer('snapToSide', () => snapToNearestSide(this.elements.viewer, config.ROTATION_CONFIG), 50);
-        }
+    if (dragDistance > this.interaction.dragThreshold) {
+        if (config.DEBUG_MODE && !this.state.isDragging) console.log("↔️ Drag detectado. Cancelando timer de hold.");
+        this.state.isDragging = true;
+        this.clearTimer('holdInitiator');
     }
   }
 
   endHoldDetection(event) {
     if (event.pointerId !== this.state.activePointerId) return;
-    if (config.DEBUG_MODE) console.log("🏁 Finalizando interacción (pointerup/cancel)");
+    if (config.DEBUG_MODE) console.log("👆 pointerup: Finalizando interacción.");
 
-    // Limpiamos el timer de intención si aún no se ha ejecutado.
-    this.clearTimer('intentionChecker');
+    this.clearTimer('holdInitiator');
 
-    const wasHolding = this.state.isHolding;
-    
-    // Siempre cancelamos para limpiar el estado.
-    this.cancelHold();
-
-    // Solo hacemos snap si NO estábamos en un hold activo (es decir, fue un drag o un clic corto).
-    // Si era un hold, ya se canceló y no necesita snap.
-    if (!wasHolding) {
-        this.setTimer(
-          "snapToSide",
-          () => {
-            if (config.DEBUG_MODE) console.log("🔄 Ejecutando snap de cámara post-drag.");
-            snapToNearestSide(this.elements.viewer, config.ROTATION_CONFIG);
-            this.setAutoRotateState(true, config.CAMERA_SNAP_TRANSITION);
-          },
-          config.CAMERA_SNAP_DELAY
-        );
-    } else {
-        // Si se canceló un hold, simplemente reactivamos la rotación.
+    if (this.state.isHolding) {
+        if (config.DEBUG_MODE) console.log("🚫 Hold interrumpido por pointerup.");
+        this.cancelHold();
         this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
     }
+    else if (this.state.isDragging) {
+        if (config.DEBUG_MODE) console.log("🔄 Ejecutando snap post-drag.");
+        this.setTimer(
+            "snapToSide",
+            () => {
+                snapToNearestSide(this.elements.viewer, config.ROTATION_CONFIG);
+                this.setAutoRotateState(true, config.CAMERA_SNAP_TRANSITION);
+            },
+            config.CAMERA_SNAP_DELAY
+        );
+    }
+    else {
+        if (config.DEBUG_MODE) console.log("🖱️ Clic corto detectado.");
+        this.setAutoRotateState(true, config.VIDEO_ACTIVATION_DELAY);
+    }
+
+    this.state.activePointerId = null;
+    this.state.isDragging = false;
   }
   
   cancelHold() {
-    if (!this.state.activePointerId) return; // No hacer nada si no hay interacción activa
-    if (config.DEBUG_MODE) console.log("🧹 Limpiando estado de interacción.");
+    if (!this.state.isHolding) return;
+    if (config.DEBUG_MODE) console.log("🧹 Cancelando y limpiando estado de HOLD activo.");
 
     this.state.isHolding = false;
-    this.state.isDragging = false;
-    this.state.activePointerId = null;
-
-    this.clearTimer('holdInitiator');
+    
     this.clearTimer('videoActivation');
     this.clearTimer('progress');
     this.clearTimer('particles');
@@ -497,16 +480,17 @@ class CardViewerApp {
     this.setModelViewerInteraction(true);
   }
 
-
   initiateHold() {
     if (!this.validateModelViewerState() || this.state.activePointerId === null) {
       if (config.DEBUG_MODE) console.warn("⚠️ Condiciones no válidas para iniciar hold. Abortando.");
-      this.cancelHold();
       return;
     }
     
-    this.setModelViewerInteraction(false); // Deshabilitamos controles AHORA.
+    if (config.DEBUG_MODE) console.log("🚀 Iniciando efectos de HOLD.");
     this.state.isHolding = true;
+
+    this.setModelViewerInteraction(false); 
+    
     this.progress.startTime = Date.now();
     this.elements.viewer.classList.add("hold");
     this.elements.indicator.classList.add("active");
@@ -517,7 +501,7 @@ class CardViewerApp {
     this.setTimer(
       "videoActivation",
       this.showVideo.bind(this),
-      config.HOLD_DURATION + config.VIDEO_ACTIVATION_DELAY
+      config.VIDEO_ACTIVATION_DELAY
     );
   }
 
