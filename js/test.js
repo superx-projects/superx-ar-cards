@@ -305,7 +305,7 @@ class CardViewerApp {
     await this.waitForModelViewer();
     this.setupModelViewerEvents();
     this.setupEventListeners();
-    this.enableCameraControls(); // ✅ Método simplificado
+    this.setModelViewerInteraction(true);
     showViewModel();
 
     if (config.AUTO_ROTATE_ENABLED) {
@@ -375,28 +375,6 @@ class CardViewerApp {
         )
       );
     });
-  }
-
-  // ✅ MÉTODOS SIMPLIFICADOS PARA CONTROLAR CAMERA-CONTROLS
-  enableCameraControls() {
-    if (!this.elements.viewer) return;
-    try {
-      this.elements.viewer.setAttribute("camera-controls", "");
-      this.elements.viewer.disablePan = true; // Mantener pan deshabilitado
-      if (config.DEBUG_MODE) console.log("🔓 Camera controls habilitados");
-    } catch (error) {
-      if (config.DEBUG_MODE) console.error("Error habilitando controles:", error);
-    }
-  }
-
-  disableCameraControls() {
-    if (!this.elements.viewer) return;
-    try {
-      this.elements.viewer.removeAttribute("camera-controls");
-      if (config.DEBUG_MODE) console.log("🔒 Camera controls deshabilitados");
-    } catch (error) {
-      if (config.DEBUG_MODE) console.error("Error deshabilitando controles:", error);
-    }
   }
 
   /* ===================== GESTIÓN DE ESTADOS ===================== */
@@ -473,7 +451,7 @@ class CardViewerApp {
         this.state.interactionLocked = false;
         
         // ✅ REACTIVAR CONTROLES INMEDIATAMENTE - SIN DELAYS
-        this.enableCameraControls();
+        this.setModelViewerInteraction(true);
         
         // Programar auto-rotate y snap
         this.scheduleAutoSnap();
@@ -621,8 +599,7 @@ class CardViewerApp {
     if (config.DEBUG_MODE) console.log("🧹 Cancelando HOLD activo.");
 
     this.resetHoldState();
-    this.enableCameraControls(); // ✅ Reactivar controles inmediatamente
-  }
+    this.setModelViewerInteraction(true);
 
   initiateHold() {
     if (!this.validateHoldConditions()) {
@@ -642,7 +619,7 @@ class CardViewerApp {
     this.state.isHolding = true;
     this.updateLastInteraction();
 
-    this.disableCameraControls(); // ✅ Método simplificado
+    this.setModelViewerInteraction(false);
     
     this.progress.startTime = Date.now();
     this.elements.viewer.classList.add("hold");
