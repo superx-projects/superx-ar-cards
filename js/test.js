@@ -186,6 +186,8 @@ class CardViewerApp {
       // Precargar modelo 3D
       await this.preloadModel();
       this.state.modelLoaded = true;
+	  
+	  await this.initializeModelViewer();
       
       this.updateLoadingProgress(this.getText("loading_video", "Preparando video..."), 70);
 
@@ -211,64 +213,94 @@ class CardViewerApp {
     }
   }
 
-  async preloadModel() {
+	async preloadModel() {
 	  return new Promise((resolve, reject) => {
 		const viewer = this.elements.viewer;
+		const targetSrc = this.resourcePaths.model;
 		
-		// Verificar si el modelo ya está configurado y cargado
-		if (viewer.src === this.resourcePaths.model && viewer.loaded) {
-		  if (config.DEBUG_MODE) console.log("Modelo ya está cargado");
+		if (config.DEBUG_MODE) console.log(`Iniciando precarga del modelo: ${targetSrc}`);
+		
+		// Función para verificar si el modelo está completamente cargado
+		const isModelReady = () => {
+		  return viewer.src === targetSrc && 
+				 viewer.loaded === true;
+		};
+		
+		// Si el modelo ya está listo, resolver inmediatamente
+		if (isModelReady()) {
+		  if (config.DEBUG_MODE) console.log("✅ Modelo ya está completamente cargado");
 		  resolve();
 		  return;
 		}
 		
-		// Si el src ya está configurado pero aún no carga, esperar
-		if (viewer.src === this.resourcePaths.model) {
-		  if (config.DEBUG_MODE) console.log("Esperando carga del modelo ya configurado");
-		  
-		  const checkLoaded = () => {
-			if (viewer.loaded) {
-			  resolve();
-			} else {
-			  setTimeout(checkLoaded, 100);
-			}
-		  };
-		  
-		  setTimeout(() => {
-			reject(new Error("Timeout esperando modelo ya configurado"));
-		  }, 30000);
-		  
-		  checkLoaded();
-		  return;
-		}
+		let timeoutId;
+		let resolved = false;
 		
-		// Configurar el modelo por primera vez
+		const cleanup = () => {
+		  if (timeoutId) clearTimeout(timeoutId);
+		  viewer.removeEventListener("load", onLoad);
+		  viewer.removeEventListener("error", onError);
+		};
+		
+		const resolveOnce = () => {
+		  if (!resolved) {
+			resolved = true;
+			cleanup();
+			if (config.DEBUG_MODE) console.log("✅ Modelo precargado exitosamente");
+			resolve();
+		  }
+		};
+		
+		const rejectOnce = (error) => {
+		  if (!resolved) {
+			resolved = true;
+			cleanup();
+			if (config.DEBUG_MODE) console.error("❌ Error precargando modelo:", error);
+			reject(error);
+		  }
+		};
+		
 		const onLoad = () => {
-		  viewer.removeEventListener("load", onLoad);
-		  viewer.removeEventListener("error", onError);
-		  if (config.DEBUG_MODE) console.log("Modelo cargado exitosamente");
-		  resolve();
+		  if (config.DEBUG_MODE) console.log("🎯 Evento 'load' del modelo disparado");
+		  resolveOnce();
 		};
 		
-		const onError = (error) => {
-		  viewer.removeEventListener("load", onLoad);
-		  viewer.removeEventListener("error", onError);
-		  if (config.DEBUG_MODE) console.error("Error cargando modelo:", error);
-		  reject(error);
+		const onError = (event) => {
+		  rejectOnce(new Error(`Error cargando modelo: ${event.message || 'Error desconocido'}`));
 		};
 		
+		// Configurar event listeners
 		viewer.addEventListener("load", onLoad, { once: true });
 		viewer.addEventListener("error", onError, { once: true });
 		
-		// Establecer el src solo si no está ya configurado
-		viewer.setAttribute("src", this.resourcePaths.model);
-		
-		// Timeout de seguridad
-		setTimeout(() => {
-		  viewer.removeEventListener("load", onLoad);
-		  viewer.removeEventListener("error", onError);
-		  reject(new Error("Timeout cargando modelo"));
+		// Configurar timeout
+		timeoutId = setTimeout(() => {
+		  rejectOnce(new Error("Timeout: El modelo tardó demasiado en cargar (30s)"));
 		}, 30000);
+		
+		// Configurar el src solo si es necesario
+		if (viewer.src !== targetSrc) {
+		  if (config.DEBUG_MODE) console.log("🔄 Configurando src del modelo");
+		  viewer.setAttribute("src", targetSrc);
+		} else {
+		  if (config.DEBUG_MODE) console.log("ℹ️ El src ya está configurado, esperando carga");
+		}
+		
+		// Verificación periódica como fallback
+		const checkInterval = setInterval(() => {
+		  if (resolved) {
+			clearInterval(checkInterval);
+			return;
+		  }
+		  
+		  if (isModelReady()) {
+			clearInterval(checkInterval);
+			resolveOnce();
+		  }
+		}, 500); // Verificar cada 500ms
+		
+		// Limpiar interval después del timeout
+		setTimeout(() => clearInterval(checkInterval), 31000);
 	  });
 	}
 
@@ -331,7 +363,7 @@ class CardViewerApp {
   async initialize() {
     this.setupCardContent();
     this.setupVideoErrorHandling();
-    await this.initializeModelViewer();
+    //await this.initializeModelViewer();
     this.setupEventListeners();
     
     // Cargar recursos con indicador de progreso
