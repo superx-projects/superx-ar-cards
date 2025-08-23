@@ -9,7 +9,7 @@
   "loading_model": "Loading 3D model...",
   "loading_video": "Preparing video...",
   "loading_complete": "Ready!",
-  "loading_hint": "This may take a few moments with slow connection"
+  "loading_hint": "This may take a few moments with slow connection",
 
   "error_card_not_found": "Card not found",
   "error_invalid_id": "Invalid or missing card ID",
@@ -49,3 +49,4 @@
   "share_twitter_text": "My 3D card \"{cardTitle}\" is incredible! 🎮✨\nGet yours at {storeHandle}",
   "share_whatsapp_text": "Look how cool this is! My 3D card \"{cardTitle}\" 🎮✨\nYou can get yours at {storeHandle}"
 }
+
