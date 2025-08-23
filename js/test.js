@@ -212,33 +212,65 @@ class CardViewerApp {
   }
 
   async preloadModel() {
-    return new Promise((resolve, reject) => {
-      // Configurar el modelo antes de cargarlo
-      this.elements.viewer.setAttribute("src", this.resourcePaths.model);
-      
-      const onLoad = () => {
-        this.elements.viewer.removeEventListener("load", onLoad);
-        this.elements.viewer.removeEventListener("error", onError);
-        resolve();
-      };
-      
-      const onError = (error) => {
-        this.elements.viewer.removeEventListener("load", onLoad);
-        this.elements.viewer.removeEventListener("error", onError);
-        reject(error);
-      };
-      
-      this.elements.viewer.addEventListener("load", onLoad, { once: true });
-      this.elements.viewer.addEventListener("error", onError, { once: true });
-      
-      // Timeout de seguridad
-      setTimeout(() => {
-        this.elements.viewer.removeEventListener("load", onLoad);
-        this.elements.viewer.removeEventListener("error", onError);
-        reject(new Error("Timeout cargando modelo"));
-      }, 30000); // 30 segundos
-    });
-  }
+	  return new Promise((resolve, reject) => {
+		const viewer = this.elements.viewer;
+		
+		// Verificar si el modelo ya está configurado y cargado
+		if (viewer.src === this.resourcePaths.model && viewer.loaded) {
+		  if (config.DEBUG_MODE) console.log("Modelo ya está cargado");
+		  resolve();
+		  return;
+		}
+		
+		// Si el src ya está configurado pero aún no carga, esperar
+		if (viewer.src === this.resourcePaths.model) {
+		  if (config.DEBUG_MODE) console.log("Esperando carga del modelo ya configurado");
+		  
+		  const checkLoaded = () => {
+			if (viewer.loaded) {
+			  resolve();
+			} else {
+			  setTimeout(checkLoaded, 100);
+			}
+		  };
+		  
+		  setTimeout(() => {
+			reject(new Error("Timeout esperando modelo ya configurado"));
+		  }, 30000);
+		  
+		  checkLoaded();
+		  return;
+		}
+		
+		// Configurar el modelo por primera vez
+		const onLoad = () => {
+		  viewer.removeEventListener("load", onLoad);
+		  viewer.removeEventListener("error", onError);
+		  if (config.DEBUG_MODE) console.log("Modelo cargado exitosamente");
+		  resolve();
+		};
+		
+		const onError = (error) => {
+		  viewer.removeEventListener("load", onLoad);
+		  viewer.removeEventListener("error", onError);
+		  if (config.DEBUG_MODE) console.error("Error cargando modelo:", error);
+		  reject(error);
+		};
+		
+		viewer.addEventListener("load", onLoad, { once: true });
+		viewer.addEventListener("error", onError, { once: true });
+		
+		// Establecer el src solo si no está ya configurado
+		viewer.setAttribute("src", this.resourcePaths.model);
+		
+		// Timeout de seguridad
+		setTimeout(() => {
+		  viewer.removeEventListener("load", onLoad);
+		  viewer.removeEventListener("error", onError);
+		  reject(new Error("Timeout cargando modelo"));
+		}, 30000);
+	  });
+	}
 
   async preloadVideo() {
     return new Promise((resolve, reject) => {
