@@ -65,18 +65,9 @@ export const ROTATION_CONFIG = {
 
 /* ===================== CONFIGURACIÓN PARA COMPARTIR ===================== */
 export const SHARE_CONFIG = {
-  shareImagePath: 'assets/images/',
-  shareImageExtension: 'png',
-  hashtags: ['#SuperX', '#ARCards', '#Coleccionables', '#3D'],
-  filename: 'super-x-card',
-  socialHandles: {
-    instagram: '@superx_coleccionables',
-    facebook: '@superxcoleccionables', 
-    tiktok: '@superxcoleccionables',
-    twitter: '@superx_store',
-    whatsapp: '+543244121680',
-    default: '@superx_coleccionables'
-  }
+  storeUrl: "https://www.superx.com.ar",
+  socialHandle: "@superx_coleccionables", // Usuario de Instagram
+  filename: "super-x-card"
 };
 
 /* ===================== CONFIGURACIÓN DE VALIDACIÓN DE RECURSOS ===================== */
@@ -281,3 +272,4 @@ export const NOTIFICATION_WARNING_CONFIG = {
   animation: { duration: 300 },
   removeExisting: true
 };
+
