@@ -3,9 +3,14 @@
   "index_title": "Super X Inmersive Cards",
   "index_instruction": "Escanea cada carta para ver el modelo 3D.",
   "index_note": "Solo disponible con cartas físicas.",
+  
+  "loading_preparing": "Preparando tu experiencia...",
+  "loading_validating": "Validando recursos...",
+  "loading_model": "Cargando modelo 3D...",
+  "loading_video": "Preparando video...",
+  "loading_complete": "¡Listo!",
+  "loading_hint": "Esto puede tomar unos momentos con conexión lenta"
 
-  "page_card_title": "Carta Super X",
-  "loading": "Cargando...",
   "error_card_not_found": "Carta no encontrada",
   "card_error_message": "Debes escanear la carta 3D para acceder a su experiencia interactiva.",
   "error_invalid_id": "ID de carta inválido o faltante",
@@ -22,6 +27,8 @@
 
   "success_model_loaded": "Modelo 3D cargado correctamente",
 
+  "page_card_title": "Carta Super X",
+  "loading": "Cargando...",
   "card_title_fallback": "Carta Desconocida",
   "card_hold_to_play": "Mantén presionada la carta para reproducir la animación",
   "video_skip": "Saltar",
@@ -42,4 +49,3 @@
   "share_twitter_text": "¡Mi carta 3D \"{cardTitle}\" es increíble! 🎮✨\nConsigue la tuya en {storeHandle}",
   "share_whatsapp_text": "¡Mira qué genial esto! Mi carta 3D \"{cardTitle}\" 🎮✨\nPuedes conseguir la tuya en {storeHandle}"
 }
-

@@ -3,9 +3,14 @@
   "index_title": "Super X Inmersive Cards",
   "index_instruction": "Scan each card to view the 3D model.",
   "index_note": "Only available with physical cards.",
+  
+  "loading_preparing": "Preparing your experience...",
+  "loading_validating": "Validating resources...",
+  "loading_model": "Loading 3D model...",
+  "loading_video": "Preparing video...",
+  "loading_complete": "Ready!",
+  "loading_hint": "This may take a few moments with slow connection"
 
-  "page_card_title": "Super X Card",
-  "loading": "Loading...",
   "error_card_not_found": "Card not found",
   "error_invalid_id": "Invalid or missing card ID",
   "error_loading_data": "Error loading card data",
@@ -22,6 +27,8 @@
 
   "success_model_loaded": "3D model loaded successfully",
 
+  "page_card_title": "Super X Card",
+  "loading": "Loading...",
   "card_title_fallback": "Unknown Card",
   "card_hold_to_play": "Hold the card to play the animation",
   "video_skip": "Skip",
@@ -42,4 +49,3 @@
   "share_twitter_text": "My 3D card \"{cardTitle}\" is incredible! 🎮✨\nGet yours at {storeHandle}",
   "share_whatsapp_text": "Look how cool this is! My 3D card \"{cardTitle}\" 🎮✨\nYou can get yours at {storeHandle}"
 }
-

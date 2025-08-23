@@ -34,6 +34,34 @@
         <p id="card_error_message" data-i18n="card_error_message"></p>
       </div>
     </div>
+	
+	<!-- ===================== VISTA: LOADING ===================== -->
+	<div id="card_view_loading" class="hidden">
+	  <div class="loading-container">
+		
+		<!-- Spinner animado -->
+		<div id="loading_spinner" class="loading-spinner">
+		  <div class="spinner-ring"></div>
+		  <div class="spinner-ring"></div>
+		  <div class="spinner-ring"></div>
+		</div>
+		
+		<!-- Mensaje de estado -->
+		<p id="loading_message" class="loading-message" data-i18n="loading_preparing">
+		  Preparando tu experiencia...
+		</p>
+		
+		<!-- Barra de progreso -->
+		<div class="loading-progress-container">
+		  <div id="loading_progress" class="loading-progress-bar"></div>
+		</div>
+		
+		<!-- Mensaje adicional para conexiones lentas -->
+		<p class="loading-hint" data-i18n="loading_hint">
+		  Esto puede tomar unos momentos con conexión lenta
+		</p>
+	  </div>
+	</div>
 
     <!-- ===================== VISTA: MODEL ===================== -->
     <div id="card_view_model" class="hidden">

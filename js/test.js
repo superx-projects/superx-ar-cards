@@ -1,7 +1,7 @@
 /**
  * test.js - Controlador principal para test.html
  * Proyecto: Super X Immersive Cards
- * VERSIÓN OPTIMIZADA - Código simplificado y atomizado
+ * VERSIÓN CON SISTEMA DE CARGA SIMPLE
  */
 
 import {
@@ -32,10 +32,12 @@ import {
 
 /* ===================== FUNCIONES DE VISTA ===================== */
 function showView(id) {
-  ["card_view_error", "card_view_model", "card_view_video"].forEach((v) =>
-    document.getElementById(v).classList.add("hidden")
-  );
-  document.getElementById(id).classList.remove("hidden");
+  ["card_view_error", "card_view_model", "card_view_video", "card_view_loading"].forEach((v) => {
+    const element = document.getElementById(v);
+    if (element) element.classList.add("hidden");
+  });
+  const targetView = document.getElementById(id);
+  if (targetView) targetView.classList.remove("hidden");
 }
 
 /* ===================== FUNCIONES DE NOTIFICACIÓN ===================== */
@@ -94,27 +96,10 @@ const displayInfo = (message) => showNotification(message, config.NOTIFICATION_I
     share: `${config.IMAGE_PATH}${cardData.share}`,
   };
 
-  try {
-    const [modelExists, videoExists] = await Promise.all([
-      validateResource(resourcePaths.model, config.RESOURCE_VALIDATION),
-      validateResource(resourcePaths.video, config.RESOURCE_VALIDATION),
-    ]);
-
-    if (!modelExists || !videoExists) {
-      displayError("Recursos de la carta no encontrados");
-      showView("card_view_error");
-      return;
-    }
-
-    const app = new CardViewerApp({ cardId, cardData, resourcePaths, translations, lang: selectedLang });
-    await app.initialize();
-    
-    if (config.DEBUG_MODE) window.cardViewerApp = app;
-  } catch (error) {
-    if (config.DEBUG_MODE) console.error("Error fatal:", error);
-    displayError(getTranslation(translations || {}, "error_fatal_init", "Error fatal de inicialización"));
-    showView("card_view_error");
-  }
+  const app = new CardViewerApp({ cardId, cardData, resourcePaths, translations, lang: selectedLang });
+  await app.initialize();
+  
+  if (config.DEBUG_MODE) window.cardViewerApp = app;
 })();
 
 /* ===================== CLASE PRINCIPAL ===================== */
@@ -133,6 +118,10 @@ class CardViewerApp {
       shareButton: document.getElementById("card_share_button"),
       logo: document.getElementById("card_logo"),
       title: document.getElementById("card_title"),
+      // Nuevos elementos de loading
+      loadingSpinner: document.getElementById("loading_spinner"),
+      loadingMessage: document.getElementById("loading_message"),
+      loadingProgress: document.getElementById("loading_progress"),
     };
 
     const requiredElements = ['viewer', 'blocker', 'video', 'fade', 'indicator'];
@@ -143,11 +132,13 @@ class CardViewerApp {
     }
 
     this.state = {
-      current: "model",
+      current: "loading",
       isHolding: false,
       activePointerId: null,
       interactionLocked: false,
       isDragging: false,
+      modelLoaded: false,
+      videoLoaded: false,
     };
 
     this.interaction = {
@@ -157,6 +148,129 @@ class CardViewerApp {
 
     this.timers = new Map();
     this.progress = { startTime: 0, totalTime: config.VIDEO_ACTIVATION_DELAY };
+  }
+
+  /* ===================== SISTEMA DE CARGA ===================== */
+  updateLoadingProgress(message, progress = null) {
+    if (this.elements.loadingMessage) {
+      this.elements.loadingMessage.textContent = message;
+    }
+    
+    if (this.elements.loadingProgress && progress !== null) {
+      this.elements.loadingProgress.style.width = `${progress}%`;
+    }
+    
+    if (config.DEBUG_MODE) {
+      console.log(`🔄 Carga: ${message} ${progress !== null ? `(${progress}%)` : ''}`);
+    }
+  }
+
+  async loadResources() {
+    try {
+      // Mostrar pantalla de carga
+      showView("card_view_loading");
+      this.updateLoadingProgress(this.getText("loading_validating", "Validando recursos..."), 10);
+
+      // Validar recursos
+      const [modelExists, videoExists] = await Promise.all([
+        validateResource(this.resourcePaths.model, config.RESOURCE_VALIDATION),
+        validateResource(this.resourcePaths.video, config.RESOURCE_VALIDATION),
+      ]);
+
+      if (!modelExists || !videoExists) {
+        throw new Error("Recursos no encontrados");
+      }
+
+      this.updateLoadingProgress(this.getText("loading_model", "Cargando modelo 3D..."), 30);
+
+      // Precargar modelo 3D
+      await this.preloadModel();
+      this.state.modelLoaded = true;
+      
+      this.updateLoadingProgress(this.getText("loading_video", "Preparando video..."), 70);
+
+      // Precargar video
+      await this.preloadVideo();
+      this.state.videoLoaded = true;
+      
+      this.updateLoadingProgress(this.getText("loading_complete", "¡Listo!"), 100);
+
+      // Pequeña pausa para mostrar "¡Listo!"
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Mostrar vista del modelo
+      showView("card_view_model");
+      this.state.current = "model";
+      
+      if (config.DEBUG_MODE) console.log("✅ Todos los recursos cargados");
+
+    } catch (error) {
+      if (config.DEBUG_MODE) console.error("Error cargando recursos:", error);
+      displayError("Error cargando recursos de la carta");
+      showView("card_view_error");
+    }
+  }
+
+  async preloadModel() {
+    return new Promise((resolve, reject) => {
+      // Configurar el modelo antes de cargarlo
+      this.elements.viewer.setAttribute("src", this.resourcePaths.model);
+      
+      const onLoad = () => {
+        this.elements.viewer.removeEventListener("load", onLoad);
+        this.elements.viewer.removeEventListener("error", onError);
+        resolve();
+      };
+      
+      const onError = (error) => {
+        this.elements.viewer.removeEventListener("load", onLoad);
+        this.elements.viewer.removeEventListener("error", onError);
+        reject(error);
+      };
+      
+      this.elements.viewer.addEventListener("load", onLoad, { once: true });
+      this.elements.viewer.addEventListener("error", onError, { once: true });
+      
+      // Timeout de seguridad
+      setTimeout(() => {
+        this.elements.viewer.removeEventListener("load", onLoad);
+        this.elements.viewer.removeEventListener("error", onError);
+        reject(new Error("Timeout cargando modelo"));
+      }, 30000); // 30 segundos
+    });
+  }
+
+  async preloadVideo() {
+    return new Promise((resolve, reject) => {
+      const video = this.elements.video;
+      
+      const onCanPlay = () => {
+        video.removeEventListener("canplaythrough", onCanPlay);
+        video.removeEventListener("error", onError);
+        resolve();
+      };
+      
+      const onError = (error) => {
+        video.removeEventListener("canplaythrough", onCanPlay);
+        video.removeEventListener("error", onError);
+        reject(error);
+      };
+      
+      video.addEventListener("canplaythrough", onCanPlay, { once: true });
+      video.addEventListener("error", onError, { once: true });
+      
+      // Configurar y cargar video
+      video.src = this.resourcePaths.video;
+      video.preload = "auto";
+      video.load();
+      
+      // Timeout de seguridad
+      setTimeout(() => {
+        video.removeEventListener("canplaythrough", onCanPlay);
+        video.removeEventListener("error", onError);
+        resolve(); // Permitir continuar incluso si el video no carga completamente
+      }, 20000); // 20 segundos
+    });
   }
 
   /* ===================== GESTIÓN DE TIMERS ===================== */
@@ -187,16 +301,15 @@ class CardViewerApp {
     this.setupVideoErrorHandling();
     await this.initializeModelViewer();
     this.setupEventListeners();
-    showView("card_view_model");
+    
+    // Cargar recursos con indicador de progreso
+    await this.loadResources();
   }
 
   setupCardContent() {
     const title = this.getLocalizedTitle();
     
     if (this.elements.title) this.elements.title.textContent = title;
-    if (this.elements.viewer) this.elements.viewer.setAttribute("src", this.resourcePaths.model);
-    if (this.elements.video) this.elements.video.src = this.resourcePaths.video;
-    
     this.updateDynamicTexts();
   }
 
