@@ -583,8 +583,7 @@ class CardViewerApp {
         return;
       }
       
-      const platform = detectPlatform(config.PLATFORM_DETECTION);
-      const shareText = this.generateShareText(platform);
+      const shareText = this.generateShareText();
       const result = await this.attemptShare(imageBlob, shareText);
       this.handleShareResult(result);
       
@@ -596,22 +595,17 @@ class CardViewerApp {
     }
   }
 
-  generateShareText(platform) {
+  generateShareText() {
     const cardTitle = this.getLocalizedTitle();
-    const storeHandle = config.SHARE_CONFIG?.socialHandles?.[platform] || 
-                       config.SHARE_CONFIG?.socialHandles?.default || 
-                       "@superx_coleccionables";
-
-    let shareText = this.getText(`share_${platform}_text`);
-    if (shareText === `share_${platform}_text`) {
-      shareText = this.getText("share_text", 
-        `¡Mira esta increíble carta 3D: "${cardTitle}"! 🎮✨\n¡Consigue la tuya en ${storeHandle}!`);
+    const storeUrl = config.SHARE_CONFIG?.storeUrl || "https://www.superx.com.ar"; 
+    const handle = config.SHARE_CONFIG?.socialHandle || "@superx_coleccionables";
+  
+    return this.getText("share_text", 
+      `🎮 ¡Mira esta increíble carta 3D: "${cardTitle}"! ✨\n\n` +
+      `🔥 Descubre todos nuestros productos en: ${storeUrl}\n` +
+      `📱 Síguenos en Instagram: ${handle}\n\n` +
+      `#cartas3D #coleccionables #manga #comic #anime #gamming`);
     }
-    
-    return shareText
-      .replace("{cardTitle}", cardTitle)
-      .replace("{storeHandle}", storeHandle);
-  }
 
   async attemptShare(imageBlob, shareText) {
     const filename = `${config.SHARE_CONFIG?.filename || "super-x-card"}-${this.cardId}.png`;
@@ -709,3 +703,4 @@ class CardViewerApp {
   }
 
 }
+
