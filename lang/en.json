@@ -42,11 +42,8 @@
   "share_error": "Error preparing image",
   "share_fallback": "Image copied. Paste it on your social media",
   "share_no_image": "Image not available for sharing",
-
-  "share_text": "Check out my 3D card \"{cardTitle}\"! 🎮✨\nGet yours at {storeHandle}!",
-  "share_instagram_text": "My 3D card \"{cardTitle}\"! 🔥\nGet yours at {storeHandle}",
-  "share_facebook_text": "Check out my amazing 3D card \"{cardTitle}\"! 🎮✨\nVisit {storeHandle} to get yours and join the AR experience.",
-  "share_twitter_text": "My 3D card \"{cardTitle}\" is incredible! 🎮✨\nGet yours at {storeHandle}",
-  "share_whatsapp_text": "Look how cool this is! My 3D card \"{cardTitle}\" 🎮✨\nYou can get yours at {storeHandle}"
+  "share_tip": "💡 Visit our store to get more cards!",
+  "share_text": "🎮 Check out this amazing 3D card: {cardTitle}! ✨\n\n🔥 Discover all our products at: {storeUrl}\n📱 Follow us on Instagram: {handle}\n\n#3Dcards #collectibles #manga #comic #anime #gaming"
 }
+
 
