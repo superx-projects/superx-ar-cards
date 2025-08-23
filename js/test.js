@@ -183,11 +183,9 @@ class CardViewerApp {
 
       this.updateLoadingProgress(this.getText("loading_model", "Cargando modelo 3D..."), 30);
 
-      // Precargar modelo 3D
+      // Ahora sí cargar el modelo (model-viewer ya está listo)
       await this.preloadModel();
       this.state.modelLoaded = true;
-	  
-	  await this.initializeModelViewer();
       
       this.updateLoadingProgress(this.getText("loading_video", "Preparando video..."), 70);
 
@@ -213,96 +211,63 @@ class CardViewerApp {
     }
   }
 
-	async preloadModel() {
-	  return new Promise((resolve, reject) => {
-		const viewer = this.elements.viewer;
-		const targetSrc = this.resourcePaths.model;
-		
-		if (config.DEBUG_MODE) console.log(`Iniciando precarga del modelo: ${targetSrc}`);
-		
-		// Función para verificar si el modelo está completamente cargado
-		const isModelReady = () => {
-		  return viewer.src === targetSrc && 
-				 viewer.loaded === true;
-		};
-		
-		// Si el modelo ya está listo, resolver inmediatamente
-		if (isModelReady()) {
-		  if (config.DEBUG_MODE) console.log("✅ Modelo ya está completamente cargado");
-		  resolve();
-		  return;
-		}
-		
-		let timeoutId;
-		let resolved = false;
-		
-		const cleanup = () => {
-		  if (timeoutId) clearTimeout(timeoutId);
-		  viewer.removeEventListener("load", onLoad);
-		  viewer.removeEventListener("error", onError);
-		};
-		
-		const resolveOnce = () => {
-		  if (!resolved) {
-			resolved = true;
-			cleanup();
-			if (config.DEBUG_MODE) console.log("✅ Modelo precargado exitosamente");
-			resolve();
-		  }
-		};
-		
-		const rejectOnce = (error) => {
-		  if (!resolved) {
-			resolved = true;
-			cleanup();
-			if (config.DEBUG_MODE) console.error("❌ Error precargando modelo:", error);
-			reject(error);
-		  }
-		};
-		
-		const onLoad = () => {
-		  if (config.DEBUG_MODE) console.log("🎯 Evento 'load' del modelo disparado");
-		  resolveOnce();
-		};
-		
-		const onError = (event) => {
-		  rejectOnce(new Error(`Error cargando modelo: ${event.message || 'Error desconocido'}`));
-		};
-		
-		// Configurar event listeners
-		viewer.addEventListener("load", onLoad, { once: true });
-		viewer.addEventListener("error", onError, { once: true });
-		
-		// Configurar timeout
-		timeoutId = setTimeout(() => {
-		  rejectOnce(new Error("Timeout: El modelo tardó demasiado en cargar (30s)"));
-		}, 30000);
-		
-		// Configurar el src solo si es necesario
-		if (viewer.src !== targetSrc) {
-		  if (config.DEBUG_MODE) console.log("🔄 Configurando src del modelo");
-		  viewer.setAttribute("src", targetSrc);
-		} else {
-		  if (config.DEBUG_MODE) console.log("ℹ️ El src ya está configurado, esperando carga");
-		}
-		
-		// Verificación periódica como fallback
-		const checkInterval = setInterval(() => {
-		  if (resolved) {
-			clearInterval(checkInterval);
-			return;
-		  }
-		  
-		  if (isModelReady()) {
-			clearInterval(checkInterval);
-			resolveOnce();
-		  }
-		}, 500); // Verificar cada 500ms
-		
-		// Limpiar interval después del timeout
-		setTimeout(() => clearInterval(checkInterval), 31000);
-	  });
-	}
+  async preloadModel() {
+    return new Promise((resolve, reject) => {
+      const viewer = this.elements.viewer;
+      const targetSrc = this.resourcePaths.model;
+      
+      if (config.DEBUG_MODE) console.log(`🎯 Cargando modelo: ${targetSrc}`);
+      
+      let resolved = false;
+      let timeoutId;
+      
+      const cleanup = () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        viewer.removeEventListener("load", onLoad);
+        viewer.removeEventListener("error", onError);
+      };
+      
+      const resolveOnce = () => {
+        if (!resolved) {
+          resolved = true;
+          cleanup();
+          if (config.DEBUG_MODE) console.log("✅ Modelo cargado exitosamente");
+          resolve();
+        }
+      };
+      
+      const rejectOnce = (error) => {
+        if (!resolved) {
+          resolved = true;
+          cleanup();
+          if (config.DEBUG_MODE) console.error("❌ Error cargando modelo:", error);
+          reject(error);
+        }
+      };
+      
+      const onLoad = () => {
+        if (config.DEBUG_MODE) console.log("🎯 Modelo cargado completamente");
+        resolveOnce();
+      };
+      
+      const onError = (event) => {
+        rejectOnce(new Error(`Error cargando modelo: ${event.message || event.type || 'Error desconocido'}`));
+      };
+      
+      // Configurar listeners
+      viewer.addEventListener("load", onLoad, { once: true });
+      viewer.addEventListener("error", onError, { once: true });
+      
+      // Configurar timeout más largo para modelos grandes
+      timeoutId = setTimeout(() => {
+        rejectOnce(new Error("Timeout: El modelo tardó demasiado en cargar"));
+      }, 45000); // 45 segundos
+      
+      // Configurar el src - el model-viewer ya está listo
+      if (config.DEBUG_MODE) console.log("🔄 Estableciendo src del modelo");
+      viewer.src = targetSrc;
+    });
+  }
 
   async preloadVideo() {
     return new Promise((resolve, reject) => {
@@ -363,10 +328,12 @@ class CardViewerApp {
   async initialize() {
     this.setupCardContent();
     this.setupVideoErrorHandling();
-    //await this.initializeModelViewer();
     this.setupEventListeners();
     
-    // Cargar recursos con indicador de progreso
+    // PRIMERO inicializar model-viewer completamente
+    await this.initializeModelViewer();
+    
+    // DESPUÉS cargar recursos
     await this.loadResources();
   }
 
@@ -403,11 +370,60 @@ class CardViewerApp {
 
   /* ===================== MODEL-VIEWER ===================== */
   async initializeModelViewer() {
-    await this.waitForModelViewer();
-    this.setupModelViewerEvents();
+    const viewer = this.elements.viewer;
+    
+    if (config.DEBUG_MODE) console.log("🔧 Inicializando model-viewer...");
+    
+    try {
+      // Esperar que model-viewer esté definido
+      await this.waitForModelViewerDefinition();
+      
+      // Esperar que esté completamente inicializado
+      if (viewer.updateComplete) {
+        await viewer.updateComplete;
+        if (config.DEBUG_MODE) console.log("✅ Model-viewer updateComplete resuelto");
+      }
+      
+      // Verificación final
+      await this.waitForModelViewer();
+      
+      // Configurar event listeners
+      this.setupModelViewerEvents();
+      
+      if (config.DEBUG_MODE) console.log("✅ Model-viewer completamente inicializado");
+      
+    } catch (error) {
+      if (config.DEBUG_MODE) console.error("❌ Error inicializando model-viewer:", error);
+      throw error;
+    }
   }
 
-  waitForModelViewer(maxAttempts = 30, interval = 200) {
+  waitForModelViewerDefinition(maxWait = 10000) {
+    return new Promise((resolve, reject) => {
+      const startTime = Date.now();
+      
+      const checkDefined = () => {
+        if (Date.now() - startTime > maxWait) {
+          reject(new Error("Model-viewer no se definió en el tiempo esperado"));
+          return;
+        }
+        
+        if (customElements.get('model-viewer')) {
+          if (config.DEBUG_MODE) console.log("✅ Model-viewer está definido");
+          resolve();
+        } else {
+          if (config.DEBUG_MODE && Date.now() - startTime > 2000) {
+            console.log("⏳ Esperando definición de model-viewer...");
+          }
+          setTimeout(checkDefined, 100);
+        }
+      };
+      
+      checkDefined();
+    });
+  }
+
+  waitForModelViewer(maxAttempts = 50, interval = 200) {
     return new Promise((resolve, reject) => {
       let attempts = 0;
       
@@ -415,23 +431,48 @@ class CardViewerApp {
         attempts++;
         
         try {
-          if (isModelViewerReady(this.elements.viewer)) {
-            if (config.DEBUG_MODE) console.log(`Model-viewer listo después de ${attempts} intentos`);
+          // Verificaciones más exhaustivas
+          const viewer = this.elements.viewer;
+          
+          // Verificar que el elemento existe
+          if (!viewer) {
+            throw new Error("Elemento model-viewer no encontrado");
+          }
+          
+          // Verificar que model-viewer está definido
+          if (typeof viewer.updateComplete === 'undefined') {
+            if (config.DEBUG_MODE && attempts === 1) {
+              console.log("⏳ Esperando que model-viewer se defina...");
+            }
+            throw new Error("Model-viewer no está definido aún");
+          }
+          
+          // Verificar que está listo usando múltiples métodos
+          const isReady = isModelViewerReady(viewer);
+          
+          if (isReady) {
+            if (config.DEBUG_MODE) console.log(`✅ Model-viewer completamente listo después de ${attempts} intentos`);
             resolve(true);
             return;
+          } else {
+            if (config.DEBUG_MODE && attempts % 10 === 0) {
+              console.log(`⏳ Esperando model-viewer... intento ${attempts}`);
+            }
+            throw new Error("Model-viewer no está listo");
           }
+          
         } catch (error) {
-          if (config.DEBUG_MODE) console.warn(`Error verificando model-viewer:`, error);
+          if (attempts >= maxAttempts) {
+            if (config.DEBUG_MODE) console.error(`❌ Model-viewer no se cargó después de ${attempts} intentos:`, error.message);
+            reject(new Error(`Model-viewer no se cargó después de ${attempts} intentos: ${error.message}`));
+            return;
+          }
+          
+          setTimeout(checkReady, interval);
         }
-        
-        if (attempts >= maxAttempts) {
-          reject(new Error(`Model-viewer no se cargó después de ${attempts} intentos`));
-          return;
-        }
-        
-        setTimeout(checkReady, interval);
       };
       
+      // Empezar la verificación
       checkReady();
     });
   }
