@@ -64,7 +64,7 @@ const displayInfo = (message) => showNotification(message, config.NOTIFICATION_I
   let errorMsg = null;
 
   if (!cardId) {
-    errorMsg = getTranslation(translations, "error_invalid_id", "ID de carta inválido");
+    errorMsg = getTranslation(translations, "card_error_message", "Debes escanear la carta 3D para acceder a su experiencia interactiva.");
   } else {
     try {
       const response = await fetch(config.CARDS_DATA_PATH);
@@ -72,7 +72,7 @@ const displayInfo = (message) => showNotification(message, config.NOTIFICATION_I
       const data = await response.json();
       cardData = data[cardId];
       if (!cardData) {
-        errorMsg = getTranslation(translations, "error_card_not_found", "Carta no encontrada");
+        errorMsg = getTranslation(translations, "card_error_message", "Debes escanear la carta 3D para acceder a su experiencia interactiva.");
       }
     } catch (err) {
       if (config.DEBUG_MODE) console.error("Error cargando datos:", err);
@@ -129,7 +129,7 @@ const displayInfo = (message) => showNotification(message, config.NOTIFICATION_I
     // Pequeña pausa para que el usuario vea el 100% antes de la transición
     setTimeout(() => {
       // app.initialize() ya se encarga de llamar a showView("card_view_model")
-    }, 300);
+    }, 800);
 
     if (config.DEBUG_MODE) window.cardViewerApp = app;
 
@@ -707,4 +707,5 @@ class CardViewerApp {
     this.interaction = null;
     this.progress = null;
   }
+
 }
