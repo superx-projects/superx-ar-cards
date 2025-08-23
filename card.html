@@ -1,52 +1,123 @@
 <!DOCTYPE html>
-<html lang="en" data-default-lang="en">
+<html lang="es" data-default-lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title data-i18n="page_card_title">Super X Card</title>
+  <title data-i18n="page_card_title">Super X - Cartas Coleccionables Inmersivas</title>
   <link rel="icon" href="assets/favicon.ico" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/card.css" />
 </head>
 <body>
+  <!-- Contenedor principal de la página -->
   <main id="card_main" class="main">
-    <img id="card_logo" class="logo" src="assets/images/logo.png" alt="Logo Super X" />
 
-    <model-viewer 
-      id="card_viewer"
-      alt="Super X Card 3D"
-      camera-controls
-      shadow-intensity="1"
-      disable-zoom
-      disable-pan
-      exposure="1"
-      camera-orbit="0deg 90deg auto"
-      min-camera-orbit="auto 75deg auto"
-      max-camera-orbit="auto 105deg auto"
-      interpolation-decay="100">
-    </model-viewer>
+    <!-- Logo (siempre visible en la parte superior) -->
+    <img id="card_logo" class="logo" src="assets/images/logo.png" alt="Super X - Cartas Coleccionables Inmersivas" />
 
-    <div class="hold-indicator-area">
-      <div id="card_hold_indicator"></div>
+    <!-- ===================== VISTA: ERROR ===================== -->
+    <div id="card_view_error" class="hidden">
+      <div id="card_error_overlay" class="card-error-overlay">
+        <div class="card-error-icon">
+          <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 4h6v6H4V4zm1 1v4h4V5H5z" fill="currentColor"/>
+            <path d="M6 6h2v2H6V6z" fill="currentColor"/>
+            <path d="M14 4h6v6h-6V4zm1 1v4h4V5h-4z" fill="currentColor"/>
+            <path d="M16 6h2v2h-2V6z" fill="currentColor"/>
+            <path d="M4 14h6v6H4v-6zm1 1v4h4v-4H5z" fill="currentColor"/>
+            <path d="M6 16h2v2H6v-2z" fill="currentColor"/>
+            <path d="M15 15l4 4m0-4l-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            <path d="M2 2h3m-3 0v3M22 2h-3m3 0v3M2 22h3m-3 0v-3M22 22h-3m3 0v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h1 id="card_error_title" data-i18n="error_card_not_found"></h1>
+        <p id="card_error_message" data-i18n="card_error_message"></p>
+      </div>
+    </div>
+	
+	<!-- ===================== VISTA: LOADING ===================== -->
+	<div id="card_view_loading" class="hidden">
+	  <div class="loading-container">
+		
+		<!-- Spinner animado -->
+		<div id="loading_spinner" class="loading-spinner">
+		  <div class="spinner-ring"></div>
+		  <div class="spinner-ring"></div>
+		  <div class="spinner-ring"></div>
+		</div>
+		
+		<!-- Mensaje de estado -->
+		<p id="loading_message" class="loading-message" data-i18n="loading_preparing">
+		  Preparando tu experiencia...
+		</p>
+		
+		<!-- Barra de progreso -->
+		<div class="loading-progress-container">
+		  <div id="loading_progress" class="loading-progress-bar"></div>
+		</div>
+		
+		<!-- Mensaje adicional para conexiones lentas -->
+		<p class="loading-hint" data-i18n="loading_hint">
+		  Esto puede tomar unos momentos con conexión lenta
+		</p>
+	  </div>
+	</div>
+
+    <!-- ===================== VISTA: MODEL ===================== -->
+    <div id="card_view_model" class="hidden">
+      <!-- Modelo 3D de la carta -->
+      <model-viewer 
+        id="card_viewer"
+        alt="Super X Card 3D"
+        camera-controls
+        shadow-intensity="1"
+        disable-zoom
+        disable-pan
+        exposure="1"
+        camera-orbit="0deg 90deg auto"
+        min-camera-orbit="auto 75deg auto"
+        max-camera-orbit="auto 105deg auto"
+        interpolation-decay="100">
+      </model-viewer>
+	  <!-- Bloqueador de interacciones al realizar hold-on sobre el modelo -->
+	  <div id="interaction_blocker" class="hidden"></div>
+
+      <!-- Indicador de avance al mantener pulsado -->
+      <div class="hold-indicator-area">
+        <div id="card_hold_indicator"></div>
+      </div>
+
+      <!-- Información de la carta -->
+      <div id="card_info_box" class="info-box">
+        <h1 id="card_title" data-i18n="loading"></h1>
+        <p id="card_instructions" data-i18n="card_hold_to_play"></p>
+      </div>
+
+      <!-- Botón de compartir -->
+      <button id="card_share_button" class="share-button" aria-label="Compartir carta en redes sociales">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.50-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z" fill="currentColor"/>
+        </svg>
+        <span data-i18n="share_button"></span>
+      </button>
+
+      <!-- Efectos propios de la vista model -->
+      <div id="card_particles_container"></div>
     </div>
 
-    <div id="card_info_box" class="info-box" >
-      <h1 id="card_title" data-i18n="loading"></h1>
-      <p id="card_instructions" data-i18n="card_hold_to_play"></p>
+    <!-- ===================== VISTA: VIDEO ===================== -->
+    <div id="card_view_video" class="hidden">
+      <video id="card_video"></video>
+      <button id="card_skip_button" class="skip-button" data-i18n="video_skip" aria-label="Saltar video"></button>
     </div>
-    
-    <div id="card_particles_container"></div>
-    <video id="card_video" class="js-hidden"></video>
-    <button id="card_skip_button" class="skip-button js-hidden" data-i18n="video_skip"></button>
-    <div id="card_fade_effect" class="fade-effect"></div>
+
+    <!-- ===================== ELEMENTO GLOBAL ===================== -->
+    <!-- Fade effect como overlay global de transición -->
+    <div id="card_fade_effect" class="fade-effect hidden"></div>
+
   </main>
 
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <script type="module" src="js/card.js"></script>
 </body>
 </html>
-
-
-
-
-

@@ -64,7 +64,7 @@ const displayInfo = (message) => showNotification(message, config.NOTIFICATION_I
   let errorMsg = null;
 
   if (!cardId) {
-    errorMsg = getTranslation(translations, "card_error_message", "Debes escanear la carta 3D para acceder a su experiencia interactiva.");
+    errorMsg = getTranslation(translations, "error_invalid_id", "ID de carta inválido");
   } else {
     try {
       const response = await fetch(config.CARDS_DATA_PATH);
@@ -72,7 +72,7 @@ const displayInfo = (message) => showNotification(message, config.NOTIFICATION_I
       const data = await response.json();
       cardData = data[cardId];
       if (!cardData) {
-        errorMsg = getTranslation(translations, "card_error_message", "Debes escanear la carta 3D para acceder a su experiencia interactiva.");
+        errorMsg = getTranslation(translations, "error_card_not_found", "Carta no encontrada");
       }
     } catch (err) {
       if (config.DEBUG_MODE) console.error("Error cargando datos:", err);
@@ -338,13 +338,13 @@ class CardViewerApp {
     this.clearAllTimers();
     
     this.elements.fade.classList.remove("hidden");
-
-    // Limpiar video
-    this.elements.video.classList.remove("showing");
-    this.elements.video.pause();
-    this.elements.video.currentTime = 0;
     
-    this.setTimer("modelTransition", () => {      
+    this.setTimer("modelTransition", () => {
+      // Limpiar video
+      this.elements.video.classList.remove("showing");
+      this.elements.video.pause();
+      this.elements.video.currentTime = 0;
+      
       // Mostrar vista del modelo
       showView("card_view_model");
       this.elements.logo.classList.remove("hidden");
@@ -707,5 +707,4 @@ class CardViewerApp {
     this.interaction = null;
     this.progress = null;
   }
-
 }

@@ -32,16 +32,16 @@
   max-width: 300px;
   margin: 1vh auto;
   flex-shrink: 0;
-  filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.4));
+  filter: var(--filter-gold-glow);
   animation: logoGlow 3s ease-in-out infinite alternate;
 }
 
 @keyframes logoGlow {
   0% {
-    filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.3));
+    filter: var(--filter-gold-glow-soft);
   }
   100% {
-    filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.5));
+    filter: var(--filter-gold-glow-strong);
   }
 }
 
@@ -70,7 +70,7 @@
 }
 
 .card-error-icon {
-  color: #FFD700;
+  color: var(--primary-gold);
   opacity: 0;
   transform: translateY(20px) scale(0.8);
   animation: errorIconFadeIn 1s ease-out 0.2s forwards;
@@ -80,14 +80,14 @@
 .card-error-icon svg {
   width: clamp(40px, 8vw, 100px);
   height: clamp(40px, 8vw, 100px);
-  filter: drop-shadow(0 2px 15px rgba(255, 215, 0, 0.3));
+  filter: var(--filter-gold-text);
   transition: transform 0.3s ease;
 }
 
 @media (hover: hover) {
   .card-error-icon:hover svg {
     transform: scale(1.1);
-    filter: drop-shadow(0 4px 20px rgba(255, 215, 0, 0.5));
+    filter: var(--filter-gold-glow-strong);
   }
 }
 
@@ -105,8 +105,8 @@
 #card_error_title {
   font-size: clamp(1.1rem, 4.5vw, 2.5rem);
   margin: 0;
-  color: white;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  color: var(--text-primary);
+  text-shadow: var(--text-shadow-dark);
   max-width: min(90vw, 600px);
   line-height: 1.2;
   opacity: 0;
@@ -129,9 +129,9 @@
 
 #card_error_message {
   font-size: clamp(0.85rem, 3.2vw, 1.3rem);
-  color: #ddd;
+  color: var(--text-muted);
   opacity: 0;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  text-shadow: var(--text-shadow-medium);
   line-height: 1.4;
   max-width: min(85vw, 550px);
   transform: translateY(15px);

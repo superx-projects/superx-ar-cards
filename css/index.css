@@ -4,6 +4,7 @@
    
    Contiene los estilos de la página principal de bienvenida,
    optimizado para dispositivos móviles y experiencia visual atractiva.
+   Actualizado con sistema de variables Negro/Oro Premium.
 ========================================== */
 
 /* =====================
@@ -24,11 +25,22 @@
 #index_logo {
   margin-bottom: 1.5rem;
   transition: transform 0.3s ease, filter 0.3s ease;
+  filter: var(--filter-gold-glow);
+  animation: logoGlow 3s ease-in-out infinite alternate;
 }
 
 #index_logo:hover {
   transform: scale(1.02);
-  filter: drop-shadow(0 0 30px rgba(0, 191, 255, 0.4));
+  filter: var(--filter-gold-glow-strong);
+}
+
+@keyframes logoGlow {
+  0% {
+    filter: var(--filter-gold-glow-soft);
+  }
+  100% {
+    filter: var(--filter-gold-glow-strong);
+  }
 }
 
 /* =====================
@@ -42,15 +54,15 @@
   margin-bottom: 1rem;
   line-height: 1.1;
   
-  /* Efecto de gradiente en el texto */
-  background: linear-gradient(135deg, #ffffff 0%, #00bfff 50%, #ffffff 100%);
+  /* Efecto de gradiente dorado en el texto */
+  background: var(--gradient-text-gold);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-size: 200% 200%;
   
   /* Sombra de texto para profundidad */
-  text-shadow: 0 4px 8px rgba(0, 191, 255, 0.3);
+  text-shadow: var(--text-shadow-gold);
   
   /* Animación sutil del gradiente */
   animation: titleShimmer 4s ease-in-out infinite;
@@ -69,18 +81,18 @@
 #index_instructions {
   font-size: clamp(1.1rem, 4vw, 1.6rem);
   font-weight: 400;
-  color: #e0e0e0;
+  color: var(--text-secondary);
   line-height: 1.5;
   max-width: 90vw;
   margin: 0 auto 1.5rem;
   
   /* Sombra de texto para legibilidad */
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  text-shadow: var(--text-shadow-medium);
   
   /* Animación de aparición */
   opacity: 0;
   transform: translateY(20px);
-  animation: fadeInUp 1s ease-out 0.3s forwards;
+  animation: fadeInUpInstructions 1s ease-out 0.3s forwards;
 }
 
 /* Nota adicional */
@@ -88,14 +100,14 @@
   font-size: clamp(0.9rem, 3vw, 1.2rem);
   font-weight: 300;
   font-style: italic;
-  color: #999;
+  color: var(--text-subtle);
   line-height: 1.4;
   max-width: 85vw;
   margin: 0 auto;
   opacity: 0.8;
   
   /* Sombra sutil */
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-shadow: var(--text-shadow-soft);
   
   /* Animación de aparición con delay */
   opacity: 0;
@@ -118,10 +130,6 @@
 }
 
 /* Animación específica para instrucciones */
-#index_instructions {
-  animation-name: fadeInUpInstructions;
-}
-
 @keyframes fadeInUpInstructions {
   0% {
     opacity: 0;
@@ -137,7 +145,7 @@
    EFECTOS VISUALES ADICIONALES
 ===================== */
 
-/* Resplandor de fondo sutil */
+/* Resplandor de fondo sutil dorado */
 #index_main::before {
   content: '';
   position: fixed;
@@ -145,14 +153,14 @@
   left: 50%;
   width: 300px;
   height: 300px;
-  background: radial-gradient(circle, rgba(0, 191, 255, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.1) 0%, transparent 70%);
   transform: translateX(-50%);
   pointer-events: none;
   z-index: -1;
-  animation: pulseGlow 6s ease-in-out infinite;
+  animation: pulseGoldGlow 6s ease-in-out infinite;
 }
 
-@keyframes pulseGlow {
+@keyframes pulseGoldGlow {
   0%, 100% {
     opacity: 0.3;
     transform: translateX(-50%) scale(1);
@@ -264,7 +272,7 @@
   /* Ajustes específicos si fueran necesarios */
   
   #index_note {
-    color: #aaa;
+    color: var(--text-subtle);
   }
 }
 
@@ -276,11 +284,9 @@
   #index_title,
   #index_instructions,
   #index_note,
-  #index_main::before {
-    animation: none !important;
-  }
-  
+  #index_main::before,
   #index_logo {
+    animation: none !important;
     transition: none !important;
   }
   
@@ -300,17 +306,17 @@
 /* Mejora de contraste para mejor legibilidad */
 @media (prefers-contrast: high) {
   #index_title {
-    background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-primary) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    text-shadow: var(--text-shadow-dark);
   }
   
   #index_instructions {
-    color: #ffffff;
+    color: var(--text-primary);
   }
   
   #index_note {
-    color: #cccccc;
+    color: var(--text-muted);
   }
 }

@@ -1,8 +1,80 @@
 /* ==========================================
    base.css - Estilos base y reutilizables
    Proyecto: Super X Immersive Cards
-   Optimizado para móviles
+   Optimizado para móviles con sistema de variables Negro/Oro Premium
 ========================================== */
+
+/* =====================
+   VARIABLES DE COLOR - PALETA NEGRO/ORO PREMIUM
+===================== */
+:root {
+  /* Colores principales de la marca */
+  --primary-gold: #FFD700;
+  --primary-gold-light: #FFEB3B;
+  --primary-gold-bright: #FFF700;
+  --primary-gold-dark: #B8860B;
+  
+  /* Colores de fondo */
+  --bg-primary: #121212;
+  --bg-secondary: rgba(33, 33, 33, 0.95);
+  --bg-tertiary: rgba(66, 66, 66, 0.95);
+  --bg-overlay: rgba(0, 0, 0, 0.8);
+  --bg-glass: rgba(0, 0, 0, 0.7);
+  
+  /* Colores de texto */
+  --text-primary: #ffffff;
+  --text-secondary: #e0e0e0;
+  --text-muted: #ddd;
+  --text-subtle: #aaa;
+  --text-gold: var(--primary-gold);
+  
+  /* Colores de borde y líneas */
+  --border-gold: rgba(255, 215, 0, 0.8);
+  --border-gold-light: rgba(255, 235, 59, 0.9);
+  --border-gold-subtle: rgba(255, 215, 0, 0.3);
+  --border-gold-faint: rgba(255, 215, 0, 0.2);
+  --border-white-subtle: rgba(255, 255, 255, 0.15);
+  --border-white-faint: rgba(255, 255, 255, 0.1);
+  
+  /* Sombras doradas */
+  --shadow-gold-soft: 0 4px 15px rgba(255, 215, 0, 0.2);
+  --shadow-gold-medium: 0 6px 20px rgba(255, 215, 0, 0.3);
+  --shadow-gold-strong: 0 6px 20px rgba(255, 215, 0, 0.4);
+  --shadow-gold-intense: 0 0 12px rgba(255, 215, 0, 0.6);
+  --shadow-gold-glow: 0 0 8px rgba(255, 215, 0, 0.7);
+  
+  /* Sombras de texto */
+  --text-shadow-dark: 0 2px 8px rgba(0, 0, 0, 0.8);
+  --text-shadow-medium: 0 1px 4px rgba(0, 0, 0, 0.6);
+  --text-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --text-shadow-gold: 0 0 15px rgba(255, 215, 0, 0.3);
+  
+  /* Gradientes dorados */
+  --gradient-gold-horizontal: linear-gradient(90deg, var(--primary-gold) 0%, var(--primary-gold-bright) 50%, var(--primary-gold-light) 100%);
+  --gradient-gold-radial: radial-gradient(circle, #fff, var(--primary-gold), transparent);
+  --gradient-text-gold: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-gold) 50%, var(--text-primary) 100%);
+  
+  /* Colores de estado */
+  --success-bg: rgba(0, 100, 0, 0.95);
+  --success-border: rgba(76, 175, 80, 0.5);
+  --success-text: #A5D6A7;
+  --success-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+  
+  --error-bg: rgba(100, 0, 0, 0.95);
+  --error-border: rgba(244, 67, 54, 0.5);
+  --error-text: #FFCDD2;
+  --error-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+  
+  /* Filtros y efectos */
+  --filter-gold-glow: drop-shadow(0 0 20px rgba(255, 215, 0, 0.4));
+  --filter-gold-glow-soft: drop-shadow(0 0 15px rgba(255, 215, 0, 0.3));
+  --filter-gold-glow-strong: drop-shadow(0 0 25px rgba(255, 215, 0, 0.5));
+  --filter-gold-text: drop-shadow(0 2px 15px rgba(255, 215, 0, 0.3));
+  
+  /* Backdrop filters */
+  --backdrop-blur: blur(10px);
+  --backdrop-blur-strong: blur(15px);
+}
 
 /* =====================
    RESET y Normalización
@@ -22,8 +94,8 @@ html,
 body {
   height: 100%;
   font-family: Arial, sans-serif;
-  background-color: #121212;
-  color: white;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
   overflow: hidden; /* Optimizado para experiencia inmersiva móvil */
 }
 
@@ -55,67 +127,111 @@ body {
   height: auto;
   object-fit: contain;
   flex-shrink: 0;
+  filter: var(--filter-gold-glow);
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.02);
+  filter: var(--filter-gold-glow-strong);
 }
 
 /* =====================
    COMPONENTES BASE
 ===================== */
-
-/* Botones base */
+/* Botones base con estilo Negro/Oro */
 button {
   cursor: pointer;
-  background: none;
-  border: none;
-  color: inherit;
+  background: var(--bg-secondary);
+  border: 2px solid var(--border-gold);
+  color: var(--text-gold);
   font: inherit;
   padding: 0.6rem 1.2rem;
-  border-radius: 8px;
-  transition: background-color 0.3s ease, transform 0.1s ease;
+  border-radius: 25px;
+  transition: all 0.3s ease;
   font-size: 1rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  backdrop-filter: var(--backdrop-blur);
+  box-shadow: var(--shadow-gold-soft);
 }
 
 button:hover {
-  background-color: rgba(255, 255, 255, 0.15);
+  background: var(--bg-tertiary);
+  border-color: var(--border-gold-light);
+  transform: scale(1.05);
+  box-shadow: var(--shadow-gold-medium);
+  color: var(--primary-gold-light);
 }
 
 button:active {
-  transform: scale(0.98);
+  transform: scale(0.95);
+  box-shadow: var(--shadow-gold-soft);
 }
 
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
-/* Enlaces */
+/* Enlaces con estilo dorado */
 a {
-  color: #00bfff;
+  color: var(--primary-gold);
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 a:hover {
-  color: #33ccff;
+  color: var(--primary-gold-light);
   text-decoration: underline;
 }
 
 a:focus {
-  outline: 2px solid #00bfff;
+  outline: 2px solid var(--primary-gold);
   outline-offset: 2px;
 }
 
-/* Títulos */
+/* Títulos con efectos dorados */
 h1 {
   font-weight: bold;
   line-height: 1.2;
   margin: 0;
+  text-shadow: var(--text-shadow-dark);
 }
 
 /* Párrafos */
 p {
   line-height: 1.5;
   margin: 0;
+  color: var(--text-secondary);
 }
+
+/* =====================
+   CLASES UTILITARIAS DE COLOR
+===================== */
+.text-gold { color: var(--text-gold); }
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted { color: var(--text-muted); }
+.text-subtle { color: var(--text-subtle); }
+
+.bg-primary { background-color: var(--bg-primary); }
+.bg-secondary { background-color: var(--bg-secondary); }
+.bg-glass { background-color: var(--bg-glass); }
+.bg-overlay { background-color: var(--bg-overlay); }
+
+.border-gold { border-color: var(--border-gold); }
+.border-gold-light { border-color: var(--border-gold-light); }
+.border-gold-subtle { border-color: var(--border-gold-subtle); }
+
+.shadow-gold-soft { box-shadow: var(--shadow-gold-soft); }
+.shadow-gold-medium { box-shadow: var(--shadow-gold-medium); }
+.shadow-gold-strong { box-shadow: var(--shadow-gold-strong); }
+
+.filter-gold-glow { filter: var(--filter-gold-glow); }
+.filter-gold-glow-strong { filter: var(--filter-gold-glow-strong); }
 
 /* =====================
    EFECTOS Y TRANSICIONES
@@ -135,6 +251,39 @@ p {
 
 .fade-effect.active {
   opacity: 1;
+}
+
+/* Animaciones base con colores dorados */
+@keyframes pulseGold {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes glowGold {
+  0% {
+    filter: var(--filter-gold-glow-soft);
+  }
+  100% {
+    filter: var(--filter-gold-glow-strong);
+  }
+}
+
+@keyframes shimmerGold {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* =====================
@@ -159,7 +308,7 @@ p {
 }
 
 /* =====================
-   MODO OSCURO (por si se necesita)
+   MODO OSCURO (ya optimizado)
 ===================== */
 @media (prefers-color-scheme: dark) {
   /* Los estilos ya están optimizados para modo oscuro */
@@ -180,5 +329,19 @@ p {
   .fade-effect {
     transition-duration: 0.01ms;
   }
+  
+  .logo {
+    transition: none !important;
+  }
+}
 
+/* Mejora de contraste para mejor legibilidad */
+@media (prefers-contrast: high) {
+  :root {
+    --text-primary: #ffffff;
+    --text-secondary: #ffffff;
+    --text-muted: #ffffff;
+    --border-gold: rgba(255, 215, 0, 1);
+    --border-gold-light: rgba(255, 235, 59, 1);
+  }
 }
