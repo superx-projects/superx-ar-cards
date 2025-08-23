@@ -9,7 +9,7 @@
   "loading_model": "Cargando modelo 3D...",
   "loading_video": "Preparando video...",
   "loading_complete": "¡Listo!",
-  "loading_hint": "Esto puede tomar unos momentos con conexión lenta"
+  "loading_hint": "Esto puede tomar unos momentos con conexión lenta",
 
   "error_card_not_found": "Carta no encontrada",
   "card_error_message": "Debes escanear la carta 3D para acceder a su experiencia interactiva.",
@@ -49,3 +49,4 @@
   "share_twitter_text": "¡Mi carta 3D \"{cardTitle}\" es increíble! 🎮✨\nConsigue la tuya en {storeHandle}",
   "share_whatsapp_text": "¡Mira qué genial esto! Mi carta 3D \"{cardTitle}\" 🎮✨\nPuedes conseguir la tuya en {storeHandle}"
 }
+
