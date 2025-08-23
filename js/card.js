@@ -624,10 +624,17 @@ class CardViewerApp {
     if (result.success) {
       const messages = {
         native: this.getText("share_success", "¡Imagen lista para compartir!"),
-        clipboard: this.getText("share_fallback", "Imagen copiada. Pégala en tus redes sociales"),
-        download: this.getText("share_success", "¡Imagen lista para compartir!"),
+        clipboard: this.getText("share_clipboard", "Imagen copiada al portapapeles"),
+        download: this.getText("share_download", "Imagen descargada"),
       };
       displaySuccess(messages[result.method]);
+    
+      // Mensaje adicional universal
+      if (result.method === "native") {
+        setTimeout(() => {
+          displayInfo(this.getText("share_tip", "💡 ¡Visita nuestro local para conseguir más cartas!"));
+        }, 2000);
+      }
     }
   }
 
@@ -703,4 +710,5 @@ class CardViewerApp {
   }
 
 }
+
 
