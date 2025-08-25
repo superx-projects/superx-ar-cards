@@ -597,15 +597,23 @@ class CardViewerApp {
 
   generateShareText() {
     const cardTitle = this.getLocalizedTitle();
-    const storeUrl = config.SHARE_CONFIG?.storeUrl || "https://www.superx.com.ar"; 
+    const storeUrl = config.SHARE_CONFIG?.storeUrl || "https://www.superx.com.ar";
     const handle = config.SHARE_CONFIG?.socialHandle || "@superx_coleccionables";
-  
-    return this.getText("share_text", 
-      `🎮 ¡Mira esta increíble carta 3D: "${cardTitle}"! ✨\n\n` +
-      `🔥 Descubre todos nuestros productos en: ${storeUrl}\n` +
-      `📱 Síguenos en Instagram: ${handle}\n\n` +
-      `#cartas3D #coleccionables #manga #comic #anime #gamming`);
-    }
+    
+    const fallbackText = `🎮 ¡Mira esta increíble carta 3D: {cardTitle}! ✨\n\n` +
+                         `🔥 Descubre todos nuestros productos en: {storeUrl}\n` +
+                         `📱 Síguenos en Instagram: {handle}\n\n` +
+                         `#cartas3D #coleccionables #manga #comic #anime #gamming`;
+    
+    const shareTemplate = this.getText("share_text", fallbackText);
+    
+    const finalShareText = shareTemplate
+      .replace("{cardTitle}", cardTitle)
+      .replace("{storeUrl}", storeUrl)
+      .replace("{handle}", handle);
+
+    return finalShareText;
+  }
 
   async attemptShare(imageBlob, shareText) {
     const filename = `${config.SHARE_CONFIG?.filename || "super-x-card"}-${this.cardId}.png`;
@@ -703,6 +711,7 @@ class CardViewerApp {
   }
 
 }
+
 
 
 
