@@ -30,7 +30,7 @@
   height: 8vh;
   width: 75vw;
   max-width: 300px;
-  margin: 1vh auto;
+  margin: 3vh auto;
   flex-shrink: 0;
   filter: var(--filter-gold-glow);
   animation: logoGlow 3s ease-in-out infinite alternate;
@@ -496,7 +496,7 @@
 ===================== */
 .share-button {
   position: absolute; 
-  top: 9vh;
+  top: 11vh;
   right: 20px;
   z-index: 1001;
   background: rgba(33, 33, 33, 0.95);
@@ -726,7 +726,7 @@
   #card_logo {
     height: 7vh;
     width: 80vw;
-    margin: 0.8vh auto;
+    margin: 2vh auto;
   }
   
   .card-error-overlay {
@@ -776,7 +776,7 @@
   }
   
   .share-button {
-    top: 8vh;
+    top: 9vh;
     right: 15px;
     padding: 0.7rem 1rem;
     font-size: 0.85rem;
@@ -803,7 +803,7 @@
   #card_logo {
     height: 6vh;
     width: 85vw;
-    margin: 0.5vh auto;
+    margin: 1.5vh auto;
   }
   
   .card-error-overlay {
@@ -871,7 +871,7 @@
   }
   
   .share-button {
-    top: 7vh;
+    top: 8vh;
     right: 12px;
     padding: 0.6rem 0.9rem;
     font-size: 0.8rem;
@@ -940,7 +940,7 @@
   }
   
   .share-button {
-    top: 6vh;
+    top: 7vh;
     right: 10px;
     padding: 0.5rem 0.8rem;
     font-size: 0.75rem;
@@ -1006,4 +1006,5 @@
   .share-button {
     top: 15vh;
   }
+
 }
