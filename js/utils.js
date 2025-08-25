@@ -1,9 +1,7 @@
 /**
  * utils.js - Funciones utilitarias puras
  * Proyecto: Super X Immersive Cards
- * 
- * Biblioteca de funciones auxiliares sin dependencias externas.
- * Todas las configuraciones se pasan como parámetros.
+ * VERSIÓN SIMPLIFICADA - Solo funciones utilizadas
  */
 
 /* =====================
@@ -75,69 +73,8 @@ function createParticle(x, y, config) {
 }
 
 /* =====================
-   ROTACIÓN AUTOMÁTICA
+   INTERACCIÓN
 ===================== */
-
-/**
- * Controla la rotación automática del modelo 3D
- * @param {HTMLElement} viewer - Elemento model-viewer
- * @param {Function} isEnabledFn - Función que retorna true para activar rotación
- * @param {Object} config - Configuración de rotación
- * @param {number} [config.speed=0.0005] - Velocidad de rotación
- * @param {boolean} [config.normalizeAngle=true] - Si normalizar ángulos
- */
-export function customAutoRotate(viewer, isEnabledFn, config = {}) {
-  if (!viewer || typeof isEnabledFn !== 'function') {
-    console.error('customAutoRotate: parámetros inválidos');
-    return;
-  }
-  
-  const settings = {
-    speed: 0.0005,
-    normalizeAngle: true,
-    ...config
-  };
-  
-  let lastTimestamp = null;
-  let animationId = null;
-  
-  function rotate(timestamp) {
-    if (!isModelViewerReady(viewer)) {
-      animationId = requestAnimationFrame(rotate);
-      return;
-    }
-    
-    if (!lastTimestamp) lastTimestamp = timestamp;
-    const delta = timestamp - lastTimestamp;
-    lastTimestamp = timestamp;
-    
-    if (isEnabledFn()) {
-      try {
-        const orbit = viewer.getCameraOrbit();
-        let newTheta = orbit.theta + delta * settings.speed;
-        
-        if (settings.normalizeAngle) {
-          newTheta = normalizeRadians(newTheta);
-        }
-        
-        viewer.cameraOrbit = `${newTheta}rad ${orbit.phi}rad ${orbit.radius}m`;
-      } catch (error) {
-        console.warn('Error en rotación automática:', error);
-      }
-    }
-    
-    animationId = requestAnimationFrame(rotate);
-  }
-  
-  animationId = requestAnimationFrame(rotate);
-  
-  return () => {
-    if (animationId) {
-      cancelAnimationFrame(animationId);
-      animationId = null;
-    }
-  };
-}
 
 /**
  * Calcula la distancia de arrastre entre dos puntos
@@ -193,7 +130,7 @@ export function normalizeRadians(radians, min = 0, max = 2 * Math.PI) {
 }
 
 /**
- * Encuentra el ángulo de snap más cercano
+ * Encuentra el ángulo de snap más cercano para alinear las cartas
  * @param {number} currentAngle - Ángulo actual
  * @param {number[]} snapAngles - Ángulos permitidos para snap
  * @param {number} [maxRange=360] - Rango máximo para cálculos
@@ -218,6 +155,9 @@ export function getClosestSnapAngle(currentAngle, snapAngles, maxRange = 360) {
    CONTROL DEL MODEL-VIEWER
 ===================== */
 
+/**
+ * Verifica si el model-viewer está listo para usar
+ */
 export function isModelViewerReady(viewer) {
   return (
     viewer &&
@@ -318,6 +258,9 @@ export async function validateResource(url, config = {}) {
    SISTEMA DE COMPARTIR
 ===================== */
 
+/**
+ * Obtiene la imagen de la carta para compartir
+ */
 export async function getCardShareImage(sharePath) {
   try {
     const response = await fetch(sharePath);
@@ -328,6 +271,9 @@ export async function getCardShareImage(sharePath) {
   }
 }
 
+/**
+ * Intenta compartir usando la API nativa del navegador
+ */
 export async function tryNativeShare(imageBlob, text, filename = 'image.png') {
   if (!navigator.share) {
     console.log('Web Share API no disponible');
@@ -348,6 +294,9 @@ export async function tryNativeShare(imageBlob, text, filename = 'image.png') {
   }
 }
 
+/**
+ * Copia imagen al portapapeles
+ */
 export async function copyImageToClipboard(imageBlob) {
   if (!navigator.clipboard?.write) {
     console.log('Clipboard API no disponible');
@@ -393,7 +342,7 @@ export function downloadImage(imageBlob, filename, cleanupDelay = 1000) {
 }
 
 /* =====================
-   DETECCIÓN DE PLATAFORMAS Y DISPOSITIVOS
+   DETECCIÓN DE PLATAFORMAS
 ===================== */
 
 /**
@@ -442,24 +391,6 @@ export function detectPlatform(config = {}) {
   return settings.fallback;
 }
 
-export function getDeviceCapabilities() {
-  return {
-    hasTouch: 'ontouchstart' in window,
-    hasVibration: 'vibrate' in navigator,
-    hasClipboard: !!navigator.clipboard,
-    hasShareAPI: !!navigator.share,
-    isMobile: /Mobi|Android/i.test(navigator.userAgent),
-    supportsWebGL: (() => {
-      try {
-        const canvas = document.createElement('canvas');
-        return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
-      } catch (e) {
-        return false;
-      }
-    })()
-  };
-}
-
 /* =====================
    FUNCIONES AUXILIARES
 ===================== */
@@ -477,8 +408,7 @@ export function triggerHapticFeedback(config = {}) {
     ...config
   };
   
-  const capabilities = getDeviceCapabilities();
-  if (!capabilities.hasVibration || !settings.enabled) return;
+  if (!navigator.vibrate || !settings.enabled) return;
   
   try {
     navigator.vibrate(settings.pattern);
@@ -563,37 +493,4 @@ export function showNotification(message, config = {}) {
       }
     }, settings.animation.duration);
   }, settings.duration);
-}
-
-/**
- * Debounce genérico
- * @param {Function} func - Función a ejecutar
- * @param {number} wait - Tiempo de espera en ms
- */
-export function debounce(func, wait) {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func.apply(this, args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-}
-
-/**
- * Throttle genérico
- * @param {Function} func - Función a ejecutar
- * @param {number} limit - Límite de tiempo en ms
- */
-export function throttle(func, limit) {
-  let inThrottle;
-  return function(...args) {
-    if (!inThrottle) {
-      func.apply(this, args);
-      inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
-    }
-  };
 }
