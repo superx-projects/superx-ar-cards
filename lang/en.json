@@ -1,50 +1,32 @@
 {
-  "page_index_title": "Super X Trading Cards",
-  "index_title": "Super X Inmersive Cards",
+  "page_index_title": "Super X Collectible Cards",
+  "index_title": "Immersive Cards",
   "index_instruction": "Scan each card to view the 3D model.",
   "index_note": "Only available with physical cards.",
   
-  "loading_preparing": "Preparing your experience...",
+  "loading_initializing": "Initializing...",
+  "loading_video": "Preparing video...",
+  "loading_finalizing": "Finalizing...",
   "loading_validating": "Validating resources...",
   "loading_model": "Loading 3D model...",
-  "loading_video": "Preparing video...",
-  "loading_complete": "Ready!",
-  "loading_hint": "This may take a few moments with slow connection",
-
-  "error_card_not_found": "Card not found",
-  "error_invalid_id": "Invalid or missing card ID",
-  "error_loading_data": "Error loading card data",
+  
   "card_error_message": "You must scan the 3D card to access its interactive experience.",
-  "error_model_not_found": "3D model file not found",
-  "error_video_not_found": "Video file not found",
-  "error_model_load_failed": "Failed to load 3D model",
-  "error_model_viewer_timeout": "Model-viewer failed to load properly",
-  "error_initialization": "Initialization error",
-
+  "error_loading_data": "Error loading card data",
+  "error_model_load_failed": "Error loading 3D model",
+  "error_resource_load_failed": "Could not load the card. Please try again later.",
   "warning_video_unavailable": "Video unavailable",
+  "warning_video_playback": "Playback error",
   "warning_translation_load_failed": "Could not load translations. Using default values.",
-  "warning_model_viewer_not_ready": "Model-viewer is not ready to configure controls",
-
-  "success_model_loaded": "3D model loaded successfully",
-
+  
   "page_card_title": "Super X Card",
-  "loading": "Loading...",
   "card_title_fallback": "Unknown Card",
-  "card_hold_to_play": "Hold the card to play the animation",
   "video_skip": "Skip",
-
-  "resource_3d_model": "3D model",
-  "resource_video": "video",
-
   "share_button": "Share",
   "share_preparing": "Preparing capture...",
   "share_success": "Image ready to share!",
+  "share_clipboard": "Image copied to clipboard",
+  "share_download": "Image downloaded",
   "share_error": "Error preparing image",
-  "share_fallback": "Image copied. Paste it on your social media",
-  "share_no_image": "Image not available for sharing",
-  "share_tip": "💡 Visit our store to get more cards!",
+  "share_no_image": "No image available to share",
   "share_text": "🎮 Check out this amazing 3D card: {cardTitle}! ✨\n\n🔥 Discover all our products at: {storeUrl}\n📱 Follow us on Instagram: {handle}\n\n#3Dcards #collectibles #manga #comic #anime #gaming"
 }
-
-
-

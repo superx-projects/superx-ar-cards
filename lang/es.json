@@ -1,51 +1,35 @@
 {
   "page_index_title": "Super X Cartas Coleccionables",
-  "index_title": "Super X Cartas Inmersivas",
+  "index_title": "Cartas Inmersivas",
   "index_instruction": "Escanea cada carta para ver el modelo 3D.",
   "index_note": "Solo disponible con cartas físicas.",
   
-  "loading_preparing": "Preparando tu experiencia...",
+  "loading_initializing": "Inicializando...",
+  "loading_video": "Preparando video...",
+  "loading_finalizing": "Finalizando...",
   "loading_validating": "Validando recursos...",
   "loading_model": "Cargando modelo 3D...",
-  "loading_video": "Preparando video...",
-  "loading_complete": "¡Listo!",
-  "loading_hint": "Esto puede tomar unos momentos con conexión lenta",
-
-  "error_card_not_found": "Carta no encontrada",
+  
   "card_error_message": "Debes escanear la carta 3D para acceder a su experiencia interactiva.",
-  "error_invalid_id": "ID de carta inválido o faltante",
   "error_loading_data": "Error cargando datos de la carta",
-  "error_model_not_found": "Archivo del modelo 3D no encontrado",
-  "error_video_not_found": "Archivo de video no encontrado",
   "error_model_load_failed": "Error al cargar el modelo 3D",
-  "error_model_viewer_timeout": "Model-viewer no se cargó correctamente",
-  "error_initialization": "Error de inicialización",
-
+  "error_resource_load_failed": "No se pudo cargar la carta. Inténtalo de nuevo más tarde.",
   "warning_video_unavailable": "Video no disponible",
+  "warning_video_playback": "Error de reproducción",
   "warning_translation_load_failed": "No se pudieron cargar las traducciones. Usando valores por defecto.",
-  "warning_model_viewer_not_ready": "Model-viewer no está listo para configurar controles",
-
-  "success_model_loaded": "Modelo 3D cargado correctamente",
-
+  
   "page_card_title": "Carta Super X",
-  "loading": "Cargando...",
   "card_title_fallback": "Carta Desconocida",
-  "card_hold_to_play": "Mantén presionada la carta para reproducir la animación",
   "video_skip": "Saltar",
-
-  "resource_3d_model": "modelo 3D",
-  "resource_video": "video",
-
   "share_button": "Compartir",
   "share_preparing": "Preparando captura...",
   "share_success": "¡Imagen lista para compartir!",
+  "share_clipboard": "Imagen copiada al portapapeles",
+  "share_download": "Imagen descargada",
   "share_error": "Error al preparar la imagen",
-  "share_fallback": "Imagen copiada. Pégala en tus redes sociales",
   "share_no_image": "Imagen no disponible para compartir",
-  "share_tip": "💡 ¡Visita nuestro local para conseguir más cartas!",
   "share_text": "🎮 ¡Mira esta increíble carta 3D: {cardTitle}! ✨\n\n🔥 Descubre todos nuestros productos en: {storeUrl}\n📱 Síguenos en Instagram: {handle}\n\n#cartas3D #coleccionables #manga #comic #anime #gaming"
 }
-
 
 
 
