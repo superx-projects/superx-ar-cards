@@ -1,368 +1,349 @@
 /* ==========================================
-   card.css - Estilos específicos para card.html (Versión Refactorizada)
-   Proyecto: Super X Immersive Cards
+ * card.css - Estilos específicos para card.html (Versión Optimizada)
+ * Proyecto: Super X Immersive Cards
 ========================================== */
 
 /* =============================================
-   1. ESTRUCTURA Y LAYOUT DE VISTAS
+ * 1. ESTRUCTURA Y LAYOUT DE VISTAS
 ============================================= */
 
-/* Clase para ocultar vistas inactivas */
+/* Clase para ocultar elementos de forma robusta */
 .hidden {
-  display: none !important;
+  display: none !important;
 }
 
 /* Contenedor principal de la página */
 #card_main {
-  /* Asegura que ocupa toda la pantalla, ya definido en base.css */
-  /* La estructura flex (column) de base.css es la clave aquí */
-  padding: 0;
-  justify-content: flex-start; /* Alinea el logo arriba */
+  /* La estructura flex (column) de base.css es la clave aquí */
+  justify-content: flex-start; /* Alinea el logo arriba */
+  position: relative; /* Contexto de posicionamiento para las vistas */
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* Logo superior */
 #card_logo {
-  width: clamp(250px, 75vw, 300px); /* Ancho responsive */
-  height: auto;
-  margin: 2vh 0; /* Margen vertical adaptable */
-  flex-shrink: 0; /* Evita que el logo se encoja */
-  filter: var(--filter-gold-glow-soft);
-  animation: logoGlow 3s ease-in-out infinite alternate;
+  width: clamp(250px, 75vw, 300px);
+  height: auto;
+  margin: 2vh 0;
+  flex-shrink: 0; /* Evita que el logo se encoja */
+  z-index: 100; /* Asegura que esté sobre las vistas si hay solapamiento */
+  filter: var(--filter-gold-glow-soft);
+  animation: logoGlow 3s ease-in-out infinite alternate;
 }
 
 @keyframes logoGlow {
-  from { filter: var(--filter-gold-glow-soft); }
-  to { filter: var(--filter-gold-glow-strong); }
+  from { filter: var(--filter-gold-glow-soft); }
+  to { filter: var(--filter-gold-glow-strong); }
 }
 
-/*  * Clase contenedora genérica para las vistas.
- * Esta es la clave para el layout a pantalla completa.
- * `flex-grow: 1` hace que la vista activa ocupe TODO el espacio restante.
+/*
+ * Contenedor genérico para las vistas.
+ *
+ * **CAMBIO CLAVE**: En lugar de ocultar cada vista individualmente,
+ * las posicionaremos de forma absoluta para que ocupen el mismo espacio.
+ * Esto evita saltos de layout y facilita las transiciones con fade.
+ * La visibilidad se controlará con 'opacity' y 'pointer-events'.
 */
 .view-container {
-  width: 100%;
-  flex-grow: 1; /* ¡Magia! Ocupa el espacio restante bajo el logo */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  position: relative; /* Contexto para elementos absolutos como el botón de compartir */
-  overflow: hidden; /* Previene desbordamientos internos */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  
+  /* Estado por defecto: invisible */
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+/*
+ * Clase 'active' para la vista que se debe mostrar.
+ * El JS solo tendrá que mover esta clase de una vista a otra.
+*/
+.view-container.active {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+  z-index: 10; /* Pone la vista activa por encima de las demás */
 }
 
 
 /* =============================================
-   2. ESTILOS ESPECÍFICOS DE LAS VISTAS
+ * 2. ESTILOS ESPECÍFICOS DE LAS VISTAS
+ * (El contenido de las vistas ahora se centra usando flexbox)
 ============================================= */
 
 /* --- 2.1 VISTA DE ERROR --- */
-.card-error-overlay {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  gap: clamp(1rem, 3vh, 1.5rem);
-  max-width: 550px;
+#card_view_error {
+  justify-content: center; /* Centra el contenido verticalmente */
 }
 
-.card-error-icon {
-  color: var(--primary-gold);
-  animation: fadeIn-scale 0.8s ease-out 0.2s forwards;
+.card-error-overlay {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: clamp(1rem, 3vh, 1.5rem);
+  max-width: 550px;
 }
 
 .card-error-icon svg {
-  width: clamp(50px, 12vw, 80px);
-  height: auto;
-  filter: var(--filter-gold-text);
-  transition: transform 0.3s ease, filter 0.3s ease;
+  width: clamp(50px, 12vw, 80px);
+  height: auto;
+  color: var(--primary-gold);
+  filter: var(--filter-gold-text);
+  transition: transform 0.3s ease, filter 0.3s ease;
 }
 
 .card-error-icon:hover svg {
-  transform: scale(1.1);
-  filter: var(--filter-gold-glow-strong);
+  transform: scale(1.1);
+  filter: var(--filter-gold-glow-strong);
 }
 
 #card_error_title {
-  font-size: clamp(1.4rem, 4.5vw, 2.2rem);
-  color: var(--text-primary);
-  text-shadow: var(--text-shadow-dark);
-  line-height: 1.2;
-  animation: fadeIn-up 0.8s ease-out 0.4s forwards;
+  font-size: clamp(1.4rem, 4.5vw, 2.2rem);
+  color: var(--text-primary);
+  text-shadow: var(--text-shadow-dark);
+  line-height: 1.2;
 }
 
 #card_error_message {
-  font-size: clamp(0.9rem, 3.2vw, 1.1rem);
-  color: var(--text-muted);
-  text-shadow: var(--text-shadow-medium);
-  line-height: 1.5;
-  opacity: 0.9;
-  animation: fadeIn-up 0.8s ease-out 0.6s forwards;
+  font-size: clamp(0.9rem, 3.2vw, 1.1rem);
+  color: var(--text-muted);
+  text-shadow: var(--text-shadow-medium);
+  line-height: 1.5;
+  opacity: 0.9;
 }
 
 
 /* --- 2.2 VISTA DE LOADING --- */
+#card_view_loading {
+  justify-content: center; /* Centra el contenido verticalmente */
+}
+
 .loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 1.5rem;
-  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  max-width: 90vw;
 }
 
 .loading-spinner {
-  position: relative;
-  width: 50px;
-  height: 50px;
+  position: relative;
+  width: 50px;
+  height: 50px;
 }
 
 .spinner-ring {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border: 3px solid transparent;
-  border-top-color: var(--primary-gold);
-  border-radius: 50%;
-  animation: spinnerRotate 1.2s linear infinite;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 3px solid transparent;
+  border-top-color: var(--primary-gold);
+  border-radius: 50%;
+  animation: spinnerRotate 1.2s linear infinite;
 }
 
-.spinner-ring:nth-child(2) {
-  animation-delay: -0.4s;
-  border-top-color: var(--primary-gold-bright);
-  transform: scale(0.8);
-}
+.spinner-ring:nth-child(2) { animation-delay: -0.4s; border-top-color: var(--primary-gold-bright); }
+.spinner-ring:nth-child(3) { animation-delay: -0.8s; border-top-color: var(--primary-gold-light); }
 
-.spinner-ring:nth-child(3) {
-  animation-delay: -0.8s;
-  border-top-color: var(--primary-gold-light);
-  transform: scale(0.6);
-}
-
-@keyframes spinnerRotate {
-  to { transform: rotate(360deg); }
-}
+@keyframes spinnerRotate { to { transform: rotate(360deg); } }
 
 .loading-message {
-  font-size: clamp(1rem, 3.5vw, 1.3rem);
-  color: var(--text-primary);
-  text-shadow: var(--text-shadow-dark);
-  font-weight: 500;
-  animation: fadeIn-up 0.8s ease-out 0.5s forwards;
+  font-size: clamp(1rem, 3.5vw, 1.3rem);
+  color: var(--text-primary);
+  text-shadow: var(--text-shadow-dark);
+  font-weight: 500;
 }
 
 .loading-hint {
-  font-size: clamp(0.8rem, 2.8vw, 1rem);
-  color: var(--text-subtle);
-  text-shadow: var(--text-shadow-medium);
-  line-height: 1.4;
-  max-width: 300px;
-  animation: fadeIn-up 0.8s ease-out 1.2s forwards;
+  font-size: clamp(0.8rem, 2.8vw, 1rem);
+  color: var(--text-subtle);
+  text-shadow: var(--text-shadow-medium);
+  line-height: 1.4;
+  max-width: 300px;
 }
 
 .loading-progress-container {
-  width: clamp(250px, 80vw, 300px);
-  height: 4px;
-  background: var(--border-white-faint);
-  border-radius: 2px;
-  border: 1px solid var(--border-gold-faint);
-  animation: fadeIn-up 0.8s ease-out 0.8s forwards;
-  overflow: hidden;
+  width: clamp(250px, 80vw, 300px);
+  height: 4px;
+  background: var(--border-white-faint);
+  border-radius: 2px;
+  border: 1px solid var(--border-gold-faint);
+  overflow: hidden;
 }
 
 .loading-progress-bar {
-  width: 0%;
-  height: 100%;
-  background: var(--gradient-gold-horizontal);
-  border-radius: 2px;
-  transition: width 0.3s ease;
-  box-shadow: var(--shadow-gold-glow);
-  animation: progressShimmer 2s ease-in-out infinite;
-}
-
-@keyframes progressShimmer {
-  from { background-position: 200% center; }
-  to { background-position: -200% center; }
+  width: 0%;
+  height: 100%;
+  background: var(--gradient-gold-horizontal);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  box-shadow: var(--shadow-gold-glow);
 }
 
 
 /* --- 2.3 VISTA DEL MODELO 3D --- */
-/*  * En la vista del modelo, usamos flexbox para distribuir el espacio verticalmente.
- * Esto es mucho más robusto que usar unidades vh fijas.
-*/
 #card_view_model {
-  padding: 0; /* Quitamos el padding para que los elementos ocupen todo el ancho */
-  justify-content: space-between; /* Distribuye los elementos */
+  padding: 0;
+  /* El logo ocupa su espacio, el resto se distribuye con flexbox */
+  justify-content: flex-start;
+}
+
+/* Contenedor que agrupa todo excepto el logo para centrarlo bajo él */
+.model-content-wrapper {
+  flex-grow: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 #card_viewer {
-  width: 100%;
-  flex-grow: 1; /* El visor 3D toma todo el espacio central disponible */
-  background: transparent;
-  transition: filter 0.3s ease;
+  width: 100%;
+  flex-grow: 1; /* El visor 3D toma todo el espacio central disponible */
+  background: transparent;
+  transition: filter 0.3s ease;
 }
 
 #card_viewer.hold {
-  filter: blur(4px) brightness(1.2);
+  filter: blur(4px) brightness(1.2);
 }
 
-/* Indicador de "Mantener pulsado" */
 .hold-indicator-area {
-  width: 100%;
-  height: 2vh; /* Un área pequeña y fija */
-  flex-shrink: 0;
-  position: relative;
+  width: 100%;
+  height: 2vh;
+  min-height: 15px; /* Altura mínima para que no desaparezca */
+  flex-shrink: 0;
+  position: relative;
 }
 
 #card_hold_indicator {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 0;
-  height: 4px;
-  background: var(--gradient-gold-horizontal);
-  border-radius: 2px;
-  z-index: 501;
-  box-shadow: var(--shadow-gold-intense);
-  transition: width 0.2s linear; /* Transición suave al llenar */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 4px;
+  background: var(--gradient-gold-horizontal);
+  border-radius: 2px;
+  z-index: 501;
+  box-shadow: var(--shadow-gold-intense);
+  transition: width 0.2s linear;
 }
 
-/* Caja de información inferior */
 .info-box {
-  width: 100%;
-  padding: clamp(0.8rem, 2vh, 1.2rem) 1rem;
-  background: var(--bg-glass);
-  backdrop-filter: var(--backdrop-blur);
-  border-top: 1px solid var(--border-white-faint);
-  flex-shrink: 0;
-  text-align: center;
+  width: 100%;
+  padding: clamp(0.8rem, 2vh, 1.2rem) 1rem;
+  background: var(--bg-glass);
+  backdrop-filter: var(--backdrop-blur);
+  border-top: 1px solid var(--border-white-faint);
+  flex-shrink: 0;
+  text-align: center;
 }
 
 #card_title {
-  font-size: clamp(1.2rem, 4vw, 1.6rem);
-  margin-bottom: 0.3rem;
-  color: var(--text-primary);
-  text-shadow: var(--text-shadow-dark);
-  animation: fadeIn-up 1s ease-out 0.3s forwards;
+  font-size: clamp(1.2rem, 4vw, 1.6rem);
+  margin-bottom: 0.3rem;
+  color: var(--text-primary);
+  text-shadow: var(--text-shadow-dark);
 }
 
 #card_instructions {
-  font-size: clamp(0.9rem, 3vw, 1rem);
-  color: var(--text-secondary);
-  text-shadow: var(--text-shadow-medium);
-  animation: fadeIn-up 1s ease-out 0.6s forwards;
+  font-size: clamp(0.9rem, 3vw, 1rem);
+  color: var(--text-secondary);
+  text-shadow: var(--text-shadow-medium);
 }
 
-/* Botón de compartir */
 .share-button {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  z-index: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  animation: fadeIn-scale 1s ease-out 1s forwards;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 500;
 }
 
-.share-button svg {
-  transition: transform 0.2s ease;
-}
-
-.share-button:hover svg {
-  transform: rotate(15deg) scale(1.1);
-}
+.share-button svg { transition: transform 0.2s ease; }
+.share-button:hover svg { transform: rotate(15deg) scale(1.1); }
 
 
 /* --- 2.4 VISTA DE VIDEO --- */
+/*
+ * **CAMBIO CLAVE**: La vista de video ahora es un 'view-container' más.
+ * Ya no necesita 'position: fixed', heredando el posicionamiento absoluto
+ * y las transiciones de opacidad. Esto unifica el comportamiento.
+*/
 #card_view_video {
-  position: fixed; /* Ocupa toda la ventana, por encima de todo */
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: #000;
-  z-index: 1000;
-  display: flex; /* Para centrar el video y los botones */
-  align-items: center;
-  justify-content: center;
+  background-color: #000;
+  justify-content: center;
+  z-index: 1000; /* Se asegura que el video se muestre por encima de todo cuando esté activo */
 }
 
 #card_video {
-  width: 100%;
-  height: 100%;
-  object-fit: contain; /* Mantiene la relación de aspecto del video */
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .skip-button {
-  position: absolute; /* Relativo a #card_view_video */
-  bottom: clamp(1rem, 4vh, 2rem);
-  right: clamp(1rem, 4vw, 2rem);
-  z-index: 1001; /* Encima del video */
+  position: absolute;
+  bottom: clamp(1rem, 4vh, 2rem);
+  right: clamp(1rem, 4vw, 2rem);
+  z-index: 1001; /* Encima del video */
 }
 
 
 /* =============================================
-   3. ELEMENTOS GLOBALES Y ANIMACIONES
+ * 3. ELEMENTOS GLOBALES Y ANIMACIONES
 ============================================= */
 
 /* Bloqueador de interacción para el evento "hold" */
 #interaction_blocker {
-  position: fixed;
-  inset: 0; /* Abreviatura de top, right, bottom, left = 0 */
-  z-index: 450;
+  position: fixed;
+  inset: 0;
+  z-index: 450;
 }
 
-/* Animaciones de aparición genéricas */
-@keyframes fadeIn-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* El 'fade-effect' puede ser usado por JS para transiciones manuales si es necesario */
+#card_fade_effect {
+    position: fixed;
+    inset: 0;
+    background-color: #000;
+    z-index: 9999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.5s ease-in-out;
 }
 
-@keyframes fadeIn-scale {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+#card_fade_effect.active {
+    opacity: 1;
+    pointer-events: all;
 }
+
+/* No se necesitan las animaciones 'fadeIn', ya que la transición de opacidad de .view-container lo maneja */
+
 
 /* =============================================
-   4. RESPONSIVE DESIGN
+ * 4. RESPONSIVE DESIGN (Sin cambios, ya estaba bien)
 ============================================= */
 @media (max-width: 480px) {
-  .view-container {
-    padding: 0.8rem;
-  }
-
-  #card_logo {
-    margin: 1.5vh 0;
-  }
-
-  .share-button {
-    padding: 0.6rem 0.9rem;
-    font-size: 0.8rem;
-  }
+  .view-container { padding: 0.8rem; }
+  #card_view_model { padding: 0; }
+  #card_logo { margin: 1.5vh 0; }
+  .share-button { padding: 0.6rem 0.9rem; font-size: 0.8rem; }
 }
 
 @media (orientation: landscape) and (max-height: 500px) {
-  #card_logo {
-    display: none; /* En pantallas apaisadas y bajas, el logo quita mucho espacio */
-  }
-
-  .share-button {
-    top: 0.5rem;
-    right: 0.5rem;
-  }
+  #card_logo { display: none; }
+  .share-button { top: 0.5rem; right: 0.5rem; }
 }
