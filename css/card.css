@@ -1,5 +1,5 @@
 /* ==========================================
- * card.css - Estilos específicos para card.html (Versión Optimizada)
+ * card.css - Estilos específicos para card.html (Versión con Logo Fijo)
  * Proyecto: Super X Immersive Cards
 ========================================== */
 
@@ -14,23 +14,29 @@
 
 /* Contenedor principal de la página */
 #card_main {
-  /* La estructura flex (column) de base.css es la clave aquí */
-  justify-content: flex-start; /* Alinea el logo arriba */
-  position: relative; /* Contexto de posicionamiento para las vistas */
+  display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100%;
   overflow: hidden;
+  position: relative;
 }
 
-/* Logo superior */
+/* =============================================
+ * 2. LOGO COMO CABECERA FIJA
+============================================= */
+
+/* Logo superior - SIEMPRE visible y en la parte superior */
 #card_logo {
   width: clamp(250px, 75vw, 300px);
   height: auto;
-  margin: 2vh 0;
+  margin: 2vh auto; /* Centrado horizontalmente */
   flex-shrink: 0; /* Evita que el logo se encoja */
-  z-index: 100; /* Asegura que esté sobre las vistas si hay solapamiento */
+  z-index: 1000; /* Z-index muy alto para estar siempre encima */
+  position: relative; /* Para que el z-index funcione */
   filter: var(--filter-gold-glow-soft);
   animation: logoGlow 3s ease-in-out infinite alternate;
+  display: block; /* Asegura que siempre esté visible por defecto */
 }
 
 @keyframes logoGlow {
@@ -38,20 +44,20 @@
   to { filter: var(--filter-gold-glow-strong); }
 }
 
+/* =============================================
+ * 3. CONTENEDOR DE VISTAS - AJUSTADO
+============================================= */
+
 /*
  * Contenedor genérico para las vistas.
- *
- * **CAMBIO CLAVE**: En lugar de ocultar cada vista individualmente,
- * las posicionaremos de forma absoluta para que ocupen el mismo espacio.
- * Esto evita saltos de layout y facilita las transiciones con fade.
- * La visibilidad se controlará con 'opacity' y 'pointer-events'.
-*/
+ * CAMBIO CLAVE: Las vistas ahora ocupan solo el espacio restante debajo del logo
+ */
 .view-container {
   position: absolute;
-  top: 0;
+  top: 0; /* Inicia desde el top del contenedor de vistas */
   left: 0;
   width: 100%;
-  height: 100%;
+  height: 100%; /* Ocupa todo el contenedor de vistas */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -66,22 +72,31 @@
 
 /*
  * Clase 'active' para la vista que se debe mostrar.
- * El JS solo tendrá que mover esta clase de una vista a otra.
-*/
+ */
 .view-container.active {
   opacity: 1;
   pointer-events: auto;
   visibility: visible;
-  z-index: 10; /* Pone la vista activa por encima de las demás */
+  z-index: 10; /* Debajo del logo pero encima de otras vistas */
 }
 
-
 /* =============================================
- * 2. ESTILOS ESPECÍFICOS DE LAS VISTAS
- * (El contenido de las vistas ahora se centra usando flexbox)
+ * 4. CONTENEDOR PARA LAS VISTAS (NUEVO)
 ============================================= */
 
-/* --- 2.1 VISTA DE ERROR --- */
+/* Nuevo contenedor que ocupa el espacio restante después del logo */
+.views-wrapper {
+  flex: 1; /* Toma todo el espacio restante */
+  position: relative; /* Contexto para las vistas absolutas */
+  width: 100%;
+  overflow: hidden;
+}
+
+/* =============================================
+ * 5. ESTILOS ESPECÍFICOS DE LAS VISTAS
+============================================= */
+
+/* --- 5.1 VISTA DE ERROR --- */
 #card_view_error {
   justify-content: center; /* Centra el contenido verticalmente */
 }
@@ -124,8 +139,7 @@
   opacity: 0.9;
 }
 
-
-/* --- 2.2 VISTA DE LOADING --- */
+/* --- 5.2 VISTA DE LOADING --- */
 #card_view_loading {
   justify-content: center; /* Centra el contenido verticalmente */
 }
@@ -193,21 +207,10 @@
   box-shadow: var(--shadow-gold-glow);
 }
 
-
-/* --- 2.3 VISTA DEL MODELO 3D --- */
+/* --- 5.3 VISTA DEL MODELO 3D --- */
 #card_view_model {
   padding: 0;
-  /* El logo ocupa su espacio, el resto se distribuye con flexbox */
   justify-content: flex-start;
-}
-
-/* Contenedor que agrupa todo excepto el logo para centrarlo bajo él */
-.model-content-wrapper {
-  flex-grow: 1;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
 }
 
 #card_viewer {
@@ -276,13 +279,7 @@
 .share-button svg { transition: transform 0.2s ease; }
 .share-button:hover svg { transform: rotate(15deg) scale(1.1); }
 
-
-/* --- 2.4 VISTA DE VIDEO --- */
-/*
- * **CAMBIO CLAVE**: La vista de video ahora es un 'view-container' más.
- * Ya no necesita 'position: fixed', heredando el posicionamiento absoluto
- * y las transiciones de opacidad. Esto unifica el comportamiento.
-*/
+/* --- 5.4 VISTA DE VIDEO --- */
 #card_view_video {
   background-color: #000;
   justify-content: center;
@@ -302,9 +299,8 @@
   z-index: 1001; /* Encima del video */
 }
 
-
 /* =============================================
- * 3. ELEMENTOS GLOBALES Y ANIMACIONES
+ * 6. ELEMENTOS GLOBALES Y ANIMACIONES
 ============================================= */
 
 /* Bloqueador de interacción para el evento "hold" */
@@ -316,34 +312,55 @@
 
 /* El 'fade-effect' puede ser usado por JS para transiciones manuales si es necesario */
 #card_fade_effect {
-    position: fixed;
-    inset: 0;
-    background-color: #000;
-    z-index: 9999;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.5s ease-in-out;
+  position: fixed;
+  inset: 0;
+  background-color: #000;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease-in-out;
 }
 
 #card_fade_effect.active {
-    opacity: 1;
-    pointer-events: all;
+  opacity: 1;
+  pointer-events: all;
 }
 
-/* No se necesitan las animaciones 'fadeIn', ya que la transición de opacidad de .view-container lo maneja */
+/* =============================================
+ * 7. CONTROL DE VISIBILIDAD DEL LOGO
+============================================= */
 
+/* 
+ * Por defecto el logo es visible en todas las vistas 
+ * (loading, error, model)
+ */
+#card_logo {
+  /* Ya definido arriba con display: block por defecto */
+}
+
+/* 
+ * Clase para ocultar el logo completamente cuando sea necesario 
+ * (principalmente en la vista de video)
+ * display: none asegura que no ocupe espacio en el layout
+ */
+#card_logo.hidden {
+  display: none !important;
+}
 
 /* =============================================
- * 4. RESPONSIVE DESIGN (Sin cambios, ya estaba bien)
+ * 8. RESPONSIVE DESIGN
 ============================================= */
 @media (max-width: 480px) {
   .view-container { padding: 0.8rem; }
   #card_view_model { padding: 0; }
-  #card_logo { margin: 1.5vh 0; }
+  #card_logo { margin: 1.5vh auto; }
   .share-button { padding: 0.6rem 0.9rem; font-size: 0.8rem; }
 }
 
 @media (orientation: landscape) and (max-height: 500px) {
-  #card_logo { display: none; }
+  #card_logo { 
+    margin: 1vh auto;
+    width: clamp(200px, 60vw, 250px);
+  }
   .share-button { top: 0.5rem; right: 0.5rem; }
 }
