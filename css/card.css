@@ -1,1012 +1,368 @@
 /* ==========================================
-   card.css - Estilos específicos para card.html
-   Proyecto: Super X Immersive Cards
-   
-   Visor de cartas 3D con funciones inmersivas
-   Optimizado para experiencia inmersiva móvil con controles sociales.
-   Paleta: Negro/Oro Premium - Acorde a la marca SUPER X
+   card.css - Estilos específicos para card.html (Versión Refactorizada)
+   Proyecto: Super X Immersive Cards
 ========================================== */
 
-/* =====================
-   CONTROL DE VISTAS - OCULTAR/MOSTRAR
-===================== */
+/* =============================================
+   1. ESTRUCTURA Y LAYOUT DE VISTAS
+============================================= */
+
+/* Clase para ocultar vistas inactivas */
 .hidden {
-  display: none !important;
+  display: none !important;
 }
 
-/* =====================
-   LAYOUT PRINCIPAL
-===================== */
+/* Contenedor principal de la página */
 #card_main {
-  padding: 0;
-  gap: 0;
-  justify-content: flex-start;
+  /* Asegura que ocupa toda la pantalla, ya definido en base.css */
+  /* La estructura flex (column) de base.css es la clave aquí */
+  padding: 0;
+  justify-content: flex-start; /* Alinea el logo arriba */
 }
 
-/* =====================
-   LOGO SUPERIOR
-===================== */
+/* Logo superior */
 #card_logo {
-  height: 8vh;
-  width: 75vw;
-  max-width: 300px;
-  margin: 3vh auto;
-  flex-shrink: 0;
-  filter: var(--filter-gold-glow);
-  animation: logoGlow 3s ease-in-out infinite alternate;
+  width: clamp(250px, 75vw, 300px); /* Ancho responsive */
+  height: auto;
+  margin: 2vh 0; /* Margen vertical adaptable */
+  flex-shrink: 0; /* Evita que el logo se encoja */
+  filter: var(--filter-gold-glow-soft);
+  animation: logoGlow 3s ease-in-out infinite alternate;
 }
 
 @keyframes logoGlow {
-  0% {
-    filter: var(--filter-gold-glow-soft);
-  }
-  100% {
-    filter: var(--filter-gold-glow-strong);
-  }
+  from { filter: var(--filter-gold-glow-soft); }
+  to { filter: var(--filter-gold-glow-strong); }
 }
 
-/* =====================
-   CARD ERROR OVERLAY (Componente para informar errores de acceso URL)
-===================== */
+/*  * Clase contenedora genérica para las vistas.
+ * Esta es la clave para el layout a pantalla completa.
+ * `flex-grow: 1` hace que la vista activa ocupe TODO el espacio restante.
+*/
+.view-container {
+  width: 100%;
+  flex-grow: 1; /* ¡Magia! Ocupa el espacio restante bajo el logo */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  position: relative; /* Contexto para elementos absolutos como el botón de compartir */
+  overflow: hidden; /* Previene desbordamientos internos */
+}
+
+
+/* =============================================
+   2. ESTILOS ESPECÍFICOS DE LAS VISTAS
+============================================= */
+
+/* --- 2.1 VISTA DE ERROR --- */
 .card-error-overlay {
-  width: 100%;
-  min-height: 60vh;
-  height: auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  z-index: 9999;
-  padding: clamp(1rem, 4vw, 2.5rem);
-  box-sizing: border-box;
-  position: relative;
-  gap: clamp(0.8rem, 3vh, 2rem);
-  
-  /* Centrado perfecto en cualquier pantalla */
-  margin: auto;
-  align-self: center;
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: clamp(1rem, 3vh, 1.5rem);
+  max-width: 550px;
 }
 
 .card-error-icon {
-  color: var(--primary-gold);
-  opacity: 0;
-  transform: translateY(20px) scale(0.8);
-  animation: errorIconFadeIn 1s ease-out 0.2s forwards;
-  transition: all 0.3s ease;
+  color: var(--primary-gold);
+  animation: fadeIn-scale 0.8s ease-out 0.2s forwards;
 }
 
 .card-error-icon svg {
-  width: clamp(40px, 8vw, 100px);
-  height: clamp(40px, 8vw, 100px);
-  filter: var(--filter-gold-text);
-  transition: transform 0.3s ease;
+  width: clamp(50px, 12vw, 80px);
+  height: auto;
+  filter: var(--filter-gold-text);
+  transition: transform 0.3s ease, filter 0.3s ease;
 }
 
-@media (hover: hover) {
-  .card-error-icon:hover svg {
-    transform: scale(1.1);
-    filter: var(--filter-gold-glow-strong);
-  }
-}
-
-@keyframes errorIconFadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(20px) scale(0.8);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+.card-error-icon:hover svg {
+  transform: scale(1.1);
+  filter: var(--filter-gold-glow-strong);
 }
 
 #card_error_title {
-  font-size: clamp(1.1rem, 4.5vw, 2.5rem);
-  margin: 0;
-  color: var(--text-primary);
-  text-shadow: var(--text-shadow-dark);
-  max-width: min(90vw, 600px);
-  line-height: 1.2;
-  opacity: 0;
-  transform: translateY(20px);
-  animation: errorTitleFadeIn 1s ease-out 0.5s forwards;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-@keyframes errorTitleFadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  font-size: clamp(1.4rem, 4.5vw, 2.2rem);
+  color: var(--text-primary);
+  text-shadow: var(--text-shadow-dark);
+  line-height: 1.2;
+  animation: fadeIn-up 0.8s ease-out 0.4s forwards;
 }
 
 #card_error_message {
-  font-size: clamp(0.85rem, 3.2vw, 1.3rem);
-  color: var(--text-muted);
-  opacity: 0;
-  text-shadow: var(--text-shadow-medium);
-  line-height: 1.4;
-  max-width: min(85vw, 550px);
-  transform: translateY(15px);
-  animation: errorMessageFadeIn 1s ease-out 0.8s forwards;
-  font-weight: 400;
+  font-size: clamp(0.9rem, 3.2vw, 1.1rem);
+  color: var(--text-muted);
+  text-shadow: var(--text-shadow-medium);
+  line-height: 1.5;
+  opacity: 0.9;
+  animation: fadeIn-up 0.8s ease-out 0.6s forwards;
 }
 
-@keyframes errorMessageFadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  100% {
-    opacity: 0.9;
-    transform: translateY(0);
-  }
-}
 
-/* =====================
-   VISTA DE LOADING
-===================== */
-#card_view_loading {
-  width: 100%;
-  min-height: 60vh;
-  height: auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  z-index: 9999;
-  padding: clamp(1rem, 4vw, 2.5rem);
-  box-sizing: border-box;
-  position: relative;
-  gap: clamp(0.8rem, 3vh, 2rem);
-  
-  /* Centrado perfecto en cualquier pantalla */
-  margin: auto;
-  align-self: center;
-  flex: 1;
-}
-
+/* --- 2.2 VISTA DE LOADING --- */
 .loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 2rem;
-  max-width: 90vw;
-  gap: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  max-width: 90vw;
 }
 
-/* =====================
-   SPINNER ANIMADO
-===================== */
 .loading-spinner {
-  position: relative;
-  width: 60px;
-  height: 60px;
-  margin: 0 auto;
+  position: relative;
+  width: 50px;
+  height: 50px;
 }
 
 .spinner-ring {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  border: 3px solid transparent;
-  border-top: 3px solid #FFD700;
-  border-radius: 50%;
-  animation: spinnerRotate 1.2s linear infinite;
-}
-
-.spinner-ring:nth-child(1) {
-  animation-delay: 0s;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 3px solid transparent;
+  border-top-color: var(--primary-gold);
+  border-radius: 50%;
+  animation: spinnerRotate 1.2s linear infinite;
 }
 
 .spinner-ring:nth-child(2) {
-  animation-delay: -0.4s;
-  border-top-color: #FFF700;
-  transform: scale(0.8);
+  animation-delay: -0.4s;
+  border-top-color: var(--primary-gold-bright);
+  transform: scale(0.8);
 }
 
 .spinner-ring:nth-child(3) {
-  animation-delay: -0.8s;
-  border-top-color: #FFEB3B;
-  transform: scale(0.6);
+  animation-delay: -0.8s;
+  border-top-color: var(--primary-gold-light);
+  transform: scale(0.6);
 }
 
 @keyframes spinnerRotate {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
-/* =====================
-   MENSAJES DE LOADING
-===================== */
 .loading-message {
-  font-size: clamp(1rem, 3.5vw, 1.3rem);
-  color: white;
-  margin: 0;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  opacity: 0;
-  animation: fadeInUp 0.8s ease-out 0.5s forwards;
+  font-size: clamp(1rem, 3.5vw, 1.3rem);
+  color: var(--text-primary);
+  text-shadow: var(--text-shadow-dark);
+  font-weight: 500;
+  animation: fadeIn-up 0.8s ease-out 0.5s forwards;
 }
 
 .loading-hint {
-  font-size: clamp(0.8rem, 2.8vw, 1rem);
-  color: rgba(255, 255, 255, 0.7);
-  margin: 0;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-  font-weight: 400;
-  line-height: 1.4;
-  max-width: 300px;
-  opacity: 0;
-  animation: fadeInUp 0.8s ease-out 1.2s forwards;
+  font-size: clamp(0.8rem, 2.8vw, 1rem);
+  color: var(--text-subtle);
+  text-shadow: var(--text-shadow-medium);
+  line-height: 1.4;
+  max-width: 300px;
+  animation: fadeIn-up 0.8s ease-out 1.2s forwards;
 }
 
-@keyframes fadeInUp {
-  0% {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* =====================
-   BARRA DE PROGRESO
-===================== */
 .loading-progress-container {
-  width: 80vw;
-  max-width: 300px;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-  overflow: hidden;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 215, 0, 0.2);
-  opacity: 0;
-  animation: fadeInUp 0.8s ease-out 0.8s forwards;
+  width: clamp(250px, 80vw, 300px);
+  height: 4px;
+  background: var(--border-white-faint);
+  border-radius: 2px;
+  border: 1px solid var(--border-gold-faint);
+  animation: fadeIn-up 0.8s ease-out 0.8s forwards;
+  overflow: hidden;
 }
 
 .loading-progress-bar {
-  width: 0%;
-  height: 100%;
-  background: linear-gradient(90deg, 
-    #FFD700 0%, 
-    #FFF700 50%, 
-    #FFEB3B 100%
-  );
-  border-radius: 2px;
-  transition: width 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
-}
-
-.loading-progress-bar::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(255, 255, 255, 0.4) 50%, 
-    transparent 100%
-  );
-  animation: progressShimmer 2s ease-in-out infinite;
+  width: 0%;
+  height: 100%;
+  background: var(--gradient-gold-horizontal);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  box-shadow: var(--shadow-gold-glow);
+  animation: progressShimmer 2s ease-in-out infinite;
 }
 
 @keyframes progressShimmer {
-  0% {
-    left: -100%;
-  }
-  50% {
-    left: 0%;
-  }
-  100% {
-    left: 100%;
-  }
+  from { background-position: 200% center; }
+  to { background-position: -200% center; }
 }
 
-/* =====================
-   MODEL VIEWER (Componente principal)
-===================== */
+
+/* --- 2.3 VISTA DEL MODELO 3D --- */
+/*  * En la vista del modelo, usamos flexbox para distribuir el espacio verticalmente.
+ * Esto es mucho más robusto que usar unidades vh fijas.
+*/
+#card_view_model {
+  padding: 0; /* Quitamos el padding para que los elementos ocupen todo el ancho */
+  justify-content: space-between; /* Distribuye los elementos */
+}
+
 #card_viewer {
-  width: 100vw;
-  height: 75vh;
-  flex-grow: 1;
-  transition: filter 0.3s ease;
-  background: transparent;
-  border-radius: 8px;
+  width: 100%;
+  flex-grow: 1; /* El visor 3D toma todo el espacio central disponible */
+  background: transparent;
+  transition: filter 0.3s ease;
 }
 
 #card_viewer.hold {
-  filter: blur(4px) brightness(1.2);
-  position: relative;
+  filter: blur(4px) brightness(1.2);
 }
 
-#card_viewer.hold::before {
-  content: '';
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  background: linear-gradient(45deg, 
-    transparent, 
-    rgba(255, 215, 0, 0.4), 
-    transparent, 
-    rgba(255, 235, 59, 0.5),
-    transparent
-  );
-  background-size: 200% 200%;
-  border-radius: 10px;
-  z-index: -1;
-  animation: shimmer 1.5s ease-in-out infinite;
-  pointer-events: none;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: 0% 0%;
-    opacity: 0.6;
-  }
-  50% {
-    background-position: 100% 100%;
-    opacity: 1;
-  }
-  100% {
-    background-position: 200% 200%;
-    opacity: 0.6;
-  }
-}
-
-/* =====================
-   INDICADOR DE PROGRESO HOLD
-===================== */
-
-#interaction_blocker {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: transparent;
-    z-index: 450;
-}
-
-#interaction_blocker.hidden {
-    display: none;
-}
-
-/* =====================
-   INDICADOR DE PROGRESO HOLD
-===================== */
+/* Indicador de "Mantener pulsado" */
 .hold-indicator-area {
-  height: 3vh;
-  width: 100vw;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  flex-shrink: 0;
+  width: 100%;
+  height: 2vh; /* Un área pequeña y fija */
+  flex-shrink: 0;
+  position: relative;
 }
 
 #card_hold_indicator {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 0;
-  height: 4px;
-  background: linear-gradient(to right, #FFD700, #FFF700, #FFD700);
-  border-radius: 2px;
-  transition: none;
-  z-index: 501;
-  box-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 4px;
+  background: var(--gradient-gold-horizontal);
+  border-radius: 2px;
+  z-index: 501;
+  box-shadow: var(--shadow-gold-intense);
+  transition: width 0.2s linear; /* Transición suave al llenar */
 }
 
-#card_hold_indicator.active {
-  width: 90vw;
-  max-width: none;
-}
-
-/* =====================
-   INFORMACIÓN DE LA CARTA
-===================== */
+/* Caja de información inferior */
 .info-box {
-  height: 14vh;
-  min-height: 80px;
-  width: 100vw;
-  margin: 1.5vh auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 0.8rem 1.2rem;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(15px);
-  border-top: 1px solid rgba(255, 215, 0, 0.2);
-  flex-shrink: 0;
+  width: 100%;
+  padding: clamp(0.8rem, 2vh, 1.2rem) 1rem;
+  background: var(--bg-glass);
+  backdrop-filter: var(--backdrop-blur);
+  border-top: 1px solid var(--border-white-faint);
+  flex-shrink: 0;
+  text-align: center;
 }
 
 #card_title {
-  font-size: clamp(1.2rem, 4vw, 1.8rem);
-  margin-bottom: 0.5rem;
-  color: white;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
-  max-width: 90vw;
-  line-height: 1.1;
-  opacity: 0;
-  transform: translateY(20px);
-  animation: titleFadeIn 1s ease-out 0.3s forwards;
-}
-
-@keyframes titleFadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  font-size: clamp(1.2rem, 4vw, 1.6rem);
+  margin-bottom: 0.3rem;
+  color: var(--text-primary);
+  text-shadow: var(--text-shadow-dark);
+  animation: fadeIn-up 1s ease-out 0.3s forwards;
 }
 
 #card_instructions {
-  font-size: clamp(0.9rem, 3vw, 1.1rem);
-  color: #ddd;
-  opacity: 0;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-  line-height: 1.3;
-  transform: translateY(15px);
-  animation: instructionsFadeIn 1s ease-out 0.6s forwards;
+  font-size: clamp(0.9rem, 3vw, 1rem);
+  color: var(--text-secondary);
+  text-shadow: var(--text-shadow-medium);
+  animation: fadeIn-up 1s ease-out 0.6s forwards;
 }
 
-@keyframes instructionsFadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  100% {
-    opacity: 0.9;
-    transform: translateY(0);
-  }
-}
-
-/* =====================
-   BOTÓN DE COMPARTIR - NEGRO/ORO PREMIUM
-===================== */
+/* Botón de compartir */
 .share-button {
-  position: absolute; 
-  top: 11vh;
-  right: 20px;
-  z-index: 1001;
-  background: rgba(33, 33, 33, 0.95);
-  color: #FFD700;
-  border: 2px solid rgba(255, 215, 0, 0.8);
-  padding: 0.8rem 1.2rem;
-  border-radius: 25px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
-  opacity: 0;
-  transform: translateY(20px) scale(0.9);
-  animation: shareButtonFadeIn 1s ease-out 1.5s forwards;
-}
-
-@keyframes shareButtonFadeIn {
-  0% {
-    opacity: 0;
-    transform: translateY(20px) scale(0.9);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.share-button:hover {
-  background: rgba(66, 66, 66, 0.95);
-  border-color: rgba(255, 235, 59, 0.9);
-  transform: scale(1.05);
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
-  color: #FFEB3B;
-}
-
-.share-button:active {
-  transform: scale(0.95);
-  box-shadow: 0 2px 10px rgba(255, 215, 0, 0.6);
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: fadeIn-scale 1s ease-out 1s forwards;
 }
 
 .share-button svg {
-  flex-shrink: 0;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease;
 }
 
 .share-button:hover svg {
-  transform: rotate(15deg);
+  transform: rotate(15deg) scale(1.1);
 }
 
-/* Estado de carga del botón */
-.share-button.loading {
-  opacity: 0.7;
-  cursor: wait;
-  pointer-events: none;
+
+/* --- 2.4 VISTA DE VIDEO --- */
+#card_view_video {
+  position: fixed; /* Ocupa toda la ventana, por encima de todo */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: #000;
+  z-index: 1000;
+  display: flex; /* Para centrar el video y los botones */
+  align-items: center;
+  justify-content: center;
 }
 
-.share-button.loading::after {
-  content: '';
-  width: 16px;
-  height: 16px;
-  border: 2px solid transparent;
-  border-top: 2px solid currentColor;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-left: 0.5rem;
-}
-
-@keyframes spin {
-  0% { 
-    transform: rotate(0deg); 
-  }
-  100% { 
-    transform: rotate(360deg); 
-  }
-}
-
-/* =====================
-   REPRODUCTOR DE VIDEO
-===================== */
 #card_video {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  width: 100vw;
-  height: 100vh;
-  background-color: black;
-  z-index: 999;
-  object-fit: contain;
-  transform: translate(-50%, -50%);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.5s ease;
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Mantiene la relación de aspecto del video */
 }
 
-#card_video.showing {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* =====================
-   BOTÓN SKIP VIDEO
-===================== */
 .skip-button {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 1001;
-  background: rgba(33, 33, 33, 0.9);
-  color: #FFD700;
-  border: 2px solid rgba(255, 215, 0, 0.5);
-  padding: 0.8rem 1.5rem;
-  border-radius: 25px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
+  position: absolute; /* Relativo a #card_view_video */
+  bottom: clamp(1rem, 4vh, 2rem);
+  right: clamp(1rem, 4vw, 2rem);
+  z-index: 1001; /* Encima del video */
 }
 
-.skip-button:hover {
-  background: rgba(66, 66, 66, 0.95);
-  border-color: rgba(255, 235, 59, 0.8);
-  transform: scale(1.05);
-  color: #FFEB3B;
-  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.3);
+
+/* =============================================
+   3. ELEMENTOS GLOBALES Y ANIMACIONES
+============================================= */
+
+/* Bloqueador de interacción para el evento "hold" */
+#interaction_blocker {
+  position: fixed;
+  inset: 0; /* Abreviatura de top, right, bottom, left = 0 */
+  z-index: 450;
 }
 
-.skip-button:active {
-  transform: scale(0.95);
+/* Animaciones de aparición genéricas */
+@keyframes fadeIn-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-/* =====================
-   SISTEMA DE PARTÍCULAS
-===================== */
-#card_particles_container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-  width: 100vw;
-  height: 100vh;
-  z-index: 999;
-  overflow: hidden;
+@keyframes fadeIn-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-.particle {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background: radial-gradient(circle, #fff, #FFD700, transparent);
-  border-radius: 50%;
-  opacity: 0.9;
-  animation: fly 0.6s ease-out forwards;
-  box-shadow: 0 0 8px rgba(255, 215, 0, 0.7);
-}
-
-@keyframes fly {
-  0% {
-    transform: translate(0, 0) scale(1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(var(--dx), var(--dy)) scale(0.1);
-    opacity: 0;
-  }
-}
-
-/* =====================
-   NOTIFICACIONES DE COMPARTIR
-===================== */
-.share-notification {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(33, 33, 33, 0.95);
-  color: #FFD700;
-  padding: 0.8rem 1.5rem;
-  border-radius: 25px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  z-index: 1002;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 215, 0, 0.3);
-  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.2);
-  opacity: 0;
-  transform: translateX(-50%) translateY(-20px);
-  transition: all 0.3s ease;
-  pointer-events: none;
-  max-width: calc(100vw - 40px);
-  text-align: center;
-}
-
-.share-notification.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-.share-notification.success {
-  background: rgba(0, 100, 0, 0.95);
-  border-color: rgba(76, 175, 80, 0.5);
-  color: #A5D6A7;
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-}
-
-.share-notification.error {
-  background: rgba(100, 0, 0, 0.95);
-  border-color: rgba(244, 67, 54, 0.5);
-  color: #FFCDD2;
-  box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
-}
-
-/* =====================
-   RESPONSIVE - TABLETS
-===================== */
-@media (max-width: 768px) {
-  #card_logo {
-    height: 7vh;
-    width: 80vw;
-    margin: 2vh auto;
-  }
-  
-  .card-error-overlay {
-    min-height: 60vh;
-    padding: 2rem 1.2rem;
-    gap: 1.2rem;
-  }
-  
-  .card-error-icon svg {
-    width: 60px;
-    height: 60px;
-  }
-  
-  #card_error_title {
-    font-size: 1.6rem;
-    line-height: 1.3;
-  }
-  
-  #card_error_message {
-    font-size: 1rem;
-    max-width: 420px;
-    line-height: 1.5;
-  }
-  
-  .loading-container {
-    min-height: 60vh;
-    padding: 2rem 1.2rem;
-    gap: 1.2rem;
-  }
-  
-  .loading-spinner {
-    width: 50px;
-    height: 50px;
-  }
-  
-  .loading-progress-container {
-    width: 85vw;
-  }
-  
-  #card_viewer {
-    height: 73vh;
-  }
-  
-  .info-box {
-    height: 16vh;
-    padding: 0.7rem;
-  }
-  
-  .share-button {
-    top: 9vh;
-    right: 15px;
-    padding: 0.7rem 1rem;
-    font-size: 0.85rem;
-    gap: 0.4rem;
-  }
-  
-  .share-button svg {
-    width: 18px;
-    height: 18px;
-  }
-  
-  .skip-button {
-    bottom: 15px;
-    right: 15px;
-    padding: 0.7rem 1.2rem;
-    font-size: 0.9rem;
-  }
-}
-
-/* =====================
-   RESPONSIVE - MÓVILES
-===================== */
+/* =============================================
+   4. RESPONSIVE DESIGN
+============================================= */
 @media (max-width: 480px) {
-  #card_logo {
-    height: 6vh;
-    width: 85vw;
-    margin: 1.5vh auto;
-  }
-  
-  .card-error-overlay {
-    min-height: 65vh;
-    padding: 1.5rem 1rem;
-    gap: 1rem;
-  }
-  
-  .card-error-icon svg {
-    width: 50px;
-    height: 50px;
-  }
-  
-  #card_error_title {
-    font-size: 1.4rem;
-    line-height: 1.3;
-  }
-  
-  #card_error_message {
-    font-size: 0.95rem;
-    max-width: 350px;
-    line-height: 1.5;
-  }
-  
-  .loading-container {
-    min-height: 65vh;
-    padding: 1.5rem 1rem;
-    gap: 1rem;
-  }
-  
-  .loading-spinner {
-    width: 45px;
-    height: 45px;
-  }
-  
-  .loading-message {
-    font-size: 1.1rem;
-  }
-  
-  .loading-hint {
-    font-size: 0.9rem;
-    max-width: 280px;
-  }
-  
-  .loading-progress-container {
-    width: 90vw;
-    height: 3px;
-  }
-  
-  #card_viewer {
-    height: 71vh;
-  }
-  
-  .info-box {
-    height: 18vh;
-    padding: 0.6rem;
-  }
-  
-  .hold-indicator-area {
-    height: 2vh;
-  }
-  
-  #card_hold_indicator {
-    height: 3px;
-  }
-  
-  .share-button {
-    top: 8vh;
-    right: 12px;
-    padding: 0.6rem 0.9rem;
-    font-size: 0.8rem;
-  }
-  
-  .share-button svg {
-    width: 16px;
-    height: 16px;
-  }
-  
-  .skip-button {
-    bottom: 12px;
-    right: 12px;
-    padding: 0.6rem 1rem;
-    font-size: 0.85rem;
-  }
-  
-  .share-notification {
-    top: 15px;
-    left: 15px;
-    right: 15px;
-    transform: translateX(0);
-    max-width: calc(100vw - 30px);
-    font-size: 0.85rem;
-    padding: 0.7rem 1.2rem;
-  }
-  
-  .share-notification.show {
-    transform: translateX(0) translateY(0);
-  }
+  .view-container {
+    padding: 0.8rem;
+  }
+
+  #card_logo {
+    margin: 1.5vh 0;
+  }
+
+  .share-button {
+    padding: 0.6rem 0.9rem;
+    font-size: 0.8rem;
+  }
 }
 
-/* =====================
-   RESPONSIVE - MÓVILES PEQUEÑOS
-===================== */
-@media (max-width: 360px) {
-  #card_logo {
-    height: 5vh;
-    width: 90vw;
-  }
-  
-  .card-error-overlay {
-    min-height: 70vh;
-    padding: 1.2rem 0.8rem;
-    gap: 0.8rem;
-  }
-  
-  .card-error-icon svg {
-    width: 45px;
-    height: 45px;
-  }
-  
-  #card_error_title {
-    font-size: 1.2rem;
-    line-height: 1.4;
-  }
-  
-  #card_error_message {
-    font-size: 0.9rem;
-    max-width: 300px;
-    line-height: 1.6;
-  }
-  
-  .info-box {
-    height: 20vh;
-  }
-  
-  .share-button {
-    top: 7vh;
-    right: 10px;
-    padding: 0.5rem 0.8rem;
-    font-size: 0.75rem;
-  }
+@media (orientation: landscape) and (max-height: 500px) {
+  #card_logo {
+    display: none; /* En pantallas apaisadas y bajas, el logo quita mucho espacio */
+  }
+
+  .share-button {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
 }
-
-/* =====================
-   RESPONSIVE - ORIENTACIÓN LANDSCAPE
-===================== */
-@media (orientation: landscape) and (max-height: 600px) {
-  #card_logo {
-    height: 12vh;
-  }
-  
-  .card-error-overlay {
-    min-height: 40vh;
-    padding: 1rem;
-    gap: 0.8rem;
-    flex-direction: row;
-    text-align: left;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .card-error-icon svg {
-    width: 50px;
-    height: 50px;
-  }
-  
-  #card_error_title {
-    font-size: 1.3rem;
-    margin-bottom: 0.5rem;
-  }
-  
-  #card_error_message {
-    font-size: 0.9rem;
-    max-width: 400px;
-  }
-  
-  .loading-container {
-    min-height: 40vh;
-    padding: 1rem;
-    gap: 0.8rem;
-    flex-direction: row;
-    text-align: left;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .loading-spinner {
-    width: 40px;
-    height: 40px;
-  }
-  
-  #card_viewer {
-    height: 60vh;
-  }
-  
-  .info-box {
-    height: 25vh;
-  }
-  
-  .share-button {
-    top: 15vh;
-  }
-
-}
-
