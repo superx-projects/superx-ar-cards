@@ -186,26 +186,9 @@ class CardViewerApp {
     }
     
     /* ===================== GESTIÓN DE TIMERS (sin cambios) ===================== */
-    setTimer(name, callback, delay, isInterval = false) { 
-      this.clearTimer(name); 
-      const timer = isInterval ? setInterval(callback, delay) : setTimeout(callback, delay); 
-      this.timers.set(name, timer); 
-      return timer; 
-    }
-  
-    clearTimer(name) { 
-      if (this.timers.has(name)) { 
-        const timer = this.timers.get(name); 
-        clearTimeout(timer); 
-        clearInterval(timer); 
-        cancelAnimationFrame(timer); 
-        this.timers.delete(name); 
-      } 
-    }
-  
-    clearAllTimers() { 
-      this.timers.forEach((timer, name) => this.clearTimer(name)); 
-    }
+    setTimer(name, callback, delay, isInterval = false) { this.clearTimer(name); const timer = isInterval ? setInterval(callback, delay) : setTimeout(callback, delay); this.timers.set(name, timer); return timer; }
+    clearTimer(name) { if (this.timers.has(name)) { const timer = this.timers.get(name); clearTimeout(timer); clearInterval(timer); cancelAnimationFrame(timer); this.timers.delete(name); } }
+    clearAllTimers() { this.timers.forEach((timer, name) => this.clearTimer(name)); }
 
     /* ===================== INICIALIZACIÓN ===================== */
     async initialize() {
@@ -213,74 +196,20 @@ class CardViewerApp {
         this.setupVideoErrorHandling();
         await this.initializeModelViewer();
         this.setupEventListeners();
+        // AHORA: Usamos el nuevo sistema
         switchView("model");
     }
-  
-    setupCardContent() { 
-      const title = this.getLocalizedTitle(); 
-      if (this.elements.title) this.elements.title.textContent = title; 
-      if (this.elements.viewer) this.elements.viewer.setAttribute("src", this.resourcePaths.model); 
-      if (this.elements.video) this.elements.video.src = this.resourcePaths.video; 
-      this.updateDynamicTexts(); 
-    }
-  
-    updateDynamicTexts() { 
-      if (this.elements.skipButton) { 
-        this.elements.skipButton.textContent = this.getText("video_skip", "Skip");
-      } 
-      document.title = this.getText("page_card_title", "Super X Card"); 
-    }
-  
-    getLocalizedTitle() { 
-      const { title } = this.cardData; 
-      return (title && (title[this.lang] || title[config.DEFAULT_LANG])) || this.getText("card_title_fallback", "Unknown Card"); 
-    }
-  
-    getText(translationKey, fallback = "") { 
-      return getTranslation(this.translations, translationKey, fallback); 
-    }
-  
-    setupVideoErrorHandling() { 
-      this.elements.video.addEventListener("error", () => { 
-        if (config.DEBUG_MODE) console.error("Error cargando video:", this.resourcePaths.video); 
-        displayWarning(this.getText("warning_video_unavailable", "Video no disponible")); 
-      }); 
-    }
+    // ... El resto de las funciones de inicialización siguen igual ...
+    setupCardContent() { const title = this.getLocalizedTitle(); if (this.elements.title) this.elements.title.textContent = title; if (this.elements.viewer) this.elements.viewer.setAttribute("src", this.resourcePaths.model); if (this.elements.video) this.elements.video.src = this.resourcePaths.video; this.updateDynamicTexts(); }
+    updateDynamicTexts() { if (this.elements.skipButton) { this.elements.skipButton.textContent = this.getText("video_skip", "Skip"); } document.title = this.getText("page_card_title", "Super X Card"); }
+    getLocalizedTitle() { const { title } = this.cardData; return (title && (title[this.lang] || title[config.DEFAULT_LANG])) || this.getText("card_title_fallback", "Unknown Card"); }
+    getText(translationKey, fallback = "") { return getTranslation(this.translations, translationKey, fallback); }
+    setupVideoErrorHandling() { this.elements.video.addEventListener("error", () => { if (config.DEBUG_MODE) console.error("Error cargando video:", this.resourcePaths.video); displayWarning(this.getText("warning_video_unavailable", "Video no disponible")); }); }
 
     /* ===================== MODEL-VIEWER (sin cambios) ===================== */
-    async initializeModelViewer() { 
-      await this.waitForModelViewer(); 
-      this.setupModelViewerEvents(); 
-    }
-  
-    waitForModelViewer(maxAttempts = 30, interval = 200) { 
-      return new Promise((resolve, reject) => { 
-        let attempts = 0; 
-        const checkReady = () => { 
-          attempts++; 
-          try { if (isModelViewerReady(this.elements.viewer)) { 
-            if (config.DEBUG_MODE) console.log(`Model-viewer listo después de ${attempts} intentos`); 
-            resolve(true); 
-            return; 
-          } } 
-          catch (error) { 
-            if (config.DEBUG_MODE) console.warn(`Error verificando model-viewer:`, error); 
-          } 
-          if (attempts >= maxAttempts) { 
-            reject(new Error(`Model-viewer no se cargó después de ${attempts} intentos`)); 
-            return; 
-          } setTimeout(checkReady, interval); }; checkReady(); }); 
-    }
-  
-    setupModelViewerEvents() { 
-      his.elements.viewer.addEventListener("load", () => { 
-        if (config.DEBUG_MODE) console.log("Modelo 3D cargado exitosamente");
-      }); 
-      this.elements.viewer.addEventListener("error", (event) => { 
-        if (config.DEBUG_MODE) console.error("Error en model-viewer:", event); 
-        displayError(this.getText("error_model_load_failed", "Error al cargar el modelo 3D")); 
-      }); 
-    }
+    async initializeModelViewer() { await this.waitForModelViewer(); this.setupModelViewerEvents(); }
+    waitForModelViewer(maxAttempts = 30, interval = 200) { return new Promise((resolve, reject) => { let attempts = 0; const checkReady = () => { attempts++; try { if (isModelViewerReady(this.elements.viewer)) { if (config.DEBUG_MODE) console.log(`Model-viewer listo después de ${attempts} intentos`); resolve(true); return; } } catch (error) { if (config.DEBUG_MODE) console.warn(`Error verificando model-viewer:`, error); } if (attempts >= maxAttempts) { reject(new Error(`Model-viewer no se cargó después de ${attempts} intentos`)); return; } setTimeout(checkReady, interval); }; checkReady(); }); }
+    setupModelViewerEvents() { this.elements.viewer.addEventListener("load", () => { if (config.DEBUG_MODE) console.log("Modelo 3D cargado exitosamente"); }); this.elements.viewer.addEventListener("error", (event) => { if (config.DEBUG_MODE) console.error("Error en model-viewer:", event); displayError(this.getText("error_model_load_failed", "Error al cargar el modelo 3D")); }); }
 
     /* ===================== GESTIÓN DE ESTADOS (REFACTORIZADO) ===================== */
     
