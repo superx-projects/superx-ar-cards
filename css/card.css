@@ -288,6 +288,9 @@
   position: absolute;
   top: 1rem;
   right: 1rem;
+  display: flex; 
+  align-items: center;
+  gap: 4px;
   z-index: 500;
 }
 
@@ -346,4 +349,5 @@
   }
   .share-button { top: 0.5rem; right: 0.5rem; }
 }
+
 
