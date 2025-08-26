@@ -28,20 +28,20 @@
 
 /* Logo superior - Cabecera sutil y discreta */
 #card_logo {
-  width: clamp(150px, 45vw, 200px); /* 🔧 Reducido significativamente */
+  width: clamp(150px, 45vw, 200px);
   height: auto;
-  margin: 1.5vh auto 1vh auto; /* 🔧 Márgenes más pequeños */
+  margin: 1.5vh auto 1vh auto;
   flex-shrink: 0; /* Evita que el logo se encoja */
   z-index: 1000; /* Z-index muy alto para estar siempre encima */
   position: relative; /* Para que el z-index funcione */
   filter: var(--filter-gold-glow-soft);
-  opacity: 0.85; /* 🔧 Ligeramente transparente para ser más sutil */
-  animation: logoGlowSubtle 4s ease-in-out infinite alternate; /* 🔧 Animación más lenta y sutil */
+  opacity: 0.85; /* Ligeramente transparente para ser más sutil */
+  animation: logoGlowSubtle 4s ease-in-out infinite alternate; /* Animación más lenta y sutil */
   display: block; /* Asegura que siempre esté visible por defecto */
-  transition: opacity 0.3s ease; /* 🔧 Transición suave para hover */
+  transition: opacity 0.3s ease; /* Transición suave para hover */
 }
 
-/* 🔧 Hover sutil en el logo */
+/* Hover sutil en el logo */
 #card_logo:hover {
   opacity: 1;
   transform: scale(1.02); /* Efecto muy sutil al hacer hover */
@@ -325,22 +325,6 @@
   z-index: 450;
 }
 
-/* El 'fade-effect' puede ser usado por JS para transiciones manuales si es necesario */
-#card_fade_effect {
-  position: fixed;
-  inset: 0;
-  background-color: #000;
-  z-index: 9999;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.5s ease-in-out;
-}
-
-#card_fade_effect.active {
-  opacity: 1;
-  pointer-events: all;
-}
-
 /* =============================================
  * 7. RESPONSIVE DESIGN
 ============================================= */
@@ -348,8 +332,8 @@
   .view-container { padding: 0.8rem; }
   #card_view_model { padding: 0; }
   #card_logo { 
-    margin: 1vh auto 0.5vh auto; /* 🔧 Márgenes aún más pequeños en móvil */
-    width: clamp(120px, 35vw, 160px); /* 🔧 Más pequeño en móvil */
+    margin: 1vh auto 0.5vh auto; /* Márgenes aún más pequeños en móvil */
+    width: clamp(120px, 35vw, 160px); /* Más pequeño en móvil */
   }
   .share-button { padding: 0.6rem 0.9rem; font-size: 0.8rem; }
 }
@@ -357,8 +341,9 @@
 @media (orientation: landscape) and (max-height: 500px) {
   #card_logo { 
     margin: 0.5vh auto;
-    width: clamp(100px, 30vw, 140px); /* 🔧 Muy discreto en landscape */
-    opacity: 0.75; /* 🔧 Aún más sutil en pantallas horizontales pequeñas */
+    width: clamp(100px, 30vw, 140px); /* Muy discreto en landscape */
+    opacity: 0.75; /* Aún más sutil en pantallas horizontales pequeñas */
   }
   .share-button { top: 0.5rem; right: 0.5rem; }
 }
+
