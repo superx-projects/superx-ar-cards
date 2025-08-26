@@ -84,6 +84,10 @@ const BASE_NOTIFICATION_STYLES = {
   minWidth: '200px',
   maxWidth: '90vw',
   boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+  textAlign: 'center',  
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   transition: 'all 0.3s ease'
 };
 
@@ -137,3 +141,4 @@ export const NOTIFICATION_WARNING_CONFIG = {
   animation: { duration: 300 },
   removeExisting: true
 };
+
