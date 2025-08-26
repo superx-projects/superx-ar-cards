@@ -16,7 +16,7 @@
     <img id="card_logo" class="logo" src="assets/images/logo.png" alt="Super X - Cartas Coleccionables Inmersivas" />
 
     <!-- ===================== VISTA: ERROR ===================== -->
-    <div id="card_view_error" class="hidden">
+    <div id="card_view_error" class="view-container hidden">
       <div id="card_error_overlay" class="card-error-overlay">
         <div class="card-error-icon">
           <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -36,7 +36,7 @@
     </div>
 	
 	<!-- ===================== VISTA: LOADING ===================== -->
-	<div id="card_view_loading" class="hidden">
+	<div id="card_view_loading" class="view-container hidden">
 	  <div class="loading-container">
 		
 		<!-- Spinner animado -->
@@ -64,7 +64,7 @@
 	</div>
 
     <!-- ===================== VISTA: MODEL ===================== -->
-    <div id="card_view_model" class="hidden">
+    <div id="card_view_model" class="view-container hidden">
       <!-- Modelo 3D de la carta -->
       <model-viewer 
         id="card_viewer"
@@ -120,4 +120,5 @@
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <script type="module" src="js/card.js"></script>
 </body>
+
 </html>
