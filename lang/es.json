@@ -4,13 +4,16 @@
   "index_instruction": "Escanea cada carta para ver el modelo 3D.",
   "index_note": "Solo disponible con cartas físicas.",
   
+  "loading_preparing": "Preparando tu experiencia...",
   "loading_initializing": "Inicializando...",
   "loading_video": "Preparando video...",
   "loading_finalizing": "Finalizando...",
   "loading_validating": "Validando recursos...",
   "loading_model": "Cargando modelo 3D...",
+  "loading_hint": "Esto puede tomar unos momentos con conexión lenta",
   
-  "card_error_message": "Debes escanear la carta 3D para acceder a su experiencia interactiva.",
+  "error_card_not_found‎": "Carta no encontrada",
+  "card_error_message‎": "Debes escanear la carta 3D para acceder a su experiencia interactiva.",
   "error_loading_data": "Error cargando datos de la carta",
   "error_model_load_failed": "Error al cargar el modelo 3D",
   "error_resource_load_failed": "No se pudo cargar la carta. Inténtalo de nuevo más tarde.",
@@ -19,7 +22,9 @@
   "warning_translation_load_failed": "No se pudieron cargar las traducciones. Usando valores por defecto.",
   
   "page_card_title": "Carta Super X",
+  "loading": "Cargando...",
   "card_title_fallback": "Carta Desconocida",
+  "card_hold_to_play": "Mantén presionada la carta para reproducir la animación",
   "video_skip": "Saltar",
   "share_button": "Compartir",
   "share_preparing": "Preparando captura...",
