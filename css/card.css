@@ -26,22 +26,37 @@
  * 2. LOGO COMO CABECERA FIJA
 ============================================= */
 
-/* Logo superior - SIEMPRE visible y en la parte superior */
+/* Logo superior - Cabecera sutil y discreta */
 #card_logo {
-  width: clamp(250px, 75vw, 300px);
+  width: clamp(150px, 45vw, 200px); /* 🔧 Reducido significativamente */
   height: auto;
-  margin: 2vh auto; /* Centrado horizontalmente */
+  margin: 1.5vh auto 1vh auto; /* 🔧 Márgenes más pequeños */
   flex-shrink: 0; /* Evita que el logo se encoja */
   z-index: 1000; /* Z-index muy alto para estar siempre encima */
   position: relative; /* Para que el z-index funcione */
   filter: var(--filter-gold-glow-soft);
-  animation: logoGlow 3s ease-in-out infinite alternate;
+  opacity: 0.85; /* 🔧 Ligeramente transparente para ser más sutil */
+  animation: logoGlowSubtle 4s ease-in-out infinite alternate; /* 🔧 Animación más lenta y sutil */
   display: block; /* Asegura que siempre esté visible por defecto */
+  transition: opacity 0.3s ease; /* 🔧 Transición suave para hover */
 }
 
-@keyframes logoGlow {
-  from { filter: var(--filter-gold-glow-soft); }
-  to { filter: var(--filter-gold-glow-strong); }
+/* 🔧 Hover sutil en el logo */
+#card_logo:hover {
+  opacity: 1;
+  transform: scale(1.02); /* Efecto muy sutil al hacer hover */
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+@keyframes logoGlowSubtle {
+  from { 
+    filter: var(--filter-gold-glow-soft);
+    opacity: 0.8;
+  }
+  to { 
+    filter: var(--filter-gold-glow-soft);
+    opacity: 0.9;
+  }
 }
 
 /* =============================================
@@ -327,40 +342,23 @@
 }
 
 /* =============================================
- * 7. CONTROL DE VISIBILIDAD DEL LOGO
-============================================= */
-
-/* 
- * Por defecto el logo es visible en todas las vistas 
- * (loading, error, model)
- */
-#card_logo {
-  /* Ya definido arriba con display: block por defecto */
-}
-
-/* 
- * Clase para ocultar el logo completamente cuando sea necesario 
- * (principalmente en la vista de video)
- * display: none asegura que no ocupe espacio en el layout
- */
-#card_logo.hidden {
-  display: none !important;
-}
-
-/* =============================================
- * 8. RESPONSIVE DESIGN
+ * 7. RESPONSIVE DESIGN
 ============================================= */
 @media (max-width: 480px) {
   .view-container { padding: 0.8rem; }
   #card_view_model { padding: 0; }
-  #card_logo { margin: 1.5vh auto; }
+  #card_logo { 
+    margin: 1vh auto 0.5vh auto; /* 🔧 Márgenes aún más pequeños en móvil */
+    width: clamp(120px, 35vw, 160px); /* 🔧 Más pequeño en móvil */
+  }
   .share-button { padding: 0.6rem 0.9rem; font-size: 0.8rem; }
 }
 
 @media (orientation: landscape) and (max-height: 500px) {
   #card_logo { 
-    margin: 1vh auto;
-    width: clamp(200px, 60vw, 250px);
+    margin: 0.5vh auto;
+    width: clamp(100px, 30vw, 140px); /* 🔧 Muy discreto en landscape */
+    opacity: 0.75; /* 🔧 Aún más sutil en pantallas horizontales pequeñas */
   }
   .share-button { top: 0.5rem; right: 0.5rem; }
 }
