@@ -736,20 +736,24 @@ class CardViewerApp {
     }
     
     async attemptShare(imageBlob, shareText) {
-        const filename = `${config.SHARE_CONFIG?.filename || "super-x-card"}-${this.cardId}.png`;
-        
-        const nativeShared = await tryNativeShare(imageBlob, shareText, filename);
-        if (nativeShared) {
-            return { method: "native", success: true };
-        }
-        
-        const copied = await copyImageToClipboard(imageBlob);
-        if (copied) {
-            return { method: "clipboard", success: true };
-        }
-        
-        downloadImage(imageBlob, filename, config.PERFORMANCE_CONFIG?.cleanup?.urlRevokeDelay);
-        return { method: "download", success: true };
+      // Detecta la extensión correcta basada en el tipo del blob
+      const extension = imageBlob.type === 'image/webp' ? 'webp' : 
+                       imageBlob.type === 'image/jpeg' ? 'jpg' : 'png';
+    
+      const filename = `${config.SHARE_CONFIG?.filename || "super-x-card"}-${this.cardId}.${extension}`;
+    
+      const nativeShared = await tryNativeShare(imageBlob, shareText, filename);
+      if (nativeShared) {
+          return { method: "native", success: true };
+      }
+    
+      const copied = await copyImageToClipboard(imageBlob);
+      if (copied) {
+          return { method: "clipboard", success: true };
+      }
+    
+      downloadImage(imageBlob, filename, config.PERFORMANCE_CONFIG?.cleanup?.urlRevokeDelay);
+      return { method: "download", success: true };
     }
     
     handleShareResult(result) {
@@ -837,3 +841,4 @@ class CardViewerApp {
         this.progress = null;
     }
 }
+
