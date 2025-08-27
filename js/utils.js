@@ -302,6 +302,14 @@ export async function copyImageToClipboard(imageBlob) {
     console.log('Clipboard API no disponible');
     return false;
   }
+
+  // En PC, si es WebP, convierte a PNG para mejor compatibilidad
+  const isDesktop = !(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+  
+  if (isDesktop && imageBlob.type === 'image/webp') {
+    console.log('Desktop detectado, usando descarga directa');
+    return false; // Fuerza la descarga en lugar del clipboard
+  }
   
   try {
     const clipboardItem = new ClipboardItem({ [imageBlob.type]: imageBlob });
@@ -494,3 +502,4 @@ export function showNotification(message, config = {}) {
     }, settings.animation.duration);
   }, settings.duration);
 }
+
