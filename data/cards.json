@@ -2,7 +2,7 @@
   "e3y7pz": {
     "model": "card0001.glb",
     "share": "card0001.webp",
-    "video": "card0001.mp4",
+    "video": "card0001.webm",
     "title": {
       "en": "Dragon Ball Super (Akira Toriyama)",
       "es": "Dragon Ball Super (Akira Toriyama)"
@@ -80,5 +80,6 @@
       "es": "Spiderman (por Todd McFarlane)"
     }
   }
+
 
 }
