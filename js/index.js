@@ -7,7 +7,7 @@
  */
 
 import { loadLang, applyTranslations, detectUserLanguage } from "./lang.js";
-import { DEFAULT_LANG, DEBUG_MODE } as config from "./config.js";
+import { DEFAULT_LANG, DEBUG_MODE } from "./config.js";
 
 /* =====================
    INICIALIZACIÓN PRINCIPAL
@@ -21,7 +21,7 @@ import { DEFAULT_LANG, DEBUG_MODE } as config from "./config.js";
   try {
     // Detectar idioma preferido del usuario
     const userLang = detectUserLanguage();
-    const selectedLang = userLang || config.DEFAULT_LANG;
+    const selectedLang = userLang || DEFAULT_LANG;
     
     // Cargar y aplicar traducciones
     const translations = await loadLang(selectedLang);
@@ -30,21 +30,21 @@ import { DEFAULT_LANG, DEBUG_MODE } as config from "./config.js";
     // Establecer atributo lang en el documento
     document.documentElement.lang = selectedLang;
     
-    if (config.DEBUG_MODE) console.log(`Página de inicio inicializada en idioma: ${selectedLang}`);
+    if (DEBUG_MODE) console.log(`Página de inicio inicializada en idioma: ${selectedLang}`);
     
   } catch (error) {
-    if (config.DEBUG_MODE) console.error("Error al inicializar la página de inicio:", error);
+    if (DEBUG_MODE) console.error("Error al inicializar la página de inicio:", error);
     
     // Fallback: intentar cargar idioma por defecto si falla el detectado
     try {
-      const fallbackTranslations = await loadLang(config.DEFAULT_LANG);
+      const fallbackTranslations = await loadLang(DEFAULT_LANG);
       applyTranslations(fallbackTranslations);
-      document.documentElement.lang = config.DEFAULT_LANG;
+      document.documentElement.lang = DEFAULT_LANG;
       
-      if (config.DEBUG_MODE) console.warn(`Fallback aplicado: idioma ${config.DEFAULT_LANG}`);
+      if (DEBUG_MODE) console.warn(`Fallback aplicado: idioma ${DEFAULT_LANG}`);
       
     } catch (fallbackError) {
-      if (config.DEBUG_MODE) console.error("Error crítico cargando idioma por defecto:", fallbackError);
+      if (DEBUG_MODE) console.error("Error crítico cargando idioma por defecto:", fallbackError);
       
       // Mostrar mensaje de error básico si todo falla
       showCriticalError();
@@ -82,15 +82,15 @@ function showCriticalError() {
 
 // Escuchar cambios de idioma dinámicos (si se implementa en el futuro)
 document.addEventListener('languageChanged', (event) => {
-  if (config.DEBUG_MODE) console.log('Idioma cambiado a:', event.detail.language);
+  if (DEBUG_MODE) console.log('Idioma cambiado a:', event.detail.language);
 });
 
 // Manejar errores no capturados relacionados con la página
 window.addEventListener('error', (event) => {
-  if (config.DEBUG_MODE) console.error('Error no capturado en index:', event.error);
+  if (DEBUG_MODE) console.error('Error no capturado en index:', event.error);
 });
 
 // Manejar promesas rechazadas no capturadas
 window.addEventListener('unhandledrejection', (event) => {
-  if (config.DEBUG_MODE) console.error('Promesa rechazada no manejada en index:', event.reason);
+  if (DEBUG_MODE) console.error('Promesa rechazada no manejada en index:', event.reason);
 });
