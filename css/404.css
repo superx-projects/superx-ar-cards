@@ -1,0 +1,497 @@
+/* ==========================================
+   404.css - Estilos específicos para 404.html
+   Proyecto: Super X Immersive Cards
+   
+   Página de error 404 personalizada manteniendo la consistencia
+   visual con el diseño premium Negro/Oro del proyecto.
+   Basado en el estilo de index.css
+========================================== */
+
+/* =====================
+   LAYOUT PRINCIPAL ERROR 404
+===================== */
+#error_main {
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 1.5rem;
+  gap: 2rem;
+  min-height: 100vh;
+  text-align: center;
+}
+
+/* =====================
+   LOGO ERROR
+===================== */
+#error_logo {
+  margin-bottom: 1.5rem;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  filter: var(--filter-gold-glow);
+  animation: logoGlow 3s ease-in-out infinite alternate;
+}
+
+#error_logo:hover {
+  transform: scale(1.02);
+  filter: var(--filter-gold-glow-strong);
+}
+
+@keyframes logoGlow {
+  0% {
+    filter: var(--filter-gold-glow-soft);
+  }
+  100% {
+    filter: var(--filter-gold-glow-strong);
+  }
+}
+
+/* =====================
+   CÓDIGO DE ERROR 404
+===================== */
+#error_code {
+  font-size: clamp(3rem, 12vw, 6rem);
+  font-weight: 900;
+  margin-bottom: 1rem;
+  line-height: 1;
+  
+  /* Efecto de gradiente dorado similar al título principal */
+  background: var(--gradient-text-gold);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 200%;
+  
+  /* Sombra de texto para profundidad */
+  text-shadow: var(--text-shadow-gold);
+  
+  /* Animación de shimmer más intensa para el error */
+  animation: errorShimmer 3s ease-in-out infinite, errorPulse 2s ease-in-out infinite;
+}
+
+@keyframes errorShimmer {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes errorPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+}
+
+/* =====================
+   CONTENIDO TEXTUAL ERROR
+===================== */
+
+/* Título del error */
+#error_title {
+  font-size: clamp(1.8rem, 6vw, 3rem);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+  color: var(--text-primary);
+  
+  /* Sombra de texto para profundidad */
+  text-shadow: var(--text-shadow-medium);
+  
+  /* Animación de aparición */
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUpTitle 1s ease-out 0.2s forwards;
+}
+
+/* Mensaje de error */
+#error_instructions {
+  font-size: clamp(1.1rem, 4vw, 1.6rem);
+  font-weight: 400;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  max-width: 90vw;
+  margin: 0 auto 2rem;
+  
+  /* Sombra de texto para legibilidad */
+  text-shadow: var(--text-shadow-medium);
+  
+  /* Animación de aparición */
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUpInstructions 1s ease-out 0.4s forwards;
+}
+
+/* Nota adicional */
+#error_note {
+  font-size: clamp(0.9rem, 3vw, 1.2rem);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--text-subtle);
+  line-height: 1.4;
+  max-width: 85vw;
+  margin: 0 auto;
+  opacity: 0.8;
+  
+  /* Sombra sutil */
+  text-shadow: var(--text-shadow-soft);
+  
+  /* Animación de aparición con delay */
+  opacity: 0;
+  transform: translateY(15px);
+  animation: fadeInUp 1s ease-out 0.8s forwards;
+}
+
+/* =====================
+   BOTONES DE ACCIÓN
+===================== */
+.error-actions {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 2.5rem 0;
+  
+  /* Animación de aparición */
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUpButtons 1s ease-out 0.6s forwards;
+}
+
+.btn-primary, .btn-secondary {
+  padding: 1rem 2.5rem;
+  border: none;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: clamp(0.9rem, 3vw, 1.1rem);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 180px;
+  justify-content: center;
+  
+  /* Sombra premium */
+  box-shadow: var(--shadow-medium);
+}
+
+.btn-primary {
+  background: var(--gradient-gold);
+  color: var(--color-black);
+  border: 2px solid transparent;
+}
+
+.btn-primary:hover {
+  background: var(--gradient-gold-hover);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-large);
+  filter: var(--filter-gold-glow);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-gold);
+  border: 2px solid var(--color-gold);
+  backdrop-filter: blur(10px);
+}
+
+.btn-secondary:hover {
+  background: var(--color-gold);
+  color: var(--color-black);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-large);
+  filter: var(--filter-gold-glow-soft);
+}
+
+/* =====================
+   ANIMACIONES DE ENTRADA
+===================== */
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 0.8;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUpTitle {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUpInstructions {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUpButtons {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =====================
+   EFECTOS VISUALES ADICIONALES
+===================== */
+
+/* Resplandor de fondo dorado más intenso para error */
+#error_main::before {
+  content: '';
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.15) 0%, rgba(255, 165, 0, 0.05) 40%, transparent 70%);
+  transform: translateX(-50%);
+  pointer-events: none;
+  z-index: -1;
+  animation: pulseErrorGlow 4s ease-in-out infinite;
+}
+
+@keyframes pulseErrorGlow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(-50%) scale(1.3);
+  }
+}
+
+/* =====================
+   RESPONSIVE DESIGN
+===================== */
+
+/* Tablets */
+@media (max-width: 768px) {
+  #error_main {
+    padding: 1.5rem 1.2rem;
+    gap: 1.5rem;
+  }
+  
+  #error_logo {
+    margin-bottom: 1.2rem;
+  }
+  
+  #error_title {
+    margin-bottom: 0.8rem;
+  }
+  
+  #error_instructions {
+    margin-bottom: 1.5rem;
+  }
+  
+  .error-actions {
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+  
+  .btn-primary, .btn-secondary {
+    min-width: 160px;
+    padding: 0.9rem 2rem;
+  }
+}
+
+/* Móviles */
+@media (max-width: 480px) {
+  #error_main {
+    padding: 1rem 1rem;
+    gap: 1.2rem;
+  }
+  
+  #error_logo {
+    margin-bottom: 1rem;
+  }
+  
+  #error_code {
+    margin-bottom: 0.8rem;
+    animation-duration: 4s;
+  }
+  
+  #error_title {
+    margin-bottom: 0.6rem;
+  }
+  
+  #error_instructions {
+    margin-bottom: 1.2rem;
+  }
+  
+  .error-actions {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+    margin: 1.5rem 0;
+  }
+  
+  .btn-primary, .btn-secondary {
+    width: 90%;
+    max-width: 250px;
+    padding: 1rem 1.5rem;
+  }
+}
+
+/* Dispositivos muy pequeños */
+@media (max-width: 360px) {
+  #error_main {
+    padding: 0.8rem 0.8rem;
+    gap: 1rem;
+  }
+  
+  #error_logo {
+    margin-bottom: 0.8rem;
+  }
+  
+  #error_code {
+    margin-bottom: 0.6rem;
+  }
+  
+  #error_title {
+    margin-bottom: 0.5rem;
+  }
+  
+  #error_instructions {
+    margin-bottom: 1rem;
+  }
+  
+  .error-actions {
+    margin: 1.2rem 0;
+  }
+}
+
+/* =====================
+   ORIENTACIÓN LANDSCAPE MÓVIL
+===================== */
+@media (orientation: landscape) and (max-height: 600px) {
+  #error_main {
+    padding: 1rem 2rem;
+    gap: 0.8rem;
+    justify-content: flex-start;
+    padding-top: 1.5rem;
+  }
+  
+  #error_logo {
+    height: 12vh;
+    margin-bottom: 0.5rem;
+  }
+  
+  #error_code {
+    font-size: clamp(2rem, 8vw, 3.5rem);
+    margin-bottom: 0.5rem;
+  }
+  
+  #error_title {
+    font-size: clamp(1.2rem, 4vw, 1.8rem);
+    margin-bottom: 0.5rem;
+  }
+  
+  #error_instructions,
+  #error_note {
+    font-size: clamp(0.8rem, 2.5vw, 1rem);
+  }
+  
+  .error-actions {
+    margin: 1rem 0;
+    gap: 1rem;
+  }
+  
+  .btn-primary, .btn-secondary {
+    padding: 0.7rem 1.5rem;
+    font-size: 0.9rem;
+    min-width: 140px;
+  }
+}
+
+/* =====================
+   MODO OSCURO ESPECÍFICO
+===================== */
+@media (prefers-color-scheme: dark) {
+  #error_note {
+    color: var(--text-subtle);
+  }
+}
+
+/* =====================
+   ACCESIBILIDAD Y RENDIMIENTO
+===================== */
+@media (prefers-reduced-motion: reduce) {
+  /* Deshabilitar animaciones para usuarios que prefieren movimiento reducido */
+  #error_code,
+  #error_title,
+  #error_instructions,
+  #error_note,
+  .error-actions,
+  #error_main::before,
+  #error_logo {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  /* Mostrar elementos inmediatamente sin animación */
+  #error_code,
+  #error_title,
+  #error_instructions,
+  .error-actions {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  
+  #error_note {
+    opacity: 0.8 !important;
+    transform: none !important;
+  }
+  
+  /* Simplificar hover effects */
+  .btn-primary:hover,
+  .btn-secondary:hover {
+    transform: none !important;
+  }
+}
+
+/* Mejora de contraste para mejor legibilidad */
+@media (prefers-contrast: high) {
+  #error_code {
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-primary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: var(--text-shadow-dark);
+  }
+  
+  #error_title {
+    color: var(--text-primary);
+  }
+  
+  #error_instructions {
+    color: var(--text-primary);
+  }
+  
+  #error_note {
+    color: var(--text-muted);
+  }
+}

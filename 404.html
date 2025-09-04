@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es" data-default-lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title data-i18n="page_404_title">Super X - Carta no encontrada</title>
+  <link rel="icon" href="assets/favicon.ico" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/404.css" />
+</head>
+<body>
+  <main id="error_main" class="main">
+    <img id="error_logo" class="logo" src="assets/images/logo.png" alt="Super X - Cartas Coleccionables Inmersivas" />
+    <h1 id="error_code" data-i18n="error_404_code">404</h1>
+    <h2 id="error_title" data-i18n="error_404_title">Carta no encontrada</h2>
+    <p id="error_instructions" data-i18n="error_404_message">
+      Esta carta parece haber desaparecido del mazo. 
+      La página que buscas no existe o ha sido movida.
+    </p>
+    <div class="error-actions">
+      <a href="/" class="btn-primary" data-i18n="error_404_home">
+        🏠 Volver al inicio
+      </a>
+      <button id="go-back-btn" class="btn-secondary" data-i18n="error_404_back">
+        ⬅️ Página anterior
+      </button>
+    </div>
+    <p id="error_note" data-i18n="error_404_note">
+      Si crees que esto es un error, verifica la URL o intenta navegar desde el menú principal.
+    </p>
+  </main>
+  <script type="module" src="./js/404.js"></script>
+</body>
+</html>

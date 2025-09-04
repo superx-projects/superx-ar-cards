@@ -55,7 +55,7 @@ export const RESOURCE_VALIDATION = {
 };
 
 /* ===================== CONFIGURACIÓN DE DESARROLLO ===================== */
-export const DEBUG_MODE = true;
+export const DEBUG_MODE = false;
 
 /* ===================== CONFIGURACIÓN DE DISPOSITIVOS ===================== */
 export const DEVICE_CONFIG = {

@@ -33,7 +33,15 @@
   "share_download": "Imagen descargada",
   "share_error": "Error al preparar la imagen",
   "share_no_image": "Imagen no disponible para compartir",
-  "share_text": "🎮 ¡Mira esta increíble carta 3D: {cardTitle}! ✨\n\n🔥 Descubre todos nuestros productos en: {storeUrl}\n📱 Síguenos en Instagram: {handle}\n\n#cartas3D #coleccionables #manga #comic #anime #gaming"
+  "share_text": "🎮 ¡Mira esta increíble carta 3D: {cardTitle}! ✨\n\n🔥 Descubre todos nuestros productos en: {storeUrl}\n📱 Síguenos en Instagram: {handle}\n\n#cartas3D #coleccionables #manga #comic #anime #gaming",
+  
+  "page_404_title": "Super X - Carta no encontrada",
+  "error_404_code": "404", 
+  "error_404_title": "Carta no encontrada",
+  "error_404_message": "Esta carta parece haber desaparecido del mazo. La página que buscas no existe o ha sido movida.",
+  "error_404_home": "🏠 Volver al inicio",
+  "error_404_back": "⬅️ Página anterior", 
+  "error_404_note": "Si crees que esto es un error, verifica la URL o intenta navegar desde el menú principal."
 }
 
 
