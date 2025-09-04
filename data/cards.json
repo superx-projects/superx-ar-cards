@@ -11,7 +11,7 @@
   "b2h6df": {
     "model": "card0002.glb",
     "share": "card0002.webp",
-    "video": "card0002.mp4",
+    "video": "card0002.webm",
     "title": {
       "en": "One Piece (Eiichirō Oda)",
       "es": "One Piece (Eiichirō Oda)"
@@ -20,7 +20,7 @@
   "j7k3xa": {
     "model": "card0003.glb",
     "share": "card0003.webp",
-    "video": "card0003.mp4",
+    "video": "card0003.webm",
     "title": {
       "en": "Demon Slayer (Koyoharu Gotouge)",
       "es": "Demon Slayer (Koyoharu Gotouge)"
@@ -29,7 +29,7 @@
   "k9r5tm": {
     "model": "card0004.glb",
     "share": "card0004.webp",
-    "video": "card0004.mp4",
+    "video": "card0004.webm",
     "title": {
       "en": "My Hero Academy (Kōhei Horikoshi)",
       "es": "My Hero Academia (Kōhei Horikoshi)"
@@ -38,7 +38,7 @@
   "l8f3wo": {
     "model": "card0005.glb",
     "share": "card0005.webp",
-    "video": "card0005.mp4",
+    "video": "card0005.webm",
     "title": {
       "en": "Dandadan (Yukinobu Tatsu)",
       "es": "Dandadan (Yukinobu Tatsu)"
@@ -47,7 +47,7 @@
   "m4t7qs": {
     "model": "card0006.glb",
     "share": "card0006.webp",
-    "video": "card0006.mp4",
+    "video": "card0006.webm",
     "title": {
       "en": "Fantastic Four (by Jack Kirby)",
       "es": "Cuatro Fantásticos (por Jack Kirby)"
@@ -56,7 +56,7 @@
   "q5c2nw": {
     "model": "card0007.glb",
     "share": "card0007.webp",
-    "video": "card0007.mp4",
+    "video": "card0007.webm",
     "title": {
       "en": "Superman (by Dan Mora)",
       "es": "Superman (por Dan Mora)"
@@ -65,7 +65,7 @@
   "u9z8mp": {
     "model": "card0008.glb",
     "share": "card0008.webp",
-    "video": "card0008.mp4",
+    "video": "card0008.webm",
     "title": {
       "en": "Batman (by Frank Miller)",
       "es": "Batman (por Frank Miller)"
@@ -74,12 +74,10 @@
   "x1v9ke": {
     "model": "card0009.glb",
     "share": "card0009.webp",
-    "video": "card0009.mp4",
+    "video": "card0009.webm",
     "title": {
       "en": "Spiderman (by Todd McFarlane)",
       "es": "Spiderman (por Todd McFarlane)"
     }
   }
-
-
 }
